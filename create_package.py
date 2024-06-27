@@ -384,7 +384,7 @@ def create_addon_package(
             else:
                 zipf.write(src_file, dst_subpath)
 
-    log.info(f"Package created")
+    log.info("Package created")
 
 
 def main(
