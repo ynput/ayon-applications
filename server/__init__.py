@@ -1,16 +1,18 @@
 import os
 import json
 import copy
+from typing import TYPE_CHECKING
 
-from ayon_server.actions import (
-    ActionExecutor,
-    ExecuteResponseModel,
-    SimpleActionManifest,
-)
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.entities.core import attribute_library
 from ayon_server.lib.postgres import Postgres
 
+if TYPE_CHECKING:
+    from ayon_server.actions import (
+        ActionExecutor,
+        ExecuteResponseModel,
+        SimpleActionManifest,
+    )
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
     get_action_manifests,
