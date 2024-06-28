@@ -121,7 +121,7 @@ class ApplicationsAddon(BaseServerAddon):
 
         return await executor.get_launcher_action_response(
             args=[
-                "addon", "applications", "launch",
+                "addon", "applications", "launch-by-id",
                 "--app", app_name,
                 "--project", project_name,
                 "--task-id", task_id,
