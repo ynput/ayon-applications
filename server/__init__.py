@@ -2,11 +2,21 @@ import os
 import json
 import copy
 
+from ayon_server.actions import (
+    ActionExecutor,
+    ExecuteResponseModel,
+    SimpleActionManifest,
+)
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.entities.core import attribute_library
 from ayon_server.lib.postgres import Postgres
 
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
+from .actions import (
+    get_action_manifests,
+    IDENTIFIER_PREFIX,
+    get_enum_items_from_groups,
+)
 
 try:
     import semver
@@ -88,6 +98,29 @@ def get_enum_items_from_groups(groups):
 class ApplicationsAddon(BaseServerAddon):
     settings_model = ApplicationsAddonSettings
 
+    async def get_simple_actions(self) -> list[SimpleActionManifest]:
+        variant = "production"
+        return await get_action_manifests(self, variant, None)
+
+    async def execute_action(
+        self,
+        executor: ActionExecutor,
+    ) -> ExecuteResponseModel:
+        """Execute an action provided by the addon"""
+        app_name = executor.identifier[len(IDENTIFIER_PREFIX):]
+        context = executor.context
+        project_name = context.project_name
+        task_id = context.entity_ids[0]
+
+        return await executor.get_launcher_action_response(
+            args=[
+                "addon", "applications", "launch",
+                "--app", app_name,
+                "--project", project_name,
+                "--task-id", task_id,
+            ]
+        )
+
     async def get_default_settings(self):
         server_dir = os.path.join(self.addon_dir, "server")
         applications_path = os.path.join(server_dir, "applications.json")
@@ -126,7 +159,7 @@ class ApplicationsAddon(BaseServerAddon):
             "type": "list_of_strings",
             "title": "Applications",
             "scope": ["project"],
-            "enum":[],
+            "enum": [],
         }
 
     def _get_tools_def(self):
@@ -135,7 +168,7 @@ class ApplicationsAddon(BaseServerAddon):
             "type": "list_of_strings",
             "title": "Tools",
             "scope": ["project", "folder", "task"],
-            "enum":[],
+            "enum": [],
         }
 
     async def create_applications_attribute(self) -> bool:
