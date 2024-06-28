@@ -261,7 +261,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         )
         (
             main_group.command(
-                self._cli_launch_applications,
+                self._cli_launch_context_names,
                 name="launch",
                 help="Launch application"
             )
@@ -270,6 +270,20 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--folder", required=True, help="Folder path")
             .option("--task", required=True, help="Task name")
         )
+        # Convert main command to click object and add it to parent group
+        (addon_click_group.add_command(
+            main_group.to_click_obj()
+        )
+            (
+            main_group.command(
+                self._cli_launch_context_ids,
+                name="launch",
+                help="Launch application"
+            )
+            .option("--app", required=True, help="Application name")
+            .option("--project", required=True, help="Project name")
+            .option("--task-id", required=True, help="Task id")
+        ))
         # Convert main command to click object and add it to parent group
         addon_click_group.add_command(
             main_group.to_click_obj()
@@ -308,7 +322,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         with open(output_json_path, "w") as file_stream:
             json.dump(env, file_stream, indent=4)
 
-    def _cli_launch_applications(self, project, folder, task, app):
+    def _cli_launch_context_names(self, project, folder, task, app):
         """Launch application.
 
         Args:
@@ -319,3 +333,22 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
 
         """
         self.launch_application(app, project, folder, task)
+
+    def _cli_launch_context_ids(self, project, task_id, app):
+        """Launch application.
+
+        Args:
+            project (str): Project name.
+            task_id (str): Task id.
+            app (str): Full application name e.g. 'maya/2024'.
+
+        """
+        task_entity = ayon_api.get_task_by_id(
+            project, task_id, fields={"name", "folderId"}
+        )
+        folder_entity = ayon_api.get_folder_by_id(
+            project, task_entity["folderId"], fields={"path"}
+        )
+        self.launch_application(
+            app, project, folder_entity["path"], task_entity["name"]
+        )
