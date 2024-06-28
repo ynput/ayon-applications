@@ -98,9 +98,16 @@ def get_enum_items_from_groups(groups):
 class ApplicationsAddon(BaseServerAddon):
     settings_model = ApplicationsAddonSettings
 
-    async def get_simple_actions(self) -> list[SimpleActionManifest]:
-        variant = "production"
-        return await get_action_manifests(self, variant, None)
+    async def get_simple_actions(
+        self,
+        project_name: str | None = None,
+        variant: str = "production",
+    ) -> list[SimpleActionManifest]:
+        return await get_action_manifests(
+            self,
+            project_name=project_name,
+            variant=variant,
+        )
 
     async def execute_action(
         self,

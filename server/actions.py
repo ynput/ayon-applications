@@ -5,6 +5,7 @@ from ayon_server.actions import (
     ExecuteResponseModel,
     SimpleActionManifest,
 )
+from ayon_server.entities import ProjectEntity
 
 IDENTIFIER_PREFIX = "application.launch."
 
@@ -39,8 +40,13 @@ def get_enum_items_from_groups(groups):
     ]
 
 
-async def get_action_manifests(addon, variant, project_name):
-    # TODO check 'project_name' and filter applications by project
+async def get_action_manifests(addon, project_name, variant):
+    if not project_name:
+        return []
+
+    project_entity = await ProjectEntity.load(project_name)
+    project_apps = project_entity.original_attributes.get("applications", [])
+
     settings_model = await addon.get_studio_settings(variant=variant)
     app_settings = settings_model.dict()["applications"]
     app_groups = app_settings.pop("additional_apps")
@@ -50,6 +56,10 @@ async def get_action_manifests(addon, variant, project_name):
 
     output = []
     for item in get_enum_items_from_groups(app_groups):
+        app_full_name = item["value"]
+        if app_full_name not in project_apps:
+            continue
+
         icon = None
         if item["icon"]:
             icon = {
@@ -58,7 +68,7 @@ async def get_action_manifests(addon, variant, project_name):
             }
         output.append(
             SimpleActionManifest(
-                identifier=f"{IDENTIFIER_PREFIX}{item['value']}",
+                identifier=f"{IDENTIFIER_PREFIX}{app_full_name}",
                 label=item["label"],
                 category="Applications",
                 icon=icon,
