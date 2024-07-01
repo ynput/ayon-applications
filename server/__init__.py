@@ -104,7 +104,7 @@ class ApplicationsAddon(BaseServerAddon):
         self,
         project_name: str | None = None,
         variant: str = "production",
-    ) -> list[SimpleActionManifest]:
+    ) -> list["SimpleActionManifest"]:
         return await get_action_manifests(
             self,
             project_name=project_name,
@@ -113,8 +113,8 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def execute_action(
         self,
-        executor: ActionExecutor,
-    ) -> ExecuteResponseModel:
+        executor: "ActionExecutor",
+    ) -> "ExecuteResponseModel":
         """Execute an action provided by the addon"""
         app_name = executor.identifier[len(IDENTIFIER_PREFIX):]
         context = executor.context
