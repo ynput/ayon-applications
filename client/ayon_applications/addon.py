@@ -271,19 +271,16 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--task", required=True, help="Task name")
         )
         # Convert main command to click object and add it to parent group
-        (addon_click_group.add_command(
-            main_group.to_click_obj()
-        )
-            (
+        (
             main_group.command(
                 self._cli_launch_context_ids,
-                name="launch",
+                name="launch-by-id",
                 help="Launch application"
             )
             .option("--app", required=True, help="Application name")
             .option("--project", required=True, help="Project name")
             .option("--task-id", required=True, help="Task id")
-        ))
+        )
         # Convert main command to click object and add it to parent group
         addon_click_group.add_command(
             main_group.to_click_obj()
