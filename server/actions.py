@@ -6,7 +6,7 @@ from ayon_server.entities import ProjectEntity
 IDENTIFIER_PREFIX = "application.launch."
 
 
-def get_enum_items_from_groups(groups):
+def get_items_for_app_groups(groups):
     label_by_name = {}
     icon_by_name = {}
     for group in groups:
@@ -51,7 +51,7 @@ async def get_action_manifests(addon, project_name, variant):
         app_groups.append(value)
 
     output = []
-    for item in get_enum_items_from_groups(app_groups):
+    for item in get_items_for_app_groups(app_groups):
         app_full_name = item["value"]
         if app_full_name not in project_apps:
             continue

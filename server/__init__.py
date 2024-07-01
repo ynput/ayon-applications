@@ -17,7 +17,6 @@ from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
     get_action_manifests,
     IDENTIFIER_PREFIX,
-    get_enum_items_from_groups,
 )
 
 try:
