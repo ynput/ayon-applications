@@ -96,7 +96,7 @@ class ErrorDialog(QtWidgets.QDialog):
 
     def showEvent(self, event):
         self.setStyleSheet(load_stylesheet())
-        self.resize(320, 140)
+        self.resize(430, 180)
         super().showEvent(event)
 
     def set_message(self, message, detail):
