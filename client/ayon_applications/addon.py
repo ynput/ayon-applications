@@ -1,14 +1,31 @@
 import os
+import sys
 import json
+import traceback
+import tempfile
 
 import ayon_api
 
+from ayon_core.lib import run_ayon_launcher_process
 from ayon_core.addon import AYONAddon, IPluginPaths, click_wrap
+try:
+    from ayon_core.addon import (
+        ProcessContext,
+        ensure_addons_are_process_ready,
+    )
+except ImportError:
+    ProcessContext = None
+    ensure_addons_are_process_ready = None
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
 from .defs import LaunchTypes
 from .manager import ApplicationManager
+from .exceptions import (
+    ApplicationLaunchFailed,
+    ApplicationExecutableNotFound,
+    ApplicationNotFound,
+)
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths):
@@ -215,13 +232,51 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             task_name (str): Task name.
 
         """
-        app_manager = self.get_applications_manager()
-        return app_manager.launch(
-            app_name,
-            project_name=project_name,
-            folder_path=folder_path,
-            task_name=task_name,
-        )
+        context = None
+        if ProcessContext is not None:
+            context = ProcessContext(
+                addon_name=self.name,
+                addon_version=self.version,
+                project_name=project_name,
+            )
+            ensure_addons_are_process_ready(context)
+
+        # TODO handle raise errors
+        failed = True
+        message = None
+        detail = None
+        try:
+            app_manager = self.get_applications_manager()
+            app_manager.launch(
+                app_name,
+                project_name=project_name,
+                folder_path=folder_path,
+                task_name=task_name,
+            )
+            failed = False
+
+        except (
+            ApplicationLaunchFailed,
+            ApplicationExecutableNotFound,
+            ApplicationNotFound,
+        ) as exc:
+            message = str(exc)
+            self.log.warning(f"Application launch failed: {message}")
+
+        except Exception as exc:
+            message = "An unexpected error happened"
+            detail = "".join(traceback.format_exception(*sys.exc_info()))
+            self.log.warning(
+                f"Application launch failed: {str(exc)}",
+                exc_info=True
+            )
+
+        if not failed:
+            return
+
+        if context is not None and not context.headless:
+            self._show_launch_error_dialog(message, detail)
+        sys.exit(1)
 
     def webserver_initialization(self, manager):
         """Initialize webserver.
@@ -331,6 +386,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         """
         self.launch_application(app, project, folder, task)
 
+
     def _cli_launch_context_ids(self, project, task_id, app):
         """Launch application.
 
@@ -349,3 +405,26 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         self.launch_application(
             app, project, folder_entity["path"], task_entity["name"]
         )
+
+    def _show_launch_error_dialog(self, message, detail):
+        script_path = os.path.join(
+            APPLICATIONS_ADDON_ROOT, "ui", "launch_failed_dialog.py"
+        )
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp_path = tmp.name
+            json.dump(
+                {"message": message, "detail": detail},
+                tmp.file
+            )
+
+        try:
+            run_ayon_launcher_process(
+                "--skip-bootstrap",
+                script_path,
+                tmp_path,
+                add_sys_paths=True,
+                creationflags=0,
+            )
+
+        finally:
+            os.remove(tmp_path)
