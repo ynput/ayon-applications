@@ -111,7 +111,7 @@
                     "app_variants": []
                 }
             ],
-            "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"YETI_HOME\": {\n        \"darwin\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/MAC\",\n        \"linux\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/LINUX\",\n        \"windows\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/WINDOWS\"\n    },\n    \"YETI_TMP\": {\n        \"windows\": \"C:/temp\",\n        \"darwin\": \"/tmp\",\n        \"linux\": \"/tmp\"\n    },\n    \"peregrinel_LICENSE\": \"4202@35.158.197.250\",\n    \"MAYA_MODULE_PATH\": [\n        \"{STUDIO_SW}/APP/YETI\",\n        \"{MAYA_MODULE_PATH}\"\n    ]\n}"
+            "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"YETI_HOME\": {\n        \"darwin\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/MAC\",\n        \"linux\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/LINUX\",\n        \"windows\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/WINDOWS\"\n    },\n    \"YETI_TMP\": {\n        \"windows\": \"C:/temp\",\n        \"darwin\": \"/tmp\",\n        \"linux\": \"/tmp\"\n    },\n    \"MAYA_MODULE_PATH\": [\n        \"{STUDIO_SW}/APP/YETI\",\n        \"{MAYA_MODULE_PATH}\"\n    ]\n}"
         },
         {
             "name": "vrayMaya",
