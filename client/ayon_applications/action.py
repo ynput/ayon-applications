@@ -12,11 +12,6 @@ from ayon_core.lib import (
 from ayon_core.settings import get_studio_settings, get_project_settings
 from ayon_core.pipeline.actions import LauncherAction
 
-from .exceptions import (
-    ApplicationExecutableNotFound,
-    ApplicationLaunchFailed,
-)
-
 
 class ApplicationAction(LauncherAction):
     """Action to launch an application.
