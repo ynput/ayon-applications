@@ -3,7 +3,12 @@ import copy
 import ayon_api
 
 from ayon_core import resources
-from ayon_core.lib import Logger, NestedCacheItem
+from ayon_core.lib import (
+    Logger,
+    NestedCacheItem,
+    run_detached_process,
+    get_ayon_launcher_args,
+)
 from ayon_core.settings import get_studio_settings, get_project_settings
 from ayon_core.pipeline.actions import LauncherAction
 
@@ -122,26 +127,11 @@ class ApplicationAction(LauncherAction):
 
     def process(self, selection, **kwargs):
         """Process the full Application action"""
-        try:
-            self.application.launch(
-                project_name=selection.project_name,
-                folder_path=selection.folder_path,
-                task_name=selection.task_name,
-                **self.data
-            )
-
-        except ApplicationExecutableNotFound as exc:
-            details = exc.details
-            msg = exc.msg
-            log_msg = str(msg)
-            if details:
-                log_msg += "\n" + details
-            self.log.warning(log_msg)
-            self._show_message_box(
-                "Application executable not found", msg, details
-            )
-
-        except ApplicationLaunchFailed as exc:
-            msg = str(exc)
-            self.log.warning(msg, exc_info=True)
-            self._show_message_box("Application launch failed", msg)
+        args = get_ayon_launcher_args(
+            "addon", "applications", "launch",
+            "--project", selection.project_name,
+            "--folder", selection.folder_path,
+            "--task", selection.task_name,
+            "--app", self.application.full_name
+        )
+        run_detached_process(args)
