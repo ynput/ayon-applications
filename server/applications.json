@@ -24,8 +24,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2025\"\n}",
-                    "use_python_2": false
+                    "environment": "{\n  \"MAYA_VERSION\": \"2025\"\n}"
                 },
                 {
                     "name": "2024",
@@ -44,8 +43,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2024\"\n}",
-                    "use_python_2": false
+                    "environment": "{\n  \"MAYA_VERSION\": \"2024\"\n}"
                 },
                 {
                     "name": "2023",
@@ -64,8 +62,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2023\"\n}",
-                    "use_python_2": false
+                    "environment": "{\n  \"MAYA_VERSION\": \"2023\"\n}"
                 },
                 {
                     "name": "2022",
@@ -84,8 +81,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2022\"\n}",
-                    "use_python_2": true
+                    "environment": "{\n  \"MAYA_VERSION\": \"2022\"\n}"
                 }
             ]
         },
@@ -113,8 +109,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2024\"\n}",
-                    "use_python_2": false
+                    "environment": "{\n  \"MAYA_VERSION\": \"2024\"\n}"
                 },
                 {
                     "name": "2023",
@@ -133,8 +128,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2023\"\n}",
-                    "use_python_2": false
+                    "environment": "{\n  \"MAYA_VERSION\": \"2023\"\n}"
                 }
             ]
         },
@@ -147,7 +141,6 @@
             "variants": [
                 {
                     "name": "2024",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\3ds Max 2024\\3dsmax.exe"
@@ -164,7 +157,6 @@
                 },
                 {
                     "name": "2023",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\3ds Max 2023\\3dsmax.exe"
@@ -205,8 +197,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n    \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021/bin/python2.7\",\n    \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021/python\",\n    \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021\"\n}",
-                    "use_python_2": true
+                    "environment": "{\n    \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021/bin/python2.7\",\n    \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021/python\",\n    \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021\"\n}"
                 },
                 {
                     "name": "2021_1",
@@ -225,8 +216,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021.1/bin/python2.7\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021.1/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021.1\"\n}",
-                    "use_python_2": true
+                    "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021.1/bin/python2.7\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021.1/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021.1\"\n}"
                 }
             ]
         },
@@ -256,8 +246,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "14-0",
@@ -278,8 +267,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "13-2",
@@ -300,8 +288,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 }
             ]
         },
@@ -331,8 +318,7 @@
                         "darwin": [],
                         "linux": ["--nukeassist"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "14-0",
@@ -353,8 +339,7 @@
                         "darwin": [],
                         "linux": ["--nukeassist"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "13-2",
@@ -375,8 +360,7 @@
                         "darwin": [],
                         "linux": ["--nukeassist"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 }
             ]
         },
@@ -406,8 +390,7 @@
                         "darwin": [],
                         "linux": ["--nukex"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "14-0",
@@ -428,8 +411,7 @@
                         "darwin": [],
                         "linux": ["--nukex"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "13-2",
@@ -450,8 +432,7 @@
                         "darwin": [],
                         "linux": ["--nukex"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 }
             ]
         },
@@ -481,8 +462,7 @@
                         "darwin": [],
                         "linux": ["--studio"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "14-0",
@@ -503,8 +483,7 @@
                         "darwin": [],
                         "linux": ["--studio"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "13-2",
@@ -525,8 +504,7 @@
                         "darwin": [],
                         "linux": ["--studio"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 }
             ]
         },
@@ -556,8 +534,7 @@
                         "darwin": [],
                         "linux": ["--hiero"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "14-0",
@@ -578,8 +555,7 @@
                         "darwin": [],
                         "linux": ["--hiero"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 },
                 {
                     "name": "13-2",
@@ -600,8 +576,7 @@
                         "darwin": [],
                         "linux": ["--hiero"]
                     },
-                    "environment": "{}",
-                    "use_python_2": false
+                    "environment": "{}"
                 }
             ]
         },
@@ -713,8 +688,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{}",
-                    "use_python_2": true
+                    "environment": "{}"
                 },
                 {
                     "name": "19-0",
@@ -731,8 +705,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{}",
-                    "use_python_2": true
+                    "environment": "{}"
                 },
                 {
                     "name": "18-5",
@@ -749,8 +722,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{}",
-                    "use_python_2": true
+                    "environment": "{}"
                 }
             ]
         },
@@ -1227,7 +1199,6 @@
             "variants": [
                 {
                     "name": "2023",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [
                             "c:\\Program Files\\Faceform\\Wrap 2023.10.2\\Wrap.exe"
@@ -1253,7 +1224,6 @@
             "variants": [
                 {
                     "name": "1.0.0",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [],
                         "darwin": [],
@@ -1277,7 +1247,6 @@
             "variants": [
                 {
                     "name": "2024",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Maxon ZBrush 2024\\ZBrush.exe"
@@ -1304,7 +1273,6 @@
                 {
                     "name": "7-1v2",
                     "label": "7.1v2",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\3DE4_win64_r7.1v2\\bin\\3DE4.exe"
@@ -1326,7 +1294,6 @@
                 {
                     "name": "2025",
                     "label": "2025",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\MotionBuilder 2025\\bin\\x64\\motionbuilder.exe"
@@ -1339,7 +1306,6 @@
                 {
                     "name": "2024",
                     "label": "2024",
-                    "use_python_2": false,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\MotionBuilder 2024\\bin\\x64\\motionbuilder.exe"
