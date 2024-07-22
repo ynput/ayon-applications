@@ -50,10 +50,6 @@ class AppVariant(BaseSettingsModel):
         return validate_json_dict(value)
 
 
-class AppVariantWithPython(AppVariant):
-    use_python_2: bool = SettingsField(False, title="Use Python 2")
-
-
 class AppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     label: str = SettingsField("", title="Label")
@@ -74,15 +70,6 @@ class AppGroup(BaseSettingsModel):
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
         return value
-
-
-class AppGroupWithPython(AppGroup):
-    variants: list[AppVariantWithPython] = SettingsField(
-        default_factory=list,
-        title="Variants",
-        description="Different variants of the applications",
-        section="Variants",
-    )
 
 
 class AdditionalAppGroup(BaseSettingsModel):
@@ -146,54 +133,54 @@ class ToolGroupModel(BaseSettingsModel):
 class ApplicationsSettings(BaseSettingsModel):
     """Applications settings"""
 
-    maya: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Autodesk Maya")
-    adsk_3dsmax: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Autodesk 3ds Max")
-    flame: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Autodesk Flame")
-    nuke: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Nuke")
-    nukeassist: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Nuke Assist")
-    nukex: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Nuke X")
-    nukestudio: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Nuke Studio")
-    hiero: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Hiero")
+    maya: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Autodesk Maya")
+    adsk_3dsmax: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Autodesk 3ds Max")
+    flame: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Autodesk Flame")
+    nuke: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Nuke")
+    nukeassist: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Nuke Assist")
+    nukex: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Nuke X")
+    nukestudio: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Nuke Studio")
+    hiero: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Hiero")
     fusion: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Fusion")
-    resolve: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Resolve")
-    houdini: AppGroupWithPython = SettingsField(
-        default_factory=AppGroupWithPython, title="Houdini")
+        default_factory=AppGroup, title="Fusion")
+    resolve: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Resolve")
+    houdini: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Houdini")
     blender: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Blender")
+        default_factory=AppGroup, title="Blender")
     harmony: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Harmony")
+        default_factory=AppGroup, title="Harmony")
     tvpaint: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="TVPaint")
+        default_factory=AppGroup, title="TVPaint")
     photoshop: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Adobe Photoshop")
+        default_factory=AppGroup, title="Adobe Photoshop")
     aftereffects: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Adobe After Effects")
+        default_factory=AppGroup, title="Adobe After Effects")
     celaction: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Celaction 2D")
+        default_factory=AppGroup, title="Celaction 2D")
     substancepainter: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Substance Painter")
+        default_factory=AppGroup, title="Substance Painter")
     unreal: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Unreal Editor")
+        default_factory=AppGroup, title="Unreal Editor")
     wrap: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Wrap")
+        default_factory=AppGroup, title="Wrap")
     openrv: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="OpenRV")
+        default_factory=AppGroup, title="OpenRV")
     zbrush: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Zbrush")
+        default_factory=AppGroup, title="Zbrush")
     equalizer: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="3DEqualizer")
+        default_factory=AppGroup, title="3DEqualizer")
     motionbuilder: AppGroup = SettingsField(
-        default_factory=AppGroupWithPython, title="Motion Builder")
+        default_factory=AppGroup, title="Motion Builder")
     additional_apps: list[AdditionalAppGroup] = SettingsField(
         default_factory=list, title="Additional Applications")
 
