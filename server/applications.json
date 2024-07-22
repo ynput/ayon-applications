@@ -2,8 +2,6 @@
     "applications": {
         "maya": {
             "enabled": true,
-            "label": "Maya",
-            "icon": "{}/app_icons/maya.png",
             "host_name": "maya",
             "environment": "{\n  \"MAYA_DISABLE_CLIC_IPM\": \"Yes\",\n  \"MAYA_DISABLE_CIP\": \"Yes\",\n  \"MAYA_DISABLE_CER\": \"Yes\",\n  \"PYMEL_SKIP_MEL_INIT\": \"Yes\",\n  \"LC_ALL\": \"C\"\n}\n",
             "variants": [
@@ -87,8 +85,6 @@
         },
         "adsk_3dsmax": {
             "enabled": true,
-            "label": "3ds Max",
-            "icon": "{}/app_icons/3dsmax.png",
             "host_name": "max",
             "environment": "{\n    \"ADSK_3DSMAX_STARTUPSCRIPTS_ADDON_DIR\": \"{OPENPYPE_ROOT}/openpype/hosts/max/startup\"\n}",
             "variants": [
@@ -128,8 +124,6 @@
         },
         "flame": {
             "enabled": true,
-            "label": "Flame",
-            "icon": "{}/app_icons/flame.png",
             "host_name": "flame",
             "environment": "{\n    \"FLAME_SCRIPT_DIRS\": {\n        \"windows\": \"\",\n        \"darwin\": \"\",\n        \"linux\": \"\"\n    },\n    \"FLAME_WIRETAP_HOSTNAME\": \"\",\n    \"FLAME_WIRETAP_VOLUME\": \"stonefs\",\n    \"FLAME_WIRETAP_GROUP\": \"staff\"\n}",
             "variants": [
@@ -175,8 +169,6 @@
         },
         "nuke": {
             "enabled": true,
-            "label": "Nuke",
-            "icon": "{}/app_icons/nuke.png",
             "host_name": "nuke",
             "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
             "variants": [
@@ -247,8 +239,6 @@
         },
         "nukeassist": {
             "enabled": true,
-            "label": "Nuke Assist",
-            "icon": "{}/app_icons/nuke.png",
             "host_name": "nuke",
             "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
             "variants": [
@@ -319,8 +309,6 @@
         },
         "nukex": {
             "enabled": true,
-            "label": "Nuke X",
-            "icon": "{}/app_icons/nukex.png",
             "host_name": "nuke",
             "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
             "variants": [
@@ -391,8 +379,6 @@
         },
         "nukestudio": {
             "enabled": true,
-            "label": "Nuke Studio",
-            "icon": "{}/app_icons/nukestudio.png",
             "host_name": "hiero",
             "environment": "{\n    \"WORKFILES_STARTUP\": \"0\",\n    \"TAG_ASSETBUILD_STARTUP\": \"0\"\n}",
             "variants": [
@@ -463,8 +449,6 @@
         },
         "hiero": {
             "enabled": true,
-            "label": "Hiero",
-            "icon": "{}/app_icons/hiero.png",
             "host_name": "hiero",
             "environment": "{\n    \"WORKFILES_STARTUP\": \"0\",\n    \"TAG_ASSETBUILD_STARTUP\": \"0\"\n}",
             "variants": [
@@ -535,8 +519,6 @@
         },
         "fusion": {
             "enabled": true,
-            "label": "Fusion",
-            "icon": "{}/app_icons/fusion.png",
             "host_name": "fusion",
             "environment": "{\n    \"FUSION_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python36\",\n        \"darwin\": \"~/Library/Python/3.6/bin\",\n        \"linux\": \"/opt/Python/3.6/bin\"\n    }\n}",
             "variants": [
@@ -595,8 +577,6 @@
         },
         "resolve": {
             "enabled": true,
-            "label": "Resolve",
-            "icon": "{}/app_icons/resolve.png",
             "host_name": "resolve",
             "environment": "{\n    \"RESOLVE_UTILITY_SCRIPTS_SOURCE_DIR\": [],\n    \"RESOLVE_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python36\",\n        \"darwin\": \"~/Library/Python/3.6/bin\",\n        \"linux\": \"/opt/Python/3.6/bin\"\n    }\n}",
             "variants": [
@@ -621,8 +601,6 @@
         },
         "houdini": {
             "enabled": true,
-            "label": "Houdini",
-            "icon": "{}/app_icons/houdini.png",
             "host_name": "houdini",
             "environment": "{}",
             "variants": [
@@ -681,8 +659,6 @@
         },
         "blender": {
             "enabled": true,
-            "label": "Blender",
-            "icon": "{}/app_icons/blender.png",
             "host_name": "blender",
             "environment": "{}",
             "variants": [
@@ -782,8 +758,6 @@
         },
         "harmony": {
             "enabled": true,
-            "label": "Harmony",
-            "icon": "{}/app_icons/harmony.png",
             "host_name": "harmony",
             "environment": "{\n    \"AVALON_HARMONY_WORKFILES_ON_LAUNCH\": \"1\"\n}",
             "variants": [
@@ -867,8 +841,6 @@
         },
         "tvpaint": {
             "enabled": true,
-            "label": "TVPaint",
-            "icon": "{}/app_icons/tvpaint.png",
             "host_name": "tvpaint",
             "environment": "{}",
             "variants": [
@@ -910,8 +882,6 @@
         },
         "photoshop": {
             "enabled": true,
-            "label": "Photoshop",
-            "icon": "{}/app_icons/photoshop.png",
             "host_name": "photoshop",
             "environment": "{\n    \"AVALON_PHOTOSHOP_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
@@ -970,8 +940,6 @@
         },
         "aftereffects": {
             "enabled": true,
-            "label": "AfterEffects",
-            "icon": "{}/app_icons/aftereffects.png",
             "host_name": "aftereffects",
             "environment": "{\n    \"AVALON_AFTEREFFECTS_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
@@ -1047,8 +1015,6 @@
         },
         "celaction": {
             "enabled": true,
-            "label": "CelAction 2D",
-            "icon": "app_icons/celaction.png",
             "host_name": "celaction",
             "environment": "{\n    \"CELACTION_TEMPLATE\": \"{OPENPYPE_REPOS_ROOT}/openpype/hosts/celaction/celaction_template_scene.scn\"\n}",
             "variants": [
@@ -1071,8 +1037,6 @@
         },
         "substancepainter": {
             "enabled": true,
-            "label": "Substance Painter",
-            "icon": "{}/app_icons/substancepainter.png",
             "host_name": "substancepainter",
             "environment": "{}",
             "variants": [
@@ -1097,8 +1061,6 @@
         },
         "unreal": {
             "enabled": false,
-            "label": "Unreal Editor",
-            "icon": "{}/app_icons/ue4.png",
             "host_name": "unreal",
             "environment": "{}",
             "variants": [
@@ -1145,8 +1107,6 @@
         },
         "wrap": {
             "enabled": true,
-            "label": "Wrap",
-            "icon": "{}/app_icons/wrap.png",
             "host_name": "wrap",
             "environment": "{\n    \n}",
             "variants": [
@@ -1170,8 +1130,6 @@
         },
         "openrv": {
             "enabled": true,
-            "label": "OpenRV",
-            "icon": "{}/app_icons/openrv.png",
             "host_name": "openrv",
             "environment": "{\n    \n}",
             "variants": [
@@ -1193,8 +1151,6 @@
         },
         "zbrush": {
             "enabled": true,
-            "label": "Zbrush",
-            "icon": "{}/app_icons/zbrush.png",
             "host_name": "zbrush",
             "environment": "{\n    \"ZBRUSH_PLUGIN_PATH\": [\n        \"{ZBRUSH_PLUGIN_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/zbrush/api/zscripts\"\n    ]\n}",
             "variants": [
@@ -1218,8 +1174,6 @@
         },
         "equalizer": {
             "enabled": true,
-            "label": "3DEqualizer",
-            "icon": "{}/app_icons/3de4.png",
             "host_name": "equalizer",
             "environment": "{}",
             "variants": [
@@ -1239,8 +1193,6 @@
         },
         "motionbuilder": {
             "enabled": true,
-            "label": "Motion Builder",
-            "icon": "{}/app_icons/motionbuilder.png",
             "host_name": "motionbuilder",
             "environment": "{}",
             "variants": [

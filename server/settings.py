@@ -1,3 +1,4 @@
+import os
 import json
 from pydantic import validator
 
@@ -8,6 +9,21 @@ from ayon_server.settings import (
 )
 from ayon_server.exceptions import BadRequestException
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ICONS_DIR = os.path.join(
+    os.path.dirname(CURRENT_DIR),
+    "public",
+    "icons"
+)
+
+
+def icons_enum():
+    icons = [
+        {"label": os.path.basename(filename), "value": filename}
+        for filename in os.listdir(ICONS_DIR)
+    ]
+    icons.insert(0, {"label": "None", "value": ""})
+    return icons
 
 def validate_json_dict(value):
     if not value.strip():
@@ -52,9 +68,7 @@ class AppVariant(BaseSettingsModel):
 
 class AppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
-    label: str = SettingsField("", title="Label")
     host_name: str = SettingsField("", title="Host name")
-    icon: str = SettingsField("", title="Icon")
     environment: str = SettingsField(
         "{}", title="Environment", widget="textarea"
     )
@@ -77,7 +91,7 @@ class AdditionalAppGroup(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
     label: str = SettingsField("", title="Label")
     host_name: str = SettingsField("", title="Host name")
-    icon: str = SettingsField("", title="Icon")
+    icon: str = SettingsField("", title="Icon", enum_resolver=icons_enum)
     environment: str = SettingsField(
         "{}", title="Environment", widget="textarea"
     )
