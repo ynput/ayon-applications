@@ -82,7 +82,7 @@ class AdditionalAppGroup(BaseSettingsModel):
         "{}", title="Environment", widget="textarea"
     )
 
-    variants: list[AppVariantWithPython] = SettingsField(
+    variants: list[AppVariant] = SettingsField(
         default_factory=list,
         title="Variants",
         description="Different variants of the applications",
