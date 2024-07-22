@@ -229,6 +229,20 @@ class ApplicationsAddonSettings(BaseSettingsModel):
         return value
 
 
+def _get_applications_defaults():
+    with open(os.path.join(CURRENT_DIR, "applications.json"), "r") as stream:
+        applications_defaults = json.load(stream)
+    return applications_defaults
+
+
+def _get_tools_defaults():
+    with open(os.path.join(CURRENT_DIR, "tools.json"), "r") as stream:
+        tools_defaults = json.load(stream)
+    return tools_defaults
+
+
 DEFAULT_VALUES = {
-    "only_available": True
+    "only_available": True,
 }
+DEFAULT_VALUES.update(_get_applications_defaults())
+DEFAULT_VALUES.update(_get_tools_defaults())
