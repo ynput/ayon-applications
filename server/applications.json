@@ -1351,6 +1351,51 @@
                 }
             ]
         },
+        "terminal": {
+            "enabled": true,
+            "label": "Terminal",
+            "icon": "{}/app_icons/terminal.png",
+            "host_name": "terminal",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "cmd",
+                    "label": "CMD",
+                    "executables": {
+                        "windows": [
+                            "C:\\WINDOWS\\System32\\cmd.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}",
+                    "use_python_2": false
+                },
+                {
+                    "name": "powershell",
+                    "label": "PowerShell",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}",
+                    "use_python_2": false
+                }
+            ]
+        },
         "additional_apps": []
     }
 }
