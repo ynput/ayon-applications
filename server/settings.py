@@ -148,6 +148,8 @@ class ApplicationsSettings(BaseSettingsModel):
 
     maya: AppGroupWithPython = SettingsField(
         default_factory=AppGroupWithPython, title="Autodesk Maya")
+    mayapy: AppGroupWithPython = SettingsField(
+        default_factory=AppGroupWithPython, title="Autodesk MayaPy")
     adsk_3dsmax: AppGroupWithPython = SettingsField(
         default_factory=AppGroupWithPython, title="Autodesk 3ds Max")
     flame: AppGroupWithPython = SettingsField(
