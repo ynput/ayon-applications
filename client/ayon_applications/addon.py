@@ -307,7 +307,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--project", help="Project name", default=None)
             .option("--folder", help="Folder path", default=None)
             .option("--task", help="Task name", default=None)
-            .option("--app", help="Application name", default=None)
+            .option("--app", help="Full application name", default=None)
             .option(
                 "--envgroup",
                 help="Environment group (e.g. \"farm\")",
@@ -320,7 +320,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
                 name="launch",
                 help="Launch application"
             )
-            .option("--app", required=True, help="Application name")
+            .option("--app", required=True, help="Full application name")
             .option("--project", required=True, help="Project name")
             .option("--folder", required=True, help="Folder path")
             .option("--task", required=True, help="Task name")
@@ -332,7 +332,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
                 name="launch-by-id",
                 help="Launch application"
             )
-            .option("--app", required=True, help="Application name")
+            .option("--app", required=True, help="Full application name")
             .option("--project", required=True, help="Project name")
             .option("--task-id", required=True, help="Task id")
         )
