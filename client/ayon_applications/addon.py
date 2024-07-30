@@ -234,12 +234,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         """
         context = None
         if ProcessContext is not None:
-            context = ProcessContext(
+            ensure_addons_are_process_ready(
                 addon_name=self.name,
                 addon_version=self.version,
                 project_name=project_name,
             )
-            ensure_addons_are_process_ready(context)
 
         # TODO handle raise errors
         failed = True
