@@ -33,11 +33,7 @@ class DebugShell(LauncherAction):
     order = 10
 
     def is_compatible(self, selection) -> bool:
-        return all((
-            selection.is_task_selected,
-            selection.is_folder_selected,
-            selection.is_project_selected,
-        ))
+        return selection.is_task_selected
 
     def process(self, selection, **kwargs):
         # Get cursor position directly so the menu shows closer to where user
