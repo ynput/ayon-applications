@@ -12,6 +12,11 @@ from ayon_core.lib import (
 from ayon_core.settings import get_studio_settings, get_project_settings
 from ayon_core.pipeline.actions import LauncherAction
 
+from .exceptions import (
+    ApplicationExecutableNotFound,
+    ApplicationLaunchFailed,
+)
+
 
 class ApplicationAction(LauncherAction):
     """Action to launch an application.
@@ -122,11 +127,40 @@ class ApplicationAction(LauncherAction):
 
     def process(self, selection, **kwargs):
         """Process the full Application action"""
-        args = get_ayon_launcher_args(
-            "addon", "applications", "launch",
-            "--project", selection.project_name,
-            "--folder", selection.folder_path,
-            "--task", selection.task_name,
-            "--app", self.application.full_name
-        )
-        run_detached_process(args)
+        try:
+            self.application.launch(
+                project_name=selection.project_name,
+                folder_path=selection.folder_path,
+                task_name=selection.task_name,
+                **self.data
+            )
+
+        except ApplicationExecutableNotFound as exc:
+            details = exc.details
+            msg = exc.msg
+            log_msg = str(msg)
+            if details:
+                log_msg += "\n" + details
+            self.log.warning(log_msg)
+            self._show_message_box(
+                "Application executable not found", msg, details
+            )
+
+        except ApplicationLaunchFailed as exc:
+            msg = str(exc)
+            self.log.warning(msg, exc_info=True)
+            self._show_message_box("Application launch failed", msg)
+
+    # TODO use subprocess
+    # - Launch using subprocess is slower because of AYON launcher bootstrap
+    #   for now was this functionality postponed, but it means the process
+    #   initialization does not happen.
+    # def launch(self, selection):
+    #     args = get_ayon_launcher_args(
+    #         "addon", "applications", "launch",
+    #         "--project", selection.project_name,
+    #         "--folder", selection.folder_path,
+    #         "--task", selection.task_name,
+    #         "--app", self.application.full_name
+    #     )
+    #     run_detached_process(args)
