@@ -328,7 +328,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         # Convert main command to click object and add it to parent group
         (
             main_group.command(
-                self._cli_launch_context_ids,
+                self._cli_launch_with_task_id,
                 name="launch-by-id",
                 help="Launch application"
             )
@@ -387,7 +387,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         self.launch_application(app, project, folder, task)
 
 
-    def _cli_launch_context_ids(self, project, task_id, app):
+    def _cli_launch_with_task_id(self, project, task_id, app):
         """Launch application.
 
         Args:
