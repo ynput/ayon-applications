@@ -1,6 +1,7 @@
-from typing import Optional
 import os
+import platform
 import subprocess
+from typing import Optional
 
 from qtpy import QtWidgets, QtGui, QtCore
 
@@ -68,8 +69,9 @@ class DebugShell(LauncherAction):
         if cwd:
             print(f"Setting Work Directory: {cwd}")
 
-        print(f"Launch cmd in environment of {app.full_label}..")
-        subprocess.Popen("cmd",
+        print(f"Launching shell in environment of {app.full_label}..")
+        args = self.get_terminal()
+        subprocess.Popen(args,
                          env=env,
                          cwd=cwd,
                          creationflags=subprocess.CREATE_NEW_CONSOLE)
@@ -114,3 +116,24 @@ class DebugShell(LauncherAction):
             applications.append(app)
 
         return applications
+
+    def get_terminal(self) -> list[str]:
+        """Return the terminal executable to launch."""
+        # TODO: Allow customization per user for this via AYON settings
+        platform_name = platform.system().lower()
+        if platform_name == "windows":
+            return ["cmd.exe"]
+        elif platform_name == "darwin":
+            shell = os.getenv("SHELL")
+            if not shell:
+                raise RuntimeError(
+                    "Missing SHELL environment variable defining the Mac OS "
+                    "terminal executable to launch")
+            return ["open", "-na", shell]
+        elif platform_name == "linux":
+            shell = os.getenv("SHELL")
+            if not shell:
+                raise RuntimeError(
+                    "Missing SHELL environment variable defining the Mac OS "
+                    "terminal executable to launch")
+            return [shell]
