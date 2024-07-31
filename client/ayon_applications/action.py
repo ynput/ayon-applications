@@ -14,7 +14,6 @@ from .exceptions import (
     ApplicationExecutableNotFound,
     ApplicationLaunchFailed,
 )
-from .version import __version__
 
 
 class ApplicationAction(LauncherAction):
