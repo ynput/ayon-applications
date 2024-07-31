@@ -10,11 +10,6 @@ from ayon_core.lib import (
 from ayon_core.settings import get_studio_settings, get_project_settings
 from ayon_core.pipeline.actions import LauncherAction
 
-try:
-    from ayon_core.addon import ensure_addons_are_process_ready
-except ImportError:
-    ensure_addons_are_process_ready = None
-
 from .exceptions import (
     ApplicationExecutableNotFound,
     ApplicationLaunchFailed,
@@ -131,18 +126,6 @@ class ApplicationAction(LauncherAction):
 
     def process(self, selection, **kwargs):
         """Process the full Application action"""
-        exc = None
-        if ensure_addons_are_process_ready is not None:
-            exc = ensure_addons_are_process_ready(
-                addon_name="applications",
-                addon_version=__version__,
-                project_name=selection.project_name,
-                exit_on_failure=False
-            )
-        if exc is not None:
-            self._show_message_box("Application launch failed", str(exc))
-            return
-
         try:
             self.application.launch(
                 project_name=selection.project_name,
