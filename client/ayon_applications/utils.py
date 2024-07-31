@@ -202,7 +202,8 @@ def _add_python_version_paths(app, env, logger, addons_manager):
     """Add vendor packages specific for a Python version."""
 
     for addon in addons_manager.get_enabled_addons():
-        addon.modify_application_launch_arguments(app, env)
+        if hasattr(addon, "modify_application_launch_arguments"):
+            addon.modify_application_launch_arguments(app, env)
 
     # Skip adding if host name is not set
     if not app.host_name:
