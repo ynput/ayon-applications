@@ -55,7 +55,8 @@ class DebugShell(LauncherAction):
             print("Only one shell application variant is configured. "
                   f"Defaulting to {shell_app.full_label}")
         else:
-            shell_app = self.choose_app(shell_applications, pos)
+            shell_app = self.choose_app(shell_applications, pos,
+                                        show_variant_name_only=True)
         if not shell_app:
             return
 
@@ -96,8 +97,11 @@ class DebugShell(LauncherAction):
             cwd=cwd)
 
     @staticmethod
-    def choose_app(applications: list[Application],
-                   pos: QtCore.QPoint) -> Optional[Application]:
+    def choose_app(
+        applications: list[Application],
+        pos: QtCore.QPoint,
+        show_variant_name_only: bool = False
+    ) -> Optional[Application]:
         """Show menu to choose from list of applications"""
         menu = QtWidgets.QMenu()
         menu.setAttribute(QtCore.Qt.WA_DeleteOnClose)  # force garbage collect
@@ -107,7 +111,8 @@ class DebugShell(LauncherAction):
         applications.sort(key=lambda item: item.full_label)
 
         for app in applications:
-            menu_action = QtWidgets.QAction(app.full_label, parent=menu)
+            label = app.label if show_variant_name_only else app.full_label
+            menu_action = QtWidgets.QAction(label, parent=menu)
             icon = get_application_qt_icon(app)
             if icon:
                 menu_action.setIcon(icon)
@@ -136,6 +141,8 @@ class DebugShell(LauncherAction):
     @staticmethod
     def get_shell_applications(application_manager) -> list[Application]:
         """Return all configured shell applications"""
+        # TODO: Maybe filter out shell applications not configured for your
+        #  current platform
         return list(application_manager.app_groups["shell"].variants.values())
 
     def launch_app_as_shell(
