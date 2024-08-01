@@ -3,7 +3,7 @@ class ApplicationNotFound(Exception):
 
     def __init__(self, app_name):
         self.app_name = app_name
-        super(ApplicationNotFound, self).__init__(
+        super().__init__(
             "Application \"{}\" was not found.".format(app_name)
         )
 
@@ -33,9 +33,9 @@ class ApplicationExecutableNotFound(Exception):
         exc_mgs = str(self.msg)
         if details:
             # Is good idea to pass new line symbol to exception message?
-            exc_mgs += "\n" + details
+            exc_mgs += "\n\n" + details
         self.exc_msg = exc_mgs
-        super(ApplicationExecutableNotFound, self).__init__(exc_mgs)
+        super().__init__(exc_mgs)
 
 
 class ApplicationLaunchFailed(Exception):
