@@ -1302,6 +1302,31 @@
                 }
             ]
         },
+        "shell": {
+            "enabled": true,
+            "label": "Shell",
+            "icon": "{}/app_icons/shell.png",
+            "host_name": "shell",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "main",
+                    "label": "Main",
+                    "use_python_2": false,
+                    "executables": {
+                        "windows": ["cmd.exe"],
+                        "darwin": ["open"],
+                        "linux": ["{SHELL}"]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": ["-na", "{SHELL}"],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "additional_apps": []
     }
 }

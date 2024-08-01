@@ -41,7 +41,10 @@ class DebugShell(LauncherAction):
         # clicked because the get applications logic might take a brief moment
         pos = QtGui.QCursor.pos()
 
-        applications = self.get_applications(selection.project_entity)
+        # Get applications
+        application_manager = ApplicationManager()
+        applications = self.get_project_applications(
+            application_manager, selection.project_entity)
         app = self.choose_app(applications, pos)
         if not app:
             return
@@ -66,11 +69,12 @@ class DebugShell(LauncherAction):
             print(f"Setting Work Directory: {cwd}")
 
         print(f"Launching shell in environment of {app.full_label}..")
-        args = self.get_terminal()
-        subprocess.Popen(args,
-                         env=env,
-                         cwd=cwd,
-                         creationflags=subprocess.CREATE_NEW_CONSOLE)
+        self.launch_shell(application_manager,
+                          project_name=selection.project_name,
+                          folder_path=selection.folder_path,
+                          task_name=selection.task_name,
+                          env=env,
+                          cwd=cwd)
 
     @staticmethod
     def choose_app(applications: list[Application],
@@ -96,40 +100,36 @@ class DebugShell(LauncherAction):
             return result.data()
 
     @staticmethod
-    def get_applications(project_entity: dict) -> list[Application]:
+    def get_project_applications(application_manager: ApplicationManager,
+                                 project_entity: dict) -> list[Application]:
         """Return the enabled applications for the project"""
-
-        # Get applications
-        manager = ApplicationManager()
-
         # Filter to apps valid for this current project, with logic from:
         # `ayon_core.tools.launcher.models.actions.ApplicationAction.is_compatible`  # noqa
         applications = []
         for app_name in project_entity["attrib"].get("applications", []):
-            app = manager.applications.get(app_name)
+            app = application_manager.applications.get(app_name)
             if not app or not app.enabled:
                 continue
             applications.append(app)
 
         return applications
 
-    def get_terminal(self) -> list[str]:
+    def launch_shell(self,
+                     application_manager,
+                     project_name,
+                     folder_path,
+                     task_name,
+                     cwd,
+                     env) -> list[str]:
         """Return the terminal executable to launch."""
         # TODO: Allow customization per user for this via AYON settings
-        platform_name = platform.system().lower()
-        if platform_name == "windows":
-            return ["cmd.exe"]
-        elif platform_name == "darwin":
-            shell = os.getenv("SHELL")
-            if not shell:
-                raise RuntimeError(
-                    "Missing SHELL environment variable defining the Mac OS "
-                    "terminal executable to launch")
-            return ["open", "-na", shell]
-        elif platform_name == "linux":
-            shell = os.getenv("SHELL")
-            if not shell:
-                raise RuntimeError(
-                    "Missing SHELL environment variable defining the Mac OS "
-                    "terminal executable to launch")
-            return [shell]
+        launch_context = application_manager.create_launch_context(
+            "shell/main",
+            project_name=project_name,
+            folder_path=folder_path,
+            task_name=task_name,
+            env=env
+        )
+        launch_context.kwargs["cwd"] = cwd
+        launch_context.kwargs["creationflags"] = subprocess.CREATE_NEW_CONSOLE
+        return application_manager.launch_with_context(launch_context)
