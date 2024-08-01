@@ -40,9 +40,26 @@ class DebugShell(LauncherAction):
         # Get cursor position directly so the menu shows closer to where user
         # clicked because the get applications logic might take a brief moment
         pos = QtGui.QCursor.pos()
+        application_manager = ApplicationManager()
+
+        # Choose shell
+        shell_applications = self.get_shell_applications(application_manager)
+        if len(shell_applications) == 0:
+            raise RuntimeError(
+                "Missing application variants for shell application. Please "
+                "configure 'ayon+settings://applications/applications/shell'"
+            )
+        elif len(shell_applications) == 1:
+            # If only one configured shell application, always use that one
+            shell_app = shell_applications[0]
+            print("Only one shell application variant is configured. "
+                  f"Defaulting to {shell_app.full_label}")
+        else:
+            shell_app = self.choose_app(shell_applications, pos)
+        if not shell_app:
+            return
 
         # Get applications
-        application_manager = ApplicationManager()
         applications = self.get_project_applications(
             application_manager, selection.project_entity)
         app = self.choose_app(applications, pos)
@@ -69,12 +86,14 @@ class DebugShell(LauncherAction):
             print(f"Setting Work Directory: {cwd}")
 
         print(f"Launching shell in environment of {app.full_label}..")
-        self.launch_shell(application_manager,
-                          project_name=selection.project_name,
-                          folder_path=selection.folder_path,
-                          task_name=selection.task_name,
-                          env=env,
-                          cwd=cwd)
+        self.launch_app_as_shell(
+            application_manager,
+            shell_app,
+            project_name=selection.project_name,
+            folder_path=selection.folder_path,
+            task_name=selection.task_name,
+            env=env,
+            cwd=cwd)
 
     @staticmethod
     def choose_app(applications: list[Application],
@@ -114,17 +133,25 @@ class DebugShell(LauncherAction):
 
         return applications
 
-    def launch_shell(self,
-                     application_manager,
-                     project_name,
-                     folder_path,
-                     task_name,
-                     cwd,
-                     env) -> list[str]:
+    @staticmethod
+    def get_shell_applications(application_manager) -> list[Application]:
+        """Return all configured shell applications"""
+        return list(application_manager.app_groups["shell"].variants.values())
+
+    def launch_app_as_shell(
+        self,
+        application_manager: ApplicationManager,
+        application: Application,
+        project_name: str,
+        folder_path: str,
+        task_name: str,
+        cwd: str,
+        env: dict[str, str]
+    ) -> list[str]:
         """Return the terminal executable to launch."""
         # TODO: Allow customization per user for this via AYON settings
         launch_context = application_manager.create_launch_context(
-            "shell/main",
+            application.full_name,
             project_name=project_name,
             folder_path=folder_path,
             task_name=task_name,
