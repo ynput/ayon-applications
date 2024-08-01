@@ -7,21 +7,30 @@ from qtpy import QtWidgets, QtGui, QtCore
 from ayon_applications import (
     Application,
     ApplicationManager,
+    APPLICATIONS_ADDON_ROOT
 )
 from ayon_applications.utils import get_app_environments_for_context
 from ayon_core.pipeline import LauncherAction
 from ayon_core.style import load_stylesheet
+from ayon_core.tools.utils.lib import get_qt_icon
 
 
-def get_application_qt_icon(
-        application: Application
-) -> Optional[QtGui.QIcon]:
-    """Return QtGui.QIcon for an Application"""
-    # TODO: Improve workflow to get the icon, remove 'color' hack
-    from ayon_core.tools.launcher.models.actions import get_action_icon
-    from ayon_core.tools.utils.lib import get_qt_icon
-    application.color = "white"
-    return get_qt_icon(get_action_icon(application))
+def get_application_qt_icon(application: Application) -> Optional[QtGui.QIcon]:
+    """Return QtGui.QIcon for an Application
+
+    Note: This forces the icons to be search in `ayon_applications/icons`
+        folder on client side and mimics what Ayon applications addon's
+        `get_app_icon_path` method does.
+    """
+    icon = application.icon
+    if not icon:
+        return QtGui.QIcon()
+    icon_filename = os.path.basename(icon)
+    icon_filepath = os.path.join(
+        APPLICATIONS_ADDON_ROOT, "icons", icon_filename)
+    if os.path.exists(icon_filepath):
+        return get_qt_icon({"type": "path", "path": icon_filepath})
+    return QtGui.QIcon()
 
 
 class DebugShell(LauncherAction):
