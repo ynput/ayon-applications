@@ -176,7 +176,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         if not server_url:
             return None
         return "/".join([
-            server_url, "addons", self.name, self.version, "icons", icon_name
+            server_url, "addons", self.name, "icons", icon_name
         ])
 
     def get_applications_action_classes(self):
@@ -284,7 +284,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             manager (WebServerManager): Webserver manager.
 
         """
-        static_prefix = f"/addons/{self.name}/{self.version}/icons"
+        static_prefix = f"/addons/{self.name}/icons"
         manager.add_static(
             static_prefix, os.path.join(APPLICATIONS_ADDON_ROOT, "icons")
         )
