@@ -194,6 +194,10 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroupWithPython, title="3DEqualizer")
     motionbuilder: AppGroup = SettingsField(
         default_factory=AppGroupWithPython, title="Motion Builder")
+    shell: AppGroup = SettingsField(
+        default_factory=AppGroupWithPython,
+        title="Shell",
+        description="Terminal shell application")
     additional_apps: list[AdditionalAppGroup] = SettingsField(
         default_factory=list, title="Additional Applications")
 
