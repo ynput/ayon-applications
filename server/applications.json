@@ -656,7 +656,9 @@
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 19.5.805\\bin\\houdini.exe"
                         ],
-                        "darwin": ["/Applications/Houdini/Houdini19.5.805/bin/houdini"],
+                        "darwin": [
+                            "/Applications/Houdini/Houdini19.5.805/Frameworks/Houdini.framework/Versions/Current/Resources/bin/houdini"
+                        ],
                         "linux": ["/opt/houdini19.5.805/bin/houdini"]
                     },
                     "arguments": {
@@ -674,7 +676,9 @@
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 19.0.720\\bin\\houdini.exe"
                         ],
-                        "darwin": ["/Applications/Houdini/Houdini19.0.720/bin/houdini"],
+                        "darwin": [
+                            "/Applications/Houdini/Houdini19.0.720/Frameworks/Houdini.framework/Versions/Current/Resources/bin/houdini"
+                        ],
                         "linux": ["/opt/houdini19.0.720/bin/houdini"]
                     },
                     "arguments": {
@@ -692,7 +696,9 @@
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 18.5.759\\bin\\houdini.exe"
                         ],
-                        "darwin": ["/Applications/Houdini/Houdini18.5.759/bin/houdini"],
+                        "darwin": [
+                            "/Applications/Houdini/Houdini18.5.759/Frameworks/Houdini.framework/Versions/Current/Resources/bin/houdini"
+                        ],
                         "linux": ["/opt/houdini18.5.759/bin/houdini"]
                     },
                     "arguments": {
