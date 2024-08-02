@@ -114,6 +114,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             "publish": [os.path.join(plugins_dir, "publish")]
         }
 
+    def get_launch_hook_paths(self, app):
+        return [
+            os.path.join(APPLICATIONS_ADDON_ROOT, "hooks")
+        ]
+
     def get_app_icon_path(self, icon_filename):
         """Get icon path.
 

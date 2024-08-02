@@ -1,5 +1,4 @@
 import os
-import subprocess
 from typing import Optional
 
 from qtpy import QtWidgets, QtGui, QtCore
@@ -173,5 +172,4 @@ class DebugShell(LauncherAction):
             env=env
         )
         launch_context.kwargs["cwd"] = cwd
-        launch_context.kwargs["creationflags"] = subprocess.CREATE_NEW_CONSOLE
         return application_manager.launch_with_context(launch_context)
