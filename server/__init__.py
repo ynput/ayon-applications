@@ -168,7 +168,7 @@ class ApplicationsAddon(BaseServerAddon):
             app_defs.versions.keys(), reverse=True
         ):
             addon = app_defs.versions[addon_version]
-            if not self._addon_has_attributes(addon):
+            if not self._addon_has_attributes(addon, addon_version):
                 continue
 
             for variant in ("production", "staging"):
