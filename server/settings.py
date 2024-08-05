@@ -46,15 +46,6 @@ DEFAULT_APP_GROUPS = {
 }
 
 
-def icons_enum():
-    icons = [
-        {"label": os.path.basename(filename), "value": filename}
-        for filename in os.listdir(ICONS_DIR)
-    ]
-    icons.insert(0, {"label": "None", "value": ""})
-    return icons
-
-
 async def applications_enum(
     project_name: str | None = None,
     addon: BaseServerAddon = None,
@@ -223,7 +214,7 @@ class AdditionalAppGroup(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
     label: str = SettingsField("", title="Label")
     host_name: str = SettingsField("", title="Host name")
-    icon: str = SettingsField("", title="Icon", enum_resolver=icons_enum)
+    icon: str = SettingsField("", title="Icon")
     environment: str = SettingsField(
         "{}", title="Environment", widget="textarea"
     )
