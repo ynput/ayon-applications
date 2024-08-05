@@ -407,6 +407,16 @@ class ApplicationsAddonSettings(BaseSettingsModel):
         title="Tools Definitions",
         scope=["studio"]
     )
+    use_attributes: bool = SettingsField(
+        True,
+        section="---",
+        title="Use attributes instead of profiles",
+        description=(
+            "Attributes were used to define used applications and tools"
+            " in the past. This setting allows to switch between"
+            " attributes and profiles."
+        ),
+    )
     project_applications: list[ProjectApplicationsProfile] = SettingsField(
         default_factory=list,
         title="Applications",
