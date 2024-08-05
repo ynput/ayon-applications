@@ -28,6 +28,7 @@ from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.entities.core import attribute_library
 from ayon_server.lib.postgres import Postgres
 
+from .constants import APP_LABELS_BY_GROUP
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 
 
@@ -129,7 +130,9 @@ class ApplicationsAddon(BaseServerAddon):
         label_by_name = {}
         for group in groups:
             group_name = group["name"]
-            group_label = group["label"] or group_name
+            group_label = group.get(
+                "label", APP_LABELS_BY_GROUP.get(group_name)
+            ) or group_name
             for variant in group["variants"]:
                 variant_name = variant["name"]
                 if not variant_name:
