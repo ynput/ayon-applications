@@ -370,9 +370,9 @@ class ProjectToolsProfile(BaseSettingsModel):
     tools: list[str] = SettingsField(
         default_factory=list,
         section="---",
-        title="Applications",
+        title="Tools",
         description="Tools used for filtered context",
-        enum_resolver=applications_enum,
+        enum_resolver=tools_enum,
     )
 
 
