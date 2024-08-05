@@ -55,6 +55,7 @@ def parse_versions(versions):
 
 class ApplicationsAddon(BaseServerAddon):
     settings_model = ApplicationsAddonSettings
+    # TODO remove this attribute when attributes support is removed
     has_attributes = True
 
     async def get_default_settings(self):
@@ -73,6 +74,9 @@ class ApplicationsAddon(BaseServerAddon):
                 self.create_applications_attribute
             )
 
+        # Update older versions of applications addon to use new
+        #   '_update_enums'
+        # - new function skips newer addon versions without 'has_attributes'
         version_objs, invalid_versions = parse_versions(app_defs.versions)
         for addon_version, version_obj in version_objs:
             # Last release with only old attribute system
@@ -81,6 +85,9 @@ class ApplicationsAddon(BaseServerAddon):
             addon = app_defs.versions[addon_version]
             addon._update_enums = self._update_enums
 
+    # --------------------------------------
+    # Backwards compatibility for attributes
+    # --------------------------------------
     def _sort_versions(self, addon_versions, reverse=False):
         version_objs, invalid_versions = parse_versions(addon_versions)
 
