@@ -1,7 +1,5 @@
 import copy
 
-import ayon_api
-
 from ayon_core import resources
 from ayon_core.lib import Logger, NestedCacheItem
 from ayon_core.settings import get_studio_settings, get_project_settings
@@ -11,6 +9,7 @@ from .exceptions import (
     ApplicationExecutableNotFound,
     ApplicationLaunchFailed,
 )
+from .utils import get_applications_for_context
 
 
 class ApplicationAction(LauncherAction):
@@ -79,12 +78,17 @@ class ApplicationAction(LauncherAction):
             return False
 
         project_settings = self._app_get_project_settings(selection)
-        apps_settings = project_settings["applications"]
-        available_apps = apps_settings["project_applications"]
-        if self.application.full_name not in available_apps:
+        apps = get_applications_for_context(
+            selection.project_name,
+            selection.get_folder_entity(),
+            selection.get_task_entity(),
+            project_settings=project_settings,
+            project_entity=selection.get_project_entity(),
+        )
+        if self.application.full_name not in apps:
             return False
 
-        only_available = apps_settings["only_available"]
+        only_available = project_settings["applications"]["only_available"]
         if only_available and not self.application.find_executable():
             return False
         return True

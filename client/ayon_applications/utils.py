@@ -6,10 +6,11 @@ import collections
 
 import six
 import acre
+import ayon_api
 
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.settings import get_project_settings
-from ayon_core.lib import Logger, get_ayon_username
+from ayon_core.lib import Logger, get_ayon_username, filter_profiles
 from ayon_core.addon import AddonsManager
 from ayon_core.pipeline.template_data import get_template_data
 from ayon_core.pipeline.workfile import (
@@ -235,6 +236,110 @@ def _add_python_version_paths(app, env, logger, addons_manager):
     env["PYTHONPATH"] = os.pathsep.join(python_paths)
 
 
+def get_applications_for_context(
+    project_name,
+    folder_entity,
+    task_entity,
+    project_settings=None,
+    project_entity=None,
+):
+    """Get applications for context based on project settings.
+
+    Args:
+        project_name (str): Name of project.
+        folder_entity (dict): Folder entity.
+        task_entity (dict): Task entity.
+        project_settings (Optional[dict]): Project settings.
+        project_entity (Optional[dict]): Project entity.
+
+    Returns:
+        List[str]: List of applications that can be used in given context.
+
+    """
+    if project_settings is None:
+        project_settings = get_project_settings(project_name)
+    apps_settings = project_settings["applications"]
+
+    # Use attributes to get available applications
+    # - this is older source of the information, will be deprecated in future
+    if apps_settings["use_attributes"]:
+        if project_entity is None:
+            project_entity = ayon_api.get_project(project_name)
+        apps = project_entity["attrib"].get("applications")
+        return apps or []
+
+    folder_type = task_type = None
+    if folder_entity:
+        folder_type = folder_entity["folderType"]
+    if task_entity:
+        task_type = task_entity["taskType"]
+
+    profiles = apps_settings["project_applications"]
+    profile = filter_profiles(
+        profiles,
+        {
+            "folder_types": folder_type,
+            "task_types": task_type,
+        }
+    )
+    if profile:
+        return profiles["applications"]
+    return []
+
+
+def get_tools_for_context(
+    project_name,
+    folder_entity,
+    task_entity,
+    project_settings=None,
+):
+    """Get tools for context based on project settings.
+
+    Args:
+        project_name (str): Name of project.
+        folder_entity (dict): Folder entity.
+        task_entity (dict): Task entity.
+        project_settings (Optional[dict]): Project settings.
+
+    Returns:
+        List[str]: List of applications that can be used in given context.
+
+    """
+    if project_settings is None:
+        project_settings = get_project_settings(project_name)
+    apps_settings = project_settings["applications"]
+
+    # Use attributes to get available tools
+    # - this is older source of the information, will be deprecated in future
+    if apps_settings["use_attributes"]:
+        tools = None
+        if task_entity:
+            tools = task_entity["attrib"].get("tools")
+
+        if tools is None and folder_entity:
+            tools = folder_entity["attrib"].get("tools")
+
+        return tools or []
+
+    folder_type = task_type = None
+    if folder_entity:
+        folder_type = folder_entity["folderType"]
+    if task_entity:
+        task_type = task_entity["taskType"]
+
+    profiles = apps_settings["project_tools"]
+    profile = filter_profiles(
+        profiles,
+        {
+            "folder_types": folder_type,
+            "task_types": task_type,
+        }
+    )
+    if profile:
+        return profiles["tools"]
+    return []
+
+
 def prepare_app_environments(
     data, env_group=None, implementation_envs=True, addons_manager=None
 ):
@@ -281,33 +386,29 @@ def prepare_app_environments(
         app.environment
     ]
 
-    task_entity = data.get("task_entity")
-    folder_entity = data.get("folder_entity")
+    tools = get_tools_for_context(
+        data.get("project_name"),
+        data.get("folder_entity"),
+        data.get("task_entity"),
+    )
+
     # Add tools environments
     groups_by_name = {}
     tool_by_group_name = collections.defaultdict(dict)
-    tools = None
-    if task_entity:
-        tools = task_entity["attrib"].get("tools")
+    for key in tools:
+        tool = app.manager.tools.get(key)
+        if not tool or not tool.is_valid_for_app(app):
+            continue
+        groups_by_name[tool.group.name] = tool.group
+        tool_by_group_name[tool.group.name][tool.name] = tool
 
-    if tools is None and folder_entity:
-        tools = folder_entity["attrib"].get("tools")
-
-    if tools:
-        for key in tools:
-            tool = app.manager.tools.get(key)
-            if not tool or not tool.is_valid_for_app(app):
-                continue
-            groups_by_name[tool.group.name] = tool.group
-            tool_by_group_name[tool.group.name][tool.name] = tool
-
-        for group_name in sorted(groups_by_name.keys()):
-            group = groups_by_name[group_name]
-            environments.append(group.environment)
-            for tool_name in sorted(tool_by_group_name[group_name].keys()):
-                tool = tool_by_group_name[group_name][tool_name]
-                environments.append(tool.environment)
-                app_and_tool_labels.append(tool.full_name)
+    for group_name in sorted(groups_by_name.keys()):
+        group = groups_by_name[group_name]
+        environments.append(group.environment)
+        for tool_name in sorted(tool_by_group_name[group_name].keys()):
+            tool = tool_by_group_name[group_name][tool_name]
+            environments.append(tool.environment)
+            app_and_tool_labels.append(tool.full_name)
 
     log.debug(
         "Will add environments for apps and tools: {}".format(
