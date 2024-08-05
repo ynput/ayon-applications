@@ -1,3 +1,16 @@
+"""Backwards compatibility for applications addon.
+
+This should have been backwards compatibility fix for older addons using
+attributes for applications and tools. But the first release of addon that
+allows to disable kept the attributes in play and the fix was not needed.
+
+This is preparation for following release of applications addon that will
+completely remove the attributes and use only settings.
+
+TODO (Added 2024/08/05).
+Use this code when attributes are removed from the addon, or remove the
+file in future if plans changed.
+"""
 import semver
 
 from ayon_server.addons import AddonLibrary
@@ -5,17 +18,25 @@ from ayon_server.entities.core import attribute_library
 from ayon_server.lib.postgres import Postgres
 
 
+ATTRIBUTES_VERSION_MILESTONE = (0, 2, 5)
+
+def parse_version(version):
+    try:
+        return semver.VersionInfo.parse(version)
+    except ValueError:
+        return None
+
+
 def parse_versions(versions):
     version_objs = []
     invalid_versions = []
     output = (version_objs, invalid_versions)
     for version in versions:
-        try:
-            version_objs.append(
-                (version, semver.VersionInfo.parse(version))
-            )
-        except ValueError:
+        parsed_version = parse_version(version)
+        if parsed_version is None:
             invalid_versions.append(version)
+        else:
+            version_objs.append((version, parsed_version))
     return output
 
 
@@ -82,6 +103,14 @@ class ApplicationsLE_0_2:
             for full_name in sorted(label_by_name)
         ]
 
+    def _addon_has_attributes(self, addon, addon_version):
+        version_obj = parse_version(addon_version)
+        if version_obj is None:
+            return True
+        if version_obj > ATTRIBUTES_VERSION_MILESTONE:
+            return getattr(addon, "has_attributes", False)
+        return True
+
     async def _update_enums(self):
         """Updates applications and tools enums based on the addon settings.
         This method is called when the addon is started (after we are sure that the
@@ -97,6 +126,9 @@ class ApplicationsLE_0_2:
             app_defs.versions.keys(), reverse=True
         ):
             addon = app_defs.versions[addon_version]
+            if not self._addon_has_attributes(addon):
+                continue
+
             for variant in ("production", "staging"):
                 settings_model = await addon.get_studio_settings(variant)
                 studio_settings = settings_model.dict()
