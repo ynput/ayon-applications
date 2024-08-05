@@ -31,7 +31,7 @@ from ayon_server.lib.postgres import Postgres
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 
 
-ATTRIBUTES_VERSION_MILESTONE = (0, 2, 5)
+ATTRIBUTES_VERSION_MILESTONE = (0, 2)
 
 def parse_version(version):
     try:

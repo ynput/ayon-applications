@@ -18,7 +18,7 @@ from ayon_server.entities.core import attribute_library
 from ayon_server.lib.postgres import Postgres
 
 
-ATTRIBUTES_VERSION_MILESTONE = (0, 2, 5)
+ATTRIBUTES_VERSION_MILESTONE = (0, 2)
 
 def parse_version(version):
     try:
