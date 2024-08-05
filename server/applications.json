@@ -759,7 +759,7 @@
         "harmony": {
             "enabled": true,
             "host_name": "harmony",
-            "environment": "{\n    \"AVALON_HARMONY_WORKFILES_ON_LAUNCH\": \"1\"\n}",
+            "environment": "{\n    \"AYON_HARMONY_WORKFILES_ON_LAUNCH\": \"1\"\n}",
             "variants": [
                 {
                     "name": "22",
