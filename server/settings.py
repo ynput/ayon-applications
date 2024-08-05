@@ -238,7 +238,9 @@ class ToolVariantModel(BaseSettingsModel):
     host_names: list[str] = SettingsField(default_factory=list, title="Hosts")
     # TODO use applications enum if possible
     app_variants: list[str] = SettingsField(
-        default_factory=list, title="Applications"
+        default_factory=list,
+        title="Applications",
+        enum_resolver=applications_enum,
     )
     environment: str = SettingsField(
         "{}", title="Environments", widget="textarea"
