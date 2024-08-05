@@ -347,7 +347,6 @@ class ProjectApplicationsProfile(BaseSettingsModel):
     applications: list[str] = SettingsField(
         default_factory=list,
         title="Applications",
-        section="---",
         description="Applications available for filtered context",
         enum_resolver=applications_enum,
     )
@@ -369,7 +368,6 @@ class ProjectToolsProfile(BaseSettingsModel):
     )
     tools: list[str] = SettingsField(
         default_factory=list,
-        section="---",
         title="Tools",
         description="Tools used for filtered context",
         enum_resolver=tools_enum,
