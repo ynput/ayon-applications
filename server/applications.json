@@ -12,7 +12,9 @@
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2025\\bin\\maya.exe"
                         ],
-                        "darwin": ["/Applications/Autodesk/maya2025/Maya.app"],
+                        "darwin": [
+                            "/Applications/Autodesk/maya2025/Maya.app"
+                        ],
                         "linux": [
                             "/usr/autodesk/maya2025/bin/maya"
                         ]
@@ -31,7 +33,9 @@
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2024\\bin\\maya.exe"
                         ],
-                        "darwin": ["/Applications/Autodesk/maya2024/Maya.app"],
+                        "darwin": [
+                            "/Applications/Autodesk/maya2024/Maya.app"
+                        ],
                         "linux": [
                             "/usr/autodesk/maya2024/bin/maya"
                         ]
@@ -50,7 +54,9 @@
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2023\\bin\\maya.exe"
                         ],
-                        "darwin": ["/Applications/Autodesk/maya2023/Maya.app"],
+                        "darwin": [
+                            "/Applications/Autodesk/maya2023/Maya.app"
+                        ],
                         "linux": [
                             "/usr/autodesk/maya2023/bin/maya"
                         ]
@@ -69,7 +75,9 @@
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2022\\bin\\maya.exe"
                         ],
-                        "darwin": ["/Applications/Autodesk/maya2022/Maya.app"],
+                        "darwin": [
+                            "/Applications/Autodesk/maya2022/Maya.app"
+                        ],
                         "linux": [
                             "/usr/autodesk/maya2022/bin/maya"
                         ]
@@ -257,9 +265,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--nukeassist"],
+                        "windows": [
+                            "--nukeassist"
+                        ],
                         "darwin": [],
-                        "linux": ["--nukeassist"]
+                        "linux": [
+                            "--nukeassist"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -278,9 +290,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--nukeassist"],
+                        "windows": [
+                            "--nukeassist"
+                        ],
                         "darwin": [],
-                        "linux": ["--nukeassist"]
+                        "linux": [
+                            "--nukeassist"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -299,9 +315,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--nukeassist"],
+                        "windows": [
+                            "--nukeassist"
+                        ],
                         "darwin": [],
-                        "linux": ["--nukeassist"]
+                        "linux": [
+                            "--nukeassist"
+                        ]
                     },
                     "environment": "{}"
                 }
@@ -327,9 +347,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--nukex"],
+                        "windows": [
+                            "--nukex"
+                        ],
                         "darwin": [],
-                        "linux": ["--nukex"]
+                        "linux": [
+                            "--nukex"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -348,9 +372,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--nukex"],
+                        "windows": [
+                            "--nukex"
+                        ],
                         "darwin": [],
-                        "linux": ["--nukex"]
+                        "linux": [
+                            "--nukex"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -369,9 +397,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--nukex"],
+                        "windows": [
+                            "--nukex"
+                        ],
                         "darwin": [],
-                        "linux": ["--nukex"]
+                        "linux": [
+                            "--nukex"
+                        ]
                     },
                     "environment": "{}"
                 }
@@ -397,9 +429,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--studio"],
+                        "windows": [
+                            "--studio"
+                        ],
                         "darwin": [],
-                        "linux": ["--studio"]
+                        "linux": [
+                            "--studio"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -418,9 +454,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--studio"],
+                        "windows": [
+                            "--studio"
+                        ],
                         "darwin": [],
-                        "linux": ["--studio"]
+                        "linux": [
+                            "--studio"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -439,9 +479,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--studio"],
+                        "windows": [
+                            "--studio"
+                        ],
                         "darwin": [],
-                        "linux": ["--studio"]
+                        "linux": [
+                            "--studio"
+                        ]
                     },
                     "environment": "{}"
                 }
@@ -467,9 +511,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--hiero"],
+                        "windows": [
+                            "--hiero"
+                        ],
                         "darwin": [],
-                        "linux": ["--hiero"]
+                        "linux": [
+                            "--hiero"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -488,9 +536,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--hiero"],
+                        "windows": [
+                            "--hiero"
+                        ],
                         "darwin": [],
-                        "linux": ["--hiero"]
+                        "linux": [
+                            "--hiero"
+                        ]
                     },
                     "environment": "{}"
                 },
@@ -509,9 +561,13 @@
                         ]
                     },
                     "arguments": {
-                        "windows": ["--hiero"],
+                        "windows": [
+                            "--hiero"
+                        ],
                         "darwin": [],
-                        "linux": ["--hiero"]
+                        "linux": [
+                            "--hiero"
+                        ]
                     },
                     "environment": "{}"
                 }
@@ -717,7 +773,7 @@
                         ],
                         "darwin": [],
                         "linux": []
-                      },
+                    },
                     "arguments": {
                         "windows": [
                             "--python-use-system-env"
@@ -735,22 +791,22 @@
                     "name": "2-91",
                     "label": "2.91",
                     "executables": {
-                      "windows": [
-                          "C:\\Program Files\\Blender Foundation\\Blender 2.91\\blender.exe"
-                      ],
-                      "darwin": [],
-                      "linux": []
+                        "windows": [
+                            "C:\\Program Files\\Blender Foundation\\Blender 2.91\\blender.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
                     },
                     "arguments": {
-                      "windows": [
-                          "--python-use-system-env"
-                      ],
-                      "darwin": [
-                          "--python-use-system-env"
-                      ],
-                      "linux": [
-                          "--python-use-system-env"
-                      ]
+                        "windows": [
+                            "--python-use-system-env"
+                        ],
+                        "darwin": [
+                            "--python-use-system-env"
+                        ],
+                        "linux": [
+                            "--python-use-system-env"
+                        ]
                     },
                     "environment": "{}"
                 }
