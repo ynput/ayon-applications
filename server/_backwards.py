@@ -20,6 +20,9 @@ def parse_versions(versions):
 
 
 class ApplicationsLE_0_2:
+    def __init__(self, addon_obj):
+        self._addon_obj = addon_obj
+
     def _sort_versions(self, addon_versions, reverse=False):
         version_objs, invalid_versions = parse_versions(addon_versions)
 
@@ -87,7 +90,7 @@ class ApplicationsLE_0_2:
         """
 
         instance = AddonLibrary.getinstance()
-        app_defs = instance.data.get(self.name)
+        app_defs = instance.data.get(self._addon_obj.name)
         all_applications = []
         all_tools = []
         for addon_version in self._sort_versions(

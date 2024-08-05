@@ -7,8 +7,6 @@ from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 
 class ApplicationsAddon(BaseServerAddon):
     settings_model = ApplicationsAddonSettings
-    # Backwards compatibility for addons older than
-    app_bw_lt_0_2 = ApplicationsLE_0_2()
 
     async def get_default_settings(self):
         return self.get_settings_model()(**DEFAULT_VALUES)
@@ -31,4 +29,5 @@ class ApplicationsAddon(BaseServerAddon):
             if (version_obj.major, version_obj.minor) > (0, 2):
                 continue
             addon = app_defs.versions[addon_version]
-            addon._update_enums = self.app_bw_lt_0_2._update_enums
+            wrapper = ApplicationsLE_0_2(addon)
+            addon._update_enums = wrapper._update_enums
