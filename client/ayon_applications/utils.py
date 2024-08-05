@@ -283,7 +283,7 @@ def get_applications_for_context(
         }
     )
     if profile:
-        return profiles["applications"]
+        return profile["applications"]
     return []
 
 
@@ -336,7 +336,7 @@ def get_tools_for_context(
         }
     )
     if profile:
-        return profiles["tools"]
+        return profile["tools"]
     return []
 
 
