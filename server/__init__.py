@@ -31,7 +31,7 @@ from ayon_server.lib.postgres import Postgres
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 
 
-ATTRIBUTES_VERSION_MILESTONE = (0, 2)
+ATTRIBUTES_VERSION_MILESTONE = (0, 3)
 
 def parse_version(version):
     try:
@@ -80,10 +80,9 @@ class ApplicationsAddon(BaseServerAddon):
         version_objs, invalid_versions = parse_versions(app_defs.versions)
         for addon_version, version_obj in version_objs:
             # Last release with only old attribute system
-            if version_obj > ATTRIBUTES_VERSION_MILESTONE:
-                continue
-            addon = app_defs.versions[addon_version]
-            addon._update_enums = self._update_enums
+            if version_obj < ATTRIBUTES_VERSION_MILESTONE:
+                addon = app_defs.versions[addon_version]
+                addon._update_enums = self._update_enums
 
     # --------------------------------------
     # Backwards compatibility for attributes
@@ -147,11 +146,10 @@ class ApplicationsAddon(BaseServerAddon):
 
     def _addon_has_attributes(self, addon, addon_version):
         version_obj = parse_version(addon_version)
-        if version_obj is None:
+        if version_obj is None or version_obj < ATTRIBUTES_VERSION_MILESTONE:
             return True
-        if version_obj > ATTRIBUTES_VERSION_MILESTONE:
-            return getattr(addon, "has_attributes", False)
-        return True
+
+        return getattr(addon, "has_attributes", False)
 
     async def _update_enums(self):
         """Updates applications and tools enums based on the addon settings.
