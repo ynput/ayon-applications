@@ -68,23 +68,6 @@ class ApplicationAction(LauncherAction):
             cache.update_data(settings)
         return copy.deepcopy(cache.get_data())
 
-    @classmethod
-    def _app_get_project_entity(cls, selection):
-        project_name = selection.project_name
-        if project_name in ApplicationAction.project_entities:
-            return ApplicationAction.project_entities[project_name]
-
-        if hasattr(selection, "get_project_settings"):
-            return selection.get_project_entity()
-
-        cache = ApplicationAction.project_entities_cache[project_name]
-        if not cache.is_valid:
-            project_entity = None
-            if project_name:
-                project_entity = ayon_api.get_project(project_name)
-            cache.update_data(project_entity)
-        return copy.deepcopy(cache.get_data())
-
     @property
     def log(self):
         if self._log is None:
@@ -95,13 +78,13 @@ class ApplicationAction(LauncherAction):
         if not selection.is_task_selected:
             return False
 
-        project_entity = self._app_get_project_entity(selection)
-        apps = project_entity["attrib"].get("applications")
-        if not apps or self.application.full_name not in apps:
+        project_settings = self._app_get_project_settings(selection)
+        apps_settings = project_settings["applications"]
+        available_apps = apps_settings["project_applications"]
+        if self.application.full_name not in available_apps:
             return False
 
-        project_settings = self._app_get_project_settings(selection)
-        only_available = project_settings["applications"]["only_available"]
+        only_available = apps_settings["only_available"]
         if only_available and not self.application.find_executable():
             return False
         return True
