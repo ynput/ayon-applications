@@ -25,6 +25,8 @@ version that used only old attribute system.
 import semver
 
 from ayon_server.addons import BaseServerAddon, AddonLibrary
+from ayon_server.entities.core import attribute_library
+from ayon_server.lib.postgres import Postgres
 
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 
