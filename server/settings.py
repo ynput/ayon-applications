@@ -7,6 +7,8 @@ from ayon_server.settings import (
     BaseSettingsModel,
     SettingsField,
     ensure_unique_names,
+    folder_types_enum,
+    task_types_enum,
 )
 from ayon_server.exceptions import BadRequestException
 
@@ -337,6 +339,52 @@ class ApplicationsSettings(BaseSettingsModel):
         return value
 
 
+class ProjectApplicationsProfile(BaseSettingsModel):
+    _layout = "expanded"
+    folder_types: list[str] = SettingsField(
+        default_factory=list,
+        title="Folder Types",
+        description="Filter by folder types",
+        enum_resolver=folder_types_enum,
+    )
+    task_types: list[str] = SettingsField(
+        default_factory=list,
+        title="Task Types",
+        description="Filter by task types",
+        enum_resolver=task_types_enum,
+    )
+    applications: list[str] = SettingsField(
+        default_factory=list,
+        title="Applications",
+        section="---",
+        description="Applications available for filtered context",
+        enum_resolver=applications_enum,
+    )
+
+
+class ProjectToolsProfile(BaseSettingsModel):
+    _layout = "expanded"
+    folder_types: list[str] = SettingsField(
+        default_factory=list,
+        title="Folder Types",
+        description="Filter by folder types",
+        enum_resolver=folder_types_enum,
+    )
+    task_types: list[str] = SettingsField(
+        default_factory=list,
+        title="Task Types",
+        description="Filter by task types",
+        enum_resolver=task_types_enum,
+    )
+    tools: list[str] = SettingsField(
+        default_factory=list,
+        section="---",
+        title="Applications",
+        description="Tools used for filtered context",
+        enum_resolver=applications_enum,
+    )
+
+
 class ApplicationsAddonSettings(BaseSettingsModel):
     only_available: bool = SettingsField(
         True,
@@ -349,18 +397,6 @@ class ApplicationsAddonSettings(BaseSettingsModel):
             " unavailable applications."
         )
     )
-    project_applications: list[str] = SettingsField(
-        default_factory=list,
-        title="Applications",
-        description="Applications available in the project",
-        enum_resolver=applications_enum,
-    )
-    project_tools: list[str] = SettingsField(
-        default_factory=list,
-        title="Tools",
-        description="Tools available in the project",
-        enum_resolver=tools_enum,
-    )
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Application Definitions",
@@ -370,6 +406,16 @@ class ApplicationsAddonSettings(BaseSettingsModel):
         default_factory=list,
         title="Tools Definitions",
         scope=["studio"]
+    )
+    project_applications: list[ProjectApplicationsProfile] = SettingsField(
+        default_factory=list,
+        title="Applications",
+        description="Applications available in the project",
+    )
+    project_tools: list[ProjectToolsProfile] = SettingsField(
+        default_factory=list,
+        title="Tools",
+        description="Tools available in the project",
     )
 
     @validator("tool_groups")
