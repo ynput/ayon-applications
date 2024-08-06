@@ -273,11 +273,11 @@ class ApplicationsSettings(BaseSettingsModel):
     """Applications settings"""
 
     maya: AppGroup = SettingsField(
-        default_factory=AppGroup, title="Autodesk Maya")
+        default_factory=AppGroup, title="Maya")
     adsk_3dsmax: AppGroup = SettingsField(
-        default_factory=AppGroup, title="Autodesk 3ds Max")
+        default_factory=AppGroup, title="3ds Max")
     flame: AppGroup = SettingsField(
-        default_factory=AppGroup, title="Autodesk Flame")
+        default_factory=AppGroup, title="Flame")
     nuke: AppGroup = SettingsField(
         default_factory=AppGroup, title="Nuke")
     nukeassist: AppGroup = SettingsField(
@@ -301,9 +301,9 @@ class ApplicationsSettings(BaseSettingsModel):
     tvpaint: AppGroup = SettingsField(
         default_factory=AppGroup, title="TVPaint")
     photoshop: AppGroup = SettingsField(
-        default_factory=AppGroup, title="Adobe Photoshop")
+        default_factory=AppGroup, title="Photoshop")
     aftereffects: AppGroup = SettingsField(
-        default_factory=AppGroup, title="Adobe After Effects")
+        default_factory=AppGroup, title="After Effects")
     celaction: AppGroup = SettingsField(
         default_factory=AppGroup, title="Celaction 2D")
     substancepainter: AppGroup = SettingsField(
