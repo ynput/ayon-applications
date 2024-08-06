@@ -381,6 +381,11 @@ class ProjectToolsProfile(BaseSettingsModel):
         description="Filter by task types",
         enum_resolver=task_types_enum,
     )
+    task_paths: list[str] = SettingsField(
+        default_factory=list,
+        title="Task Paths",
+        description="Filter by task paths. You can use regex.",
+    )
     tools: list[str] = SettingsField(
         default_factory=list,
         title="Tools",
