@@ -332,6 +332,13 @@ class ApplicationsSettings(BaseSettingsModel):
         return value
 
 
+def _get_allow_type():
+    return [
+        {"label": "All applications", "value": "all_applications"},
+        {"label": "Selected", "value": "applications"},
+    ]
+
+
 class ProjectApplicationsProfile(BaseSettingsModel):
     _layout = "expanded"
     folder_types: list[str] = SettingsField(
@@ -345,6 +352,12 @@ class ProjectApplicationsProfile(BaseSettingsModel):
         title="Task Types",
         description="Filter by task types",
         enum_resolver=task_types_enum,
+    )
+    allow_type: str = SettingsField(
+        "applications",
+        title="Allow",
+        enum_resolver=_get_allow_type,
+        conditionalEnum=True,
     )
     applications: list[str] = SettingsField(
         default_factory=list,
@@ -403,9 +416,9 @@ class ApplicationsAddonSettings(BaseSettingsModel):
         section="---",
         title="Use attributes instead of profiles",
         description=(
-            "Attributes were used to define used applications and tools"
-            " in the past. This setting allows to switch between"
-            " attributes and profiles."
+            "Use deprecated attributes. Attributes were used to define used"
+            " applications and tools in the past. This setting allows to"
+            " switch between attributes and profiles."
         ),
     )
     project_applications: list[ProjectApplicationsProfile] = SettingsField(
@@ -439,6 +452,14 @@ def _get_tools_defaults():
 
 DEFAULT_VALUES = {
     "only_available": True,
+    "project_applications": [
+        {
+            "folder_types": [],
+            "task_types": [],
+            "allow_type": "all_applications",
+            "applications": [],
+        },
+    ],
 }
 DEFAULT_VALUES.update(_get_applications_defaults())
 DEFAULT_VALUES.update(_get_tools_defaults())

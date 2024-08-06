@@ -236,6 +236,34 @@ def _add_python_version_paths(app, env, logger, addons_manager):
     env["PYTHONPATH"] = os.pathsep.join(python_paths)
 
 
+def _get_app_full_names_from_settings(applications_settings):
+    """Get full names of applications from settings.
+
+    Args:
+        applications_settings (dict): Applications settings.
+
+    Returns:
+        List[str]: Full names of applications.
+
+    """
+    apps = copy.deepcopy(applications_settings["applications"])
+    additional_apps = apps.pop("additional_apps")
+
+    full_names = []
+    for group_name, group_info in apps.items():
+        for variant in group_info["variants"]:
+            variant_name = variant["name"]
+            full_names.append(f"{group_name}/{variant_name}")
+
+    for additional_app in additional_apps:
+        group_name = additional_app["name"]
+        for variant in additional_app["variants"]:
+            variant_name = variant["name"]
+            full_names.append(f"{group_name}/{variant_name}")
+
+    return full_names
+
+
 def get_applications_for_context(
     project_name,
     folder_entity,
@@ -283,7 +311,9 @@ def get_applications_for_context(
         }
     )
     if profile:
-        return profile["applications"]
+        if profile["allow_type"] == "applications":
+            return profile["applications"]
+        return _get_app_full_names_from_settings(apps_settings)
     return []
 
 
