@@ -393,8 +393,7 @@ class ProjectApplicationsModel(BaseSettingsModel):
     )
     profiles: list[ProjectApplicationsProfile] = SettingsField(
         default_factory=list,
-        title="Applications Filters",
-        description="Applications available in the project",
+        title="Profiles",
     )
 
 
@@ -410,7 +409,7 @@ class ProjectToolsModel(BaseSettingsModel):
     )
     profiles: list[ProjectToolsProfile] = SettingsField(
         default_factory=list,
-        description="Tools available in the project",
+        title="Profiles",
     )
 
 
