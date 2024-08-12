@@ -381,6 +381,39 @@ class ProjectToolsProfile(BaseSettingsModel):
     )
 
 
+class ProjectApplicationsModel(BaseSettingsModel):
+    enabled: bool = SettingsField(
+        False,
+        title="Use Applications profiles instead of attribute",
+        description=(
+            "Use applications attribute on the project instead of these"
+            " profiles. Attribute based applications will"
+            " be deprecated in future versions of applications addon."
+        ),
+    )
+    profiles: list[ProjectApplicationsProfile] = SettingsField(
+        default_factory=list,
+        title="Applications Filters",
+        description="Applications available in the project",
+    )
+
+
+class ProjectToolsModel(BaseSettingsModel):
+    enabled: bool = SettingsField(
+        False,
+        title="Use Tools profiles instead of attribute",
+        description=(
+            "Use tools attribute on folders and tasks instead of these"
+            " profiles. Attribute based tools will"
+            " be deprecated in future versions of applications addon."
+        ),
+    )
+    profiles: list[ProjectToolsProfile] = SettingsField(
+        default_factory=list,
+        description="Tools available in the project",
+    )
+
+
 class ApplicationsAddonSettings(BaseSettingsModel):
     only_available: bool = SettingsField(
         True,
@@ -395,7 +428,7 @@ class ApplicationsAddonSettings(BaseSettingsModel):
     )
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
-        title="Application Definitions",
+        title="Applications Definitions",
         scope=["studio"]
     )
     tool_groups: list[ToolGroupModel] = SettingsField(
@@ -403,25 +436,24 @@ class ApplicationsAddonSettings(BaseSettingsModel):
         title="Tools Definitions",
         scope=["studio"]
     )
-    use_attributes: bool = SettingsField(
-        True,
+    project_applications: ProjectApplicationsModel = SettingsField(
         section="---",
-        title="Use attributes instead of profiles",
+        title="Applications Filters",
         description=(
-            "Use deprecated attributes. Attributes were used to define used"
-            " applications and tools in the past. This setting allows to"
-            " switch between attributes and profiles."
+            "Enabling this feature will disable using 'applications'"
+            " attribute on project. Attribute based applications will"
+            " be deprecated in future versions of applications addon."
         ),
+        default_factory=ProjectApplicationsModel,
     )
-    project_applications: list[ProjectApplicationsProfile] = SettingsField(
-        default_factory=list,
-        title="Applications",
-        description="Applications available in the project",
-    )
-    project_tools: list[ProjectToolsProfile] = SettingsField(
-        default_factory=list,
-        title="Tools",
-        description="Tools available in the project",
+    project_tools: ProjectToolsModel = SettingsField(
+        title="Tool Filters",
+        description=(
+            "Enabling this feature will disable using 'tools'"
+            " attribute on folders and tasks. Attribute based tools will"
+            " be deprecated in future versions of applications addon."
+        ),
+        default_factory=ProjectToolsModel,
     )
 
     @validator("tool_groups")
@@ -444,13 +476,16 @@ def _get_tools_defaults():
 
 DEFAULT_VALUES = {
     "only_available": True,
-    "project_applications": [
-        {
-            "task_types": [],
-            "allow_type": "all_applications",
-            "applications": [],
-        },
-    ],
+    "project_applications": {
+        "enabled": False,
+        "profiles": [
+            {
+                "task_types": [],
+                "allow_type": "all_applications",
+                "applications": [],
+            },
+        ],
+    }
 }
 DEFAULT_VALUES.update(_get_applications_defaults())
 DEFAULT_VALUES.update(_get_tools_defaults())
