@@ -7,7 +7,6 @@ from ayon_server.settings import (
     BaseSettingsModel,
     SettingsField,
     ensure_unique_names,
-    folder_types_enum,
     task_types_enum,
 )
 from ayon_server.exceptions import BadRequestException
@@ -341,12 +340,6 @@ def _get_allow_type():
 
 class ProjectApplicationsProfile(BaseSettingsModel):
     _layout = "expanded"
-    folder_types: list[str] = SettingsField(
-        default_factory=list,
-        title="Folder Types",
-        description="Filter by folder types",
-        enum_resolver=folder_types_enum,
-    )
     task_types: list[str] = SettingsField(
         default_factory=list,
         title="Task Types",
@@ -369,12 +362,6 @@ class ProjectApplicationsProfile(BaseSettingsModel):
 
 class ProjectToolsProfile(BaseSettingsModel):
     _layout = "expanded"
-    folder_types: list[str] = SettingsField(
-        default_factory=list,
-        title="Folder Types",
-        description="Filter by folder types",
-        enum_resolver=folder_types_enum,
-    )
     task_types: list[str] = SettingsField(
         default_factory=list,
         title="Task Types",
@@ -459,7 +446,6 @@ DEFAULT_VALUES = {
     "only_available": True,
     "project_applications": [
         {
-            "folder_types": [],
             "task_types": [],
             "allow_type": "all_applications",
             "applications": [],
