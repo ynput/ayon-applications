@@ -290,25 +290,20 @@ def get_applications_for_context(
 
     # Use attributes to get available applications
     # - this is older source of the information, will be deprecated in future
-    if apps_settings["use_attributes"]:
+    project_applications = apps_settings["project_applications"]
+    if not project_applications["enabled"]:
         if project_entity is None:
             project_entity = ayon_api.get_project(project_name)
         apps = project_entity["attrib"].get("applications")
         return apps or []
 
-    folder_type = task_type = None
-    if folder_entity:
-        folder_type = folder_entity["folderType"]
+    task_type = None
     if task_entity:
         task_type = task_entity["taskType"]
 
-    profiles = apps_settings["project_applications"]
     profile = filter_profiles(
-        profiles,
-        {
-            "folder_types": folder_type,
-            "task_types": task_type,
-        }
+        project_applications["profiles"],
+        {"task_types": task_type}
     )
     if profile:
         if profile["allow_type"] == "applications":
@@ -339,9 +334,10 @@ def get_tools_for_context(
         project_settings = get_project_settings(project_name)
     apps_settings = project_settings["applications"]
 
+    project_tools = apps_settings["project_tools"]
     # Use attributes to get available tools
     # - this is older source of the information, will be deprecated in future
-    if apps_settings["use_attributes"]:
+    if not project_tools["enabled"]:
         tools = None
         if task_entity:
             tools = task_entity["attrib"].get("tools")
@@ -351,20 +347,15 @@ def get_tools_for_context(
 
         return tools or []
 
-    folder_type = task_type = task_path = None
-    if folder_entity:
-        folder_type = folder_entity["folderType"]
+    task_type = task_path = None
     if task_entity:
         task_type = task_entity["taskType"]
         task_name = task_entity["name"]
         folder_path = folder_entity["path"]
         task_path = f"{folder_path}/{task_name}"
-
-    profiles = apps_settings["project_tools"]
     profile = filter_profiles(
-        profiles,
+        project_tools["profiles"],
         {
-            "folder_types": folder_type,
             "task_types": task_type,
             "task_paths": task_path,
         }
