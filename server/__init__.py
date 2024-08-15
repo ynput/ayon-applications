@@ -22,6 +22,8 @@ have to find some clever way how to avoid the issues.
 Version stored under 'ATTRIBUTES_VERSION_MILESTONE' should be last released
 version that used only old attribute system.
 """
+from typing import Any
+
 import semver
 
 from ayon_server.addons import BaseServerAddon, AddonLibrary
@@ -84,6 +86,26 @@ class ApplicationsAddon(BaseServerAddon):
             if version_obj < ATTRIBUTES_VERSION_MILESTONE:
                 addon = app_defs.versions[addon_version]
                 addon._update_enums = self._update_enums
+
+    async def convert_settings_overrides(
+        self,
+        source_version: str,
+        overrides: dict[str, Any],
+    ) -> dict[str, Any]:
+        overrides = await super().convert_settings_overrides(
+            source_version, overrides
+        )
+        # Since 1.0.0 the project applications and tools are
+        #   using settings instead of attributes.
+        # Disable automatically project applications and tools
+        #   when converting settings of version < 1.0.0 so we don't break
+        #   productions on update
+        if parse_version(source_version) < (1, 0, 0):
+            prj_apps = overrides.setdefault("project_applications", {})
+            prj_apps["enabled"] = False
+            prj_tools = overrides.setdefault("project_tools", {})
+            prj_tools["enabled"] = False
+        return overrides
 
     # --------------------------------------
     # Backwards compatibility for attributes

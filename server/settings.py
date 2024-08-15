@@ -388,7 +388,7 @@ class ProjectToolsProfile(BaseSettingsModel):
 
 class ProjectApplicationsModel(BaseSettingsModel):
     enabled: bool = SettingsField(
-        False,
+        True,
         title="Use Applications profiles instead of attribute",
         description=(
             "Use applications attribute on the project instead of these"
@@ -404,7 +404,7 @@ class ProjectApplicationsModel(BaseSettingsModel):
 
 class ProjectToolsModel(BaseSettingsModel):
     enabled: bool = SettingsField(
-        False,
+        True,
         title="Use Tools profiles instead of attribute",
         description=(
             "Use tools attribute on folders and tasks instead of these"
@@ -481,7 +481,6 @@ def _get_tools_defaults():
 DEFAULT_VALUES = {
     "only_available": True,
     "project_applications": {
-        "enabled": False,
         "profiles": [
             {
                 "task_types": [],
