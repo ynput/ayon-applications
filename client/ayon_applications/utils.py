@@ -347,18 +347,21 @@ def get_tools_for_context(
 
         return tools or []
 
-    task_type = task_path = None
+    folder_path = task_type = task_name = None
+    if folder_entity:
+        folder_path = folder_entity["path"]
     if task_entity:
         task_type = task_entity["taskType"]
         task_name = task_entity["name"]
-        folder_path = folder_entity["path"]
-        task_path = f"{folder_path}/{task_name}"
+
     profile = filter_profiles(
         project_tools["profiles"],
         {
+            "folder_paths": folder_path,
             "task_types": task_type,
-            "task_paths": task_path,
-        }
+            "task_names": task_name,
+        },
+        keys_order=["folder_paths", "task_names", "task_types"]
     )
     if profile:
         return profile["tools"]

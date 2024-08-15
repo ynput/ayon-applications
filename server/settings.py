@@ -362,16 +362,21 @@ class ProjectApplicationsProfile(BaseSettingsModel):
 
 class ProjectToolsProfile(BaseSettingsModel):
     _layout = "expanded"
+    folder_paths: list[str] = SettingsField(
+        default_factory=list,
+        title="Folder paths",
+        description="Filter by folder paths. Regex is supported.",
+    )
     task_types: list[str] = SettingsField(
         default_factory=list,
         title="Task Types",
         description="Filter by task types",
         enum_resolver=task_types_enum,
     )
-    task_paths: list[str] = SettingsField(
+    task_names: list[str] = SettingsField(
         default_factory=list,
-        title="Task Paths",
-        description="Filter by task paths. You can use regex.",
+        title="Task Names",
+        description="Filter by task names.",
     )
     tools: list[str] = SettingsField(
         default_factory=list,
