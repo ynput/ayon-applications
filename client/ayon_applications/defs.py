@@ -4,6 +4,7 @@ import json
 import copy
 
 from ayon_core.lib import find_executable
+from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 
 class LaunchTypes:
@@ -152,65 +153,12 @@ class ApplicationGroup:
         data (dict): Group defying data loaded from settings.
         manager (ApplicationManager): Manager that created the group.
     """
-    icons_by_group = {
-        "adsk_3dsmax": "3dsmax.png",
-        "aftereffects": "aftereffects.png",
-        "blender": "blender.png",
-        "celaction": "celaction.png",
-        "equalizer": "3de4.png",
-        "flame": "flame.png",
-        "fusion": "fusion.png",
-        "harmony": "harmony.png",
-        "hiero": "hiero.png",
-        "houdini": "houdini.png",
-        "maya": "maya.png",
-        "motionbuilder": "motionbuilder.png",
-        "nuke": "nuke.png",
-        "nukeassist": "nuke.png",
-        "nukestudio": "nukestudio.png",
-        "nukex": "nukex.png",
-        "openrv": "openrv.png",
-        "photoshop": "photoshop.png",
-        "resolve": "resolve.png",
-        "substancepainter": "substancepainter.png",
-        "tvpaint": "tvpaint.png",
-        "unreal": "ue4.png",
-        "wrap": "wrap.png",
-        "zbrush": "zbrush.png",
-    }
-    labels_by_group = {
-        "adsk_3dsmax": "3ds Max",
-        "aftereffects": "After Effects",
-        "blender": "Blender",
-        "celaction": "Celaction 2D",
-        "equalizer": "3DEqualizer",
-        "flame": "Flame",
-        "fusion": "Fusion",
-        "harmony": "Harmony",
-        "hiero": "Hiero",
-        "houdini": "Houdini",
-        "maya": "Maya",
-        "motionbuilder": "Motion Builder",
-        "nuke": "Nuke",
-        "nukeassist": "Nuke Assist",
-        "nukestudio": "Nuke Studio",
-        "nukex": "Nuke X",
-        "openrv": "OpenRV",
-        "photoshop": "Photoshop",
-        "resolve": "Resolve",
-        "substancepainter": "Substance Painter",
-        "tvpaint": "TVPaint",
-        "unreal": "Unreal Editor",
-        "wrap": "Wrap",
-        "zbrush": "Zbrush",
-    }
-
     def __init__(self, name, data, manager):
-        icon = self.icons_by_group.get(name)
+        icon = ICONS_BY_GROUP_NAME.get(name)
         if not icon:
             icon = data.get("icon")
 
-        label = self.labels_by_group.get(name)
+        label = LABELS_BY_GROUP_NAME.get(name)
         if not label:
             label = data.get("label")
 
