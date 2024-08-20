@@ -1,52 +1,24 @@
-"""Server side of the Applications addon.
+"""Backwards compatibility for applications addon.
 
-This module contains the server side of the Applications addon.
-It is responsible for managing settings and initial setup of addon.
+This should have been backwards compatibility fix for older addons using
+attributes for applications and tools. But the first release of addon that
+allows to disable kept the attributes in play and the fix was not needed.
 
-## Attributes backward compatibility
-Current and previous versions of applications addon did use AYON attributes
-to define applications and tools for a project and task.
+This is preparation for following release of applications addon that will
+completely remove the attributes and use only settings.
 
-This system was replaced with a new system using settings. This change is
-not 100% backwards compatible, we need to make sure that older versions of
-the addon don't break initialization.
-
-Older versions of the addon used settings of other versions, but
-the settings structure did change which can cause that combination of old
-and new Applications addon on server can cause crashes.
-
-First version introduction settings does support both settings and attributes
-so the handling of older versions is part of the addon, but following versions
-have to find some clever way how to avoid the issues.
-
-Version stored under 'ATTRIBUTES_VERSION_MILESTONE' should be last released
-version that used only old attribute system.
+TODO (Added 2024/08/05).
+Use this code when attributes are removed from the addon, or remove the
+file in future if plans changed.
 """
-from typing import Any
-from typing import TYPE_CHECKING
-
 import semver
 
-from ayon_server.addons import BaseServerAddon, AddonLibrary
+from ayon_server.addons import AddonLibrary
 from ayon_server.entities.core import attribute_library
 from ayon_server.lib.postgres import Postgres
 
-if TYPE_CHECKING:
-    from ayon_server.actions import (
-        ActionExecutor,
-        ExecuteResponseModel,
-        SimpleActionManifest,
-    )
-
-from .constants import APP_LABELS_BY_GROUP
-from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
-from .actions import (
-    get_action_manifests,
-    IDENTIFIER_PREFIX,
-)
 
 ATTRIBUTES_VERSION_MILESTONE = (1, 0, 0)
-
 
 def parse_version(version):
     try:
@@ -68,90 +40,10 @@ def parse_versions(versions):
     return output
 
 
-class ApplicationsAddon(BaseServerAddon):
-    settings_model = ApplicationsAddonSettings
-    # TODO remove this attribute when attributes support is removed
-    has_attributes = True
+class ApplicationsLE_0_2:
+    def __init__(self, addon_obj):
+        self._addon_obj = addon_obj
 
-    async def get_simple_actions(
-        self,
-        project_name: str | None = None,
-        variant: str = "production",
-    ) -> list["SimpleActionManifest"]:
-        return await get_action_manifests(
-            self,
-            project_name=project_name,
-            variant=variant,
-        )
-
-    async def execute_action(
-        self,
-        executor: "ActionExecutor",
-    ) -> "ExecuteResponseModel":
-        """Execute an action provided by the addon"""
-        app_name = executor.identifier[len(IDENTIFIER_PREFIX):]
-        context = executor.context
-        project_name = context.project_name
-        task_id = context.entity_ids[0]
-
-        return await executor.get_launcher_action_response(
-            args=[
-                "addon", "applications", "launch-by-id",
-                "--app", app_name,
-                "--project", project_name,
-                "--task-id", task_id,
-            ]
-        )
-
-    async def get_default_settings(self):
-        return self.get_settings_model()(**DEFAULT_VALUES)
-
-    async def pre_setup(self):
-        """Make sure older version of addon use the new way of attributes."""
-
-        instance = AddonLibrary.getinstance()
-        app_defs = instance.data.get(self.name)
-        old_addon = app_defs.versions.get("0.1.0")
-        if old_addon is not None:
-            # Override 'create_applications_attribute' for older versions
-            #   - avoid infinite server restart loop
-            old_addon.create_applications_attribute = (
-                self.create_applications_attribute
-            )
-
-        # Update older versions of applications addon to use new
-        #   '_update_enums'
-        # - new function skips newer addon versions without 'has_attributes'
-        version_objs, invalid_versions = parse_versions(app_defs.versions)
-        for addon_version, version_obj in version_objs:
-            # Last release with only old attribute system
-            if version_obj < ATTRIBUTES_VERSION_MILESTONE:
-                addon = app_defs.versions[addon_version]
-                addon._update_enums = self._update_enums
-
-    async def convert_settings_overrides(
-        self,
-        source_version: str,
-        overrides: dict[str, Any],
-    ) -> dict[str, Any]:
-        overrides = await super().convert_settings_overrides(
-            source_version, overrides
-        )
-        # Since 1.0.0 the project applications and tools are
-        #   using settings instead of attributes.
-        # Disable automatically project applications and tools
-        #   when converting settings of version < 1.0.0 so we don't break
-        #   productions on update
-        if parse_version(source_version) < (1, 0, 0):
-            prj_apps = overrides.setdefault("project_applications", {})
-            prj_apps["enabled"] = False
-            prj_tools = overrides.setdefault("project_tools", {})
-            prj_tools["enabled"] = False
-        return overrides
-
-    # --------------------------------------
-    # Backwards compatibility for attributes
-    # --------------------------------------
     def _sort_versions(self, addon_versions, reverse=False):
         version_objs, invalid_versions = parse_versions(addon_versions)
 
@@ -160,6 +52,8 @@ class ApplicationsAddon(BaseServerAddon):
             for addon_version, version_obj in (
                 sorted(version_objs, key=lambda x: x[1])
             )
+            # Skip versions greater than 0.2
+            if (version_obj.major, version_obj.minor) <= (0, 2)
         ]
         sorted_versions = list(sorted(invalid_versions)) + valid_versions
         if reverse:
@@ -194,9 +88,7 @@ class ApplicationsAddon(BaseServerAddon):
         label_by_name = {}
         for group in groups:
             group_name = group["name"]
-            group_label = group.get(
-                "label", APP_LABELS_BY_GROUP.get(group_name)
-            ) or group_name
+            group_label = group["label"] or group_name
             for variant in group["variants"]:
                 variant_name = variant["name"]
                 if not variant_name:
@@ -215,7 +107,6 @@ class ApplicationsAddon(BaseServerAddon):
         version_obj = parse_version(addon_version)
         if version_obj is None or version_obj < ATTRIBUTES_VERSION_MILESTONE:
             return True
-
         return getattr(addon, "has_attributes", False)
 
     async def _update_enums(self):
@@ -226,14 +117,14 @@ class ApplicationsAddon(BaseServerAddon):
         """
 
         instance = AddonLibrary.getinstance()
-        app_defs = instance.data.get(self.name)
+        app_defs = instance.data.get(self._addon_obj.name)
         all_applications = []
         all_tools = []
         for addon_version in self._sort_versions(
             app_defs.versions.keys(), reverse=True
         ):
             addon = app_defs.versions[addon_version]
-            if not self._addon_has_attributes(addon, addon_version):
+            if not self._addon_has_attributes(addon):
                 continue
 
             for variant in ("production", "staging"):
