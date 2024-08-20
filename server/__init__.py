@@ -38,7 +38,7 @@ if TYPE_CHECKING:
         SimpleActionManifest,
     )
 
-from .constants import APP_LABELS_BY_GROUP
+from .constants import LABELS_BY_GROUP_NAME
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
     get_action_manifests,
@@ -195,7 +195,7 @@ class ApplicationsAddon(BaseServerAddon):
         for group in groups:
             group_name = group["name"]
             group_label = group.get(
-                "label", APP_LABELS_BY_GROUP.get(group_name)
+                "label", LABELS_BY_GROUP_NAME.get(group_name)
             ) or group_name
             for variant in group["variants"]:
                 variant_name = variant["name"]

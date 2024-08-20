@@ -1,4 +1,4 @@
-APP_LABELS_BY_GROUP = {
+LABELS_BY_GROUP_NAME = {
     "adsk_3dsmax": "3ds Max",
     "aftereffects": "After Effects",
     "blender": "Blender",
@@ -23,4 +23,30 @@ APP_LABELS_BY_GROUP = {
     "unreal": "Unreal Editor",
     "wrap": "Wrap",
     "zbrush": "Zbrush",
+}
+ICONS_BY_GROUP_NAME = {
+    "adsk_3dsmax": "3dsmax.png",
+    "aftereffects": "aftereffects.png",
+    "blender": "blender.png",
+    "celaction": "celaction.png",
+    "equalizer": "3de4.png",
+    "flame": "flame.png",
+    "fusion": "fusion.png",
+    "harmony": "harmony.png",
+    "hiero": "hiero.png",
+    "houdini": "houdini.png",
+    "maya": "maya.png",
+    "motionbuilder": "motionbuilder.png",
+    "nuke": "nuke.png",
+    "nukeassist": "nuke.png",
+    "nukestudio": "nukestudio.png",
+    "nukex": "nukex.png",
+    "openrv": "openrv.png",
+    "photoshop": "photoshop.png",
+    "resolve": "resolve.png",
+    "substancepainter": "substancepainter.png",
+    "tvpaint": "tvpaint.png",
+    "unreal": "ue4.png",
+    "wrap": "wrap.png",
+    "zbrush": "zbrush.png",
 }
