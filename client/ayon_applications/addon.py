@@ -9,12 +9,8 @@ import ayon_api
 from ayon_core.lib import run_ayon_launcher_process
 from ayon_core.addon import AYONAddon, IPluginPaths, click_wrap
 try:
-    from ayon_core.addon import (
-        ProcessContext,
-        ensure_addons_are_process_ready,
-    )
+    from ayon_core.addon import ensure_addons_are_process_ready
 except ImportError:
-    ProcessContext = None
     ensure_addons_are_process_ready = None
 
 from .version import __version__
@@ -232,13 +228,17 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             task_name (str): Task name.
 
         """
-        context = None
-        if ProcessContext is not None:
-            ensure_addons_are_process_ready(
+        # TODO remove when 'ensure_addons_are_process_ready' is available
+        #   and returns 'ProcessContext' object
+        headless = os.getenv("AYON_HEADLESS_MODE", False)
+        if ensure_addons_are_process_ready is not None:
+            context = ensure_addons_are_process_ready(
                 addon_name=self.name,
                 addon_version=self.version,
                 project_name=project_name,
             )
+            if context is not None:
+                headless = context.headless
 
         # TODO handle raise errors
         failed = True
@@ -273,7 +273,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         if not failed:
             return
 
-        if context is not None and not context.headless:
+        if not headless:
             self._show_launch_error_dialog(message, detail)
         sys.exit(1)
 
