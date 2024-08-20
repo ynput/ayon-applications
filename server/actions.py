@@ -145,6 +145,8 @@ async def get_action_manifests(addon, project_name, variant):
     for app_item in app_items:
         app_name = app_item["value"]
         task_types = task_types_by_app_name[app_name]
+        if not task_types:
+            continue
         output.append(
             SimpleActionManifest(
                 identifier=f"{IDENTIFIER_PREFIX}{app_name}",
