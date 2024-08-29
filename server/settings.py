@@ -433,7 +433,8 @@ class ApplicationsAddonSettings(BaseSettingsModel):
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Applications Definitions",
-        scope=["studio"]
+        scope=["studio"],
+        section="Definitions"
     )
     tool_groups: list[ToolGroupModel] = SettingsField(
         default_factory=list,
@@ -441,7 +442,6 @@ class ApplicationsAddonSettings(BaseSettingsModel):
         scope=["studio"]
     )
     project_applications: ProjectApplicationsModel = SettingsField(
-        section="---",
         title="Applications Filters",
         description=(
             "Enabling this feature will disable using 'applications'"
@@ -449,6 +449,7 @@ class ApplicationsAddonSettings(BaseSettingsModel):
             " be deprecated in future versions of applications addon."
         ),
         default_factory=ProjectApplicationsModel,
+        section="Filters"
     )
     project_tools: ProjectToolsModel = SettingsField(
         title="Tool Filters",
