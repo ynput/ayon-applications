@@ -42,7 +42,7 @@ DEFAULT_APP_GROUPS = {
     "zbrush",
     "equalizer",
     "motionbuilder",
-    "terminal"
+    "terminal",
 }
 
 
