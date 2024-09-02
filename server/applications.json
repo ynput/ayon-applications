@@ -1289,7 +1289,21 @@
                     "executables": {
                         "windows": ["cmd.exe"],
                         "darwin": ["Terminal.app"],
-                        "linux": ["{SHELL}"]
+                        "linux": [
+                            "gnome-terminal",
+                            "x-terminal-emulator",
+                            "konsole",
+                            "xfce4-terminal",
+                            "lxterminal",
+                            "mate-terminal",
+                            "tilix",
+                            "deepin-terminal",
+                            "terminator",
+                            "alacritty",
+                            "st",
+                            "urxvt",
+                            "xterm"
+                        ]
                     },
                     "arguments": {
                         "windows": [],
