@@ -2,12 +2,12 @@ import subprocess
 from ayon_applications import PreLaunchHook, LaunchTypes
 
 
-class LaunchShellWindowsCreationflags(PreLaunchHook):
-    """Avoid running the shell without new console"""
+class LaunchTerminalWindowsCreationflags(PreLaunchHook):
+    """Avoid running the terminal without new console"""
 
     # Should be as last hook because must change launch arguments to string
     order = 1000
-    app_groups = {"shell"}
+    app_groups = {"terminal"}
     platforms = {"windows"}
     launch_types = {LaunchTypes.local}
 

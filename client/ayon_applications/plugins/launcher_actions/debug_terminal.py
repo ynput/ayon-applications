@@ -32,10 +32,10 @@ def get_application_qt_icon(application: Application) -> Optional[QtGui.QIcon]:
     return QtGui.QIcon()
 
 
-class DebugShell(LauncherAction):
-    """Run any host environment in command line."""
-    name = "debugshell"
-    label = "Shell"
+class DebugTerminal(LauncherAction):
+    """Run any host environment in command line terminal."""
+    name = "debugterminal"
+    label = "Terminal"
     icon = "terminal"
     color = "#e8770e"
     order = 10
@@ -49,22 +49,24 @@ class DebugShell(LauncherAction):
         pos = QtGui.QCursor.pos()
         application_manager = ApplicationManager()
 
-        # Choose shell
-        shell_applications = self.get_shell_applications(application_manager)
-        if len(shell_applications) == 0:
+        # Choose terminal
+        terminal_applications = self.get_terminal_applications(
+            application_manager)
+        if len(terminal_applications) == 0:
             raise ValueError(
-                "Missing application variants for shell application. Please "
-                "configure 'ayon+settings://applications/applications/shell'"
+                "Missing application variants for terminal application. "
+                "Please configure "
+                "'ayon+settings://applications/applications/terminal'"
             )
-        elif len(shell_applications) == 1:
+        elif len(terminal_applications) == 1:
             # If only one configured shell application, always use that one
-            shell_app = shell_applications[0]
-            print("Only one shell application variant is configured. "
-                  f"Defaulting to {shell_app.full_label}")
+            terminal_app = terminal_applications[0]
+            print("Only one terminal application variant is configured. "
+                  f"Defaulting to {terminal_app.full_label}")
         else:
-            shell_app = self.choose_app(shell_applications, pos,
-                                        show_variant_name_only=True)
-        if not shell_app:
+            terminal_app = self.choose_app(
+                terminal_applications, pos, show_variant_name_only=True)
+        if not terminal_app:
             return
 
         # Get applications
@@ -93,10 +95,10 @@ class DebugShell(LauncherAction):
         if cwd:
             print(f"Setting Work Directory: {cwd}")
 
-        print(f"Launching shell in environment of {app.full_label}..")
-        self.launch_app_as_shell(
+        print(f"Launching terminal in environment of {app.full_label}..")
+        self.launch_terminal_with_app_context(
             application_manager,
-            shell_app,
+            terminal_app,
             project_name=selection.project_name,
             folder_path=selection.folder_path,
             task_name=selection.task_name,
@@ -146,13 +148,14 @@ class DebugShell(LauncherAction):
         return applications
 
     @staticmethod
-    def get_shell_applications(application_manager) -> list[Application]:
-        """Return all configured shell applications"""
-        # TODO: Maybe filter out shell applications not configured for your
+    def get_terminal_applications(application_manager) -> list[Application]:
+        """Return all configured terminal applications"""
+        # TODO: Maybe filter out terminal applications not configured for your
         #  current platform
-        return list(application_manager.app_groups["shell"].variants.values())
+        return list(
+            application_manager.app_groups["terminal"].variants.values())
 
-    def launch_app_as_shell(
+    def launch_terminal_with_app_context(
         self,
         application_manager: ApplicationManager,
         application: Application,

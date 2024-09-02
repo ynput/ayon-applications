@@ -1278,17 +1278,16 @@
                 }
             ]
         },
-        "shell": {
+        "terminal": {
             "enabled": true,
-            "label": "Shell",
-            "icon": "{}/app_icons/shell.png",
+            "label": "Terminal",
+            "icon": "{}/app_icons/terminal.png",
             "host_name": "",
             "environment": "{}",
             "variants": [
                 {
                     "name": "main",
                     "label": "Main",
-                    "use_python_2": false,
                     "executables": {
                         "windows": ["cmd.exe"],
                         "darwin": ["Terminal.app"],
