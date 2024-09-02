@@ -20,12 +20,7 @@ from ayon_core.tools.utils.lib import get_qt_icon
 
 
 def get_application_qt_icon(application: Application) -> Optional[QtGui.QIcon]:
-    """Return QtGui.QIcon for an Application
-
-    Note: This forces the icons to be search in `ayon_applications/icons`
-        folder on client side and mimics what Ayon applications addon's
-        `get_app_icon_path` method does.
-    """
+    """Return QtGui.QIcon for an Application"""
     icon = application.icon
     if not icon:
         return QtGui.QIcon()
