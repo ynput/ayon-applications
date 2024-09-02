@@ -41,8 +41,11 @@ class DebugTerminal(LauncherAction):
     """Run any host environment in command line terminal."""
     name = "debugterminal"
     label = "Terminal"
-    icon = "terminal"
-    color = "#e8770e"
+    icon = {
+        "type": "awesome-font",
+        "name": "fa.terminal",
+        "color": "#e8770e"
+    }
     order = 10
 
     def is_compatible(self, selection) -> bool:
