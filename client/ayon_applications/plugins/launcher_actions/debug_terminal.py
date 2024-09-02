@@ -8,7 +8,12 @@ from ayon_applications import (
     ApplicationManager,
     APPLICATIONS_ADDON_ROOT
 )
-from ayon_applications.utils import get_app_environments_for_context
+
+from ayon_applications.utils import (
+    get_app_environments_for_context,
+    get_applications_for_context
+)
+from ayon_core.pipeline.actions import LauncherActionSelection
 from ayon_core.pipeline import LauncherAction
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils.lib import get_qt_icon
@@ -71,7 +76,7 @@ class DebugTerminal(LauncherAction):
 
         # Get applications
         applications = self.get_project_applications(
-            application_manager, selection.project_entity)
+            application_manager, selection)
         app = self.choose_app(applications, pos)
         if not app:
             return
@@ -133,13 +138,23 @@ class DebugTerminal(LauncherAction):
             return result.data()
 
     @staticmethod
-    def get_project_applications(application_manager: ApplicationManager,
-                                 project_entity: dict) -> list[Application]:
+    def get_project_applications(
+            application_manager: ApplicationManager,
+            selection: LauncherActionSelection) -> list[Application]:
         """Return the enabled applications for the project"""
+
+        application_names = get_applications_for_context(
+            project_name=selection.project_name,
+            folder_entity=selection.folder_entity,
+            task_entity=selection.task_entity,
+            project_settings=selection.get_project_settings(),
+            project_entity=selection.project_entity
+        )
+
         # Filter to apps valid for this current project, with logic from:
         # `ayon_core.tools.launcher.models.actions.ApplicationAction.is_compatible`  # noqa
         applications = []
-        for app_name in project_entity["attrib"].get("applications", []):
+        for app_name in application_names:
             app = application_manager.applications.get(app_name)
             if not app or not app.enabled:
                 continue
