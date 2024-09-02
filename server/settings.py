@@ -323,7 +323,7 @@ class ApplicationsSettings(BaseSettingsModel):
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",
-        description="Terminal shell application")
+        description="Terminal application")
     additional_apps: list[AdditionalAppGroup] = SettingsField(
         default_factory=list, title="Additional Applications")
 
