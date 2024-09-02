@@ -9,6 +9,7 @@ from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
 from .defs import LaunchTypes
 from .manager import ApplicationManager
+from .utils import get_app_icon_path
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths):
@@ -129,13 +130,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             Union[str, None]: Icon path or None if not found.
 
         """
-        if not icon_filename:
-            return None
-        icon_name = os.path.basename(icon_filename)
-        path = os.path.join(APPLICATIONS_ADDON_ROOT, "icons", icon_name)
-        if os.path.exists(path):
-            return path
-        return None
+        return get_app_icon_path(icon_filename)
 
     def get_app_icon_url(self, icon_filename, server=False):
         """Get icon path.

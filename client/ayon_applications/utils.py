@@ -21,7 +21,11 @@ from ayon_core.pipeline.workfile import (
     should_open_workfiles_tool_on_launch,
 )
 
-from .constants import PLATFORM_NAMES, DEFAULT_ENV_SUBGROUP
+from .constants import (
+    APPLICATIONS_ADDON_ROOT,
+    DEFAULT_ENV_SUBGROUP,
+    PLATFORM_NAMES,
+)
 from .exceptions import MissingRequiredKey, ApplicationLaunchFailed
 from .manager import ApplicationManager
 
@@ -742,3 +746,22 @@ def _prepare_last_workfile(data, workdir, addons_manager):
 
     data["env"]["AYON_LAST_WORKFILE"] = last_workfile_path
     data["last_workfile_path"] = last_workfile_path
+
+
+def get_app_icon_path(icon_filename):
+    """Get icon path.
+
+    Args:
+        icon_filename (str): Icon filename.
+
+    Returns:
+        Union[str, None]: Icon path or None if not found.
+
+    """
+    if not icon_filename:
+        return None
+    icon_name = os.path.basename(icon_filename)
+    path = os.path.join(APPLICATIONS_ADDON_ROOT, "icons", icon_name)
+    if os.path.exists(path):
+        return path
+    return None

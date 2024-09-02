@@ -5,13 +5,13 @@ from qtpy import QtWidgets, QtGui, QtCore
 
 from ayon_applications import (
     Application,
-    ApplicationManager,
-    APPLICATIONS_ADDON_ROOT
+    ApplicationManager
 )
 
 from ayon_applications.utils import (
     get_app_environments_for_context,
-    get_applications_for_context
+    get_applications_for_context,
+    get_app_icon_path
 )
 from ayon_core.pipeline.actions import LauncherActionSelection
 from ayon_core.pipeline import LauncherAction
@@ -29,9 +29,7 @@ def get_application_qt_icon(application: Application) -> Optional[QtGui.QIcon]:
     icon = application.icon
     if not icon:
         return QtGui.QIcon()
-    icon_filename = os.path.basename(icon)
-    icon_filepath = os.path.join(
-        APPLICATIONS_ADDON_ROOT, "icons", icon_filename)
+    icon_filepath = get_app_icon_path(icon)
     if os.path.exists(icon_filepath):
         return get_qt_icon({"type": "path", "path": icon_filepath})
     return QtGui.QIcon()
