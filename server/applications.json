@@ -1280,8 +1280,6 @@
         },
         "terminal": {
             "enabled": true,
-            "label": "Terminal",
-            "icon": "{}/app_icons/terminal.png",
             "host_name": "",
             "environment": "{}",
             "variants": [
