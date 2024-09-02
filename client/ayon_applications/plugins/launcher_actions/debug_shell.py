@@ -52,7 +52,7 @@ class DebugShell(LauncherAction):
         # Choose shell
         shell_applications = self.get_shell_applications(application_manager)
         if len(shell_applications) == 0:
-            raise RuntimeError(
+            raise ValueError(
                 "Missing application variants for shell application. Please "
                 "configure 'ayon+settings://applications/applications/shell'"
             )

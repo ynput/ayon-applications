@@ -1282,7 +1282,7 @@
             "enabled": true,
             "label": "Shell",
             "icon": "{}/app_icons/shell.png",
-            "host_name": "shell",
+            "host_name": "",
             "environment": "{}",
             "variants": [
                 {
@@ -1291,12 +1291,12 @@
                     "use_python_2": false,
                     "executables": {
                         "windows": ["cmd.exe"],
-                        "darwin": ["open"],
+                        "darwin": ["Terminal.app"],
                         "linux": ["{SHELL}"]
                     },
                     "arguments": {
                         "windows": [],
-                        "darwin": ["-na", "{SHELL}"],
+                        "darwin": [],
                         "linux": []
                     },
                     "environment": "{}"
