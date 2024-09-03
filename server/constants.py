@@ -19,6 +19,7 @@ LABELS_BY_GROUP_NAME = {
     "photoshop": "Photoshop",
     "resolve": "Resolve",
     "substancepainter": "Substance Painter",
+    "terminal": "Terminal",
     "tvpaint": "TVPaint",
     "unreal": "Unreal Editor",
     "wrap": "Wrap",
