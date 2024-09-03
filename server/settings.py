@@ -42,6 +42,7 @@ DEFAULT_APP_GROUPS = {
     "zbrush",
     "equalizer",
     "motionbuilder",
+    "terminal",
 }
 
 
@@ -319,6 +320,10 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="3DEqualizer")
     motionbuilder: AppGroup = SettingsField(
         default_factory=AppGroup, title="Motion Builder")
+    terminal: AppGroup = SettingsField(
+        default_factory=AppGroup,
+        title="Terminal",
+        description="Terminal application")
     additional_apps: list[AdditionalAppGroup] = SettingsField(
         default_factory=list, title="Additional Applications")
 

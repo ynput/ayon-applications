@@ -19,6 +19,7 @@ APP_LABELS_BY_GROUP = {
     "photoshop": "Photoshop",
     "resolve": "Resolve",
     "substancepainter": "Substance Painter",
+    "terminal": "Terminal",
     "tvpaint": "TVPaint",
     "unreal": "Unreal Editor",
     "wrap": "Wrap",
