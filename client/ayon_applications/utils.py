@@ -438,7 +438,7 @@ def prepare_app_environments(
             environments.append(tool.environment)
             app_and_tool_labels.append(tool.full_name)
 
-    log.debug(
+    log.info(
         "Will add environments for apps and tools: {}".format(
             ", ".join(app_and_tool_labels)
         )
