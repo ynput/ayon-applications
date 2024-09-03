@@ -188,7 +188,7 @@ class ApplicationsLE_0_2:
                 UPDATE attributes SET
                     scope = $1,
                     data = $2
-                WHERE 
+                WHERE
                     name = $3
                 """,
                 apps_scope,
@@ -202,7 +202,7 @@ class ApplicationsLE_0_2:
                 UPDATE attributes SET
                     scope = $1,
                     data = $2
-                WHERE 
+                WHERE
                     name = $3
                 """,
                 tools_scope,
