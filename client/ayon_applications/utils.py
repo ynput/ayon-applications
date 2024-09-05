@@ -735,7 +735,7 @@ def _prepare_last_workfile(data, workdir, addons_manager):
                 workdir, file_template, workdir_data, extensions, True
             )
 
-    if os.path.exists(last_workfile_path):
+    if not os.path.exists(last_workfile_path):
         log.debug((
             "Workfiles for launch context does not exists"
             " yet but path will be set."
