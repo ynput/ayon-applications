@@ -232,7 +232,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             task_name (str): Task name.
 
         """
-        context = ensure_addons_are_process_ready(
+        ensure_addons_are_process_ready(
             addon_name=self.name,
             addon_version=self.version,
             project_name=project_name,
