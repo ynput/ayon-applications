@@ -6,7 +6,10 @@ import tempfile
 
 import ayon_api
 
-from ayon_core.lib import run_ayon_launcher_process
+from ayon_core.lib import (
+    run_ayon_launcher_process,
+    is_headless_mode_enabled,
+)
 from ayon_core.addon import (
     AYONAddon,
     IPluginPaths,
@@ -229,14 +232,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             task_name (str): Task name.
 
         """
-        headless = os.getenv("AYON_HEADLESS_MODE", False)
         context = ensure_addons_are_process_ready(
             addon_name=self.name,
             addon_version=self.version,
             project_name=project_name,
         )
-        if context is not None:
-            headless = context.headless
+        headless = is_headless_mode_enabled()
 
         # TODO handle raise errors
         failed = True
@@ -365,8 +366,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             env = os.environ.copy()
 
         output_dir = os.path.dirname(output_json_path)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
         with open(output_json_path, "w") as file_stream:
             json.dump(env, file_stream, indent=4)
