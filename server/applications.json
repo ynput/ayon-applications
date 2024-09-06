@@ -1029,7 +1029,7 @@
             ]
         },
         "unreal": {
-            "enabled": false,
+            "enabled": true,
             "host_name": "unreal",
             "environment": "{}",
             "variants": [
