@@ -880,40 +880,6 @@
             "environment": "{\n    \"AVALON_AFTEREFFECTS_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
                 {
-                    "name": "2021",
-                    "label": "2021",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Adobe\\Adobe After Effects 2021\\Support Files\\AfterFX.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "2022",
-                    "label": "2022",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Adobe\\Adobe After Effects 2022\\Support Files\\AfterFX.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
-                },
-                {
                     "name": "2023",
                     "label": "2023",
                     "executables": {
