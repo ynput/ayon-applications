@@ -630,23 +630,6 @@
                         "linux": []
                     },
                     "environment": "{}"
-                },
-                {
-                    "name": "16",
-                    "label": "16",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Blackmagic Design\\Fusion 16\\Fusion.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
                 }
             ]
         },
