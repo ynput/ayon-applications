@@ -967,40 +967,6 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "5-0",
-                    "label": "5.0",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Epic Games\\UE_5.0\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "5-1",
-                    "label": "5.1",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Epic Games\\UE_5.1\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
                     "name": "5-2",
                     "label": "5.2",
                     "executables": {
