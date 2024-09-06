@@ -67,27 +67,6 @@
                         "linux": []
                     },
                     "environment": "{\n  \"MAYA_VERSION\": \"2023\"\n}"
-                },
-                {
-                    "name": "2022",
-                    "label": "2022",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Autodesk\\Maya2022\\bin\\maya.exe"
-                        ],
-                        "darwin": [
-                            "/Applications/Autodesk/maya2022/Maya.app"
-                        ],
-                        "linux": [
-                            "/usr/autodesk/maya2022/bin/maya"
-                        ]
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2022\"\n}"
                 }
             ]
         },
