@@ -782,52 +782,6 @@
                         ]
                     },
                     "environment": "{}"
-                },
-                {
-                    "name": "2-90",
-                    "label": "2.90",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Blender Foundation\\Blender 2.90\\blender.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [
-                            "--python-use-system-env"
-                        ],
-                        "darwin": [
-                            "--python-use-system-env"
-                        ],
-                        "linux": [
-                            "--python-use-system-env"
-                        ]
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "2-91",
-                    "label": "2.91",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Blender Foundation\\Blender 2.91\\blender.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [
-                            "--python-use-system-env"
-                        ],
-                        "darwin": [
-                            "--python-use-system-env"
-                        ],
-                        "linux": [
-                            "--python-use-system-env"
-                        ]
-                    },
-                    "environment": "{}"
                 }
             ]
         },
