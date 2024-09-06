@@ -595,7 +595,7 @@
         "fusion": {
             "enabled": true,
             "host_name": "fusion",
-            "environment": "{\n    \"FUSION_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python36\",\n        \"darwin\": \"~/Library/Python/3.6/bin\",\n        \"linux\": \"/opt/Python/3.6/bin\"\n    }\n}",
+            "environment": "{\n    \"FUSION_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python39\",\n        \"darwin\": \"~/Library/Python/3.9/bin\",\n        \"linux\": \"/opt/Python/3.9/bin\"\n    }\n}",
             "variants": [
                 {
                     "name": "18",
@@ -653,7 +653,7 @@
         "resolve": {
             "enabled": true,
             "host_name": "resolve",
-            "environment": "{\n    \"RESOLVE_UTILITY_SCRIPTS_SOURCE_DIR\": [],\n    \"RESOLVE_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python36\",\n        \"darwin\": \"~/Library/Python/3.6/bin\",\n        \"linux\": \"/opt/Python/3.6/bin\"\n    }\n}",
+            "environment": "{\n    \"RESOLVE_UTILITY_SCRIPTS_SOURCE_DIR\": [],\n    \"RESOLVE_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python39\",\n        \"darwin\": \"~/Library/Python/3.9/bin\",\n        \"linux\": \"/opt/Python/3.9/bin\"\n    }\n}",
             "variants": [
                 {
                     "name": "stable",
