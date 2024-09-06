@@ -691,6 +691,23 @@
                         "linux": []
                     },
                     "environment": "{}"
+                },
+                {
+                    "name": "20-5",
+                    "label": "20.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Side Effects Software\\Houdini 20.5.332\\bin\\houdini.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
                 }
             ]
         },
