@@ -866,7 +866,9 @@
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2023\\Photoshop.exe"
                         ],
-                        "darwin": [],
+                        "darwin": [
+                            "/Applications/Adobe Photoshop 2023/Adobe Photoshop 2023.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
@@ -883,7 +885,28 @@
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2024\\Photoshop.exe"
                         ],
+                        "darwin": [
+                            "/Applications/Adobe Photoshop 2024/Adobe Photoshop 2024.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
                         "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2025",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Photoshop 2025\\Photoshop.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Photoshop 2025/Adobe Photoshop 2025.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
