@@ -930,7 +930,9 @@
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2023\\Support Files\\AfterFX.exe"
                         ],
-                        "darwin": [],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2023/Adobe After Effects 2023.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
@@ -947,7 +949,28 @@
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2024\\Support Files\\AfterFX.exe"
                         ],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2024/Adobe After Effects 2024.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
                         "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                },
+                {
+                    "name": "2025",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe After Effects 2025\\Support Files\\AfterFX.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2025/Adobe After Effects 2025.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
