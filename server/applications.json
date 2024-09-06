@@ -1212,8 +1212,12 @@
                     "name": "main",
                     "label": "Main",
                     "executables": {
-                        "windows": ["cmd.exe"],
-                        "darwin": ["Terminal.app"],
+                        "windows": [
+                            "cmd.exe"
+                        ],
+                        "darwin": [
+                            "Terminal.app"
+                        ],
                         "linux": [
                             "gnome-terminal",
                             "x-terminal-emulator",
