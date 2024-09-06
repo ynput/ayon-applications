@@ -23,6 +23,7 @@ Version stored under 'ATTRIBUTES_VERSION_MILESTONE' should be last released
 version that used only old attribute system.
 """
 from typing import Any
+from typing import TYPE_CHECKING
 
 import semver
 
@@ -30,8 +31,19 @@ from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.entities.core import attribute_library
 from ayon_server.lib.postgres import Postgres
 
-from .constants import APP_LABELS_BY_GROUP
+if TYPE_CHECKING:
+    from ayon_server.actions import (
+        ActionExecutor,
+        ExecuteResponseModel,
+        SimpleActionManifest,
+    )
+
+from .constants import LABELS_BY_GROUP_NAME
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
+from .actions import (
+    get_action_manifests,
+    IDENTIFIER_PREFIX,
+)
 
 ATTRIBUTES_VERSION_MILESTONE = (1, 0, 0)
 
@@ -60,6 +72,36 @@ class ApplicationsAddon(BaseServerAddon):
     settings_model = ApplicationsAddonSettings
     # TODO remove this attribute when attributes support is removed
     has_attributes = True
+
+    async def get_simple_actions(
+        self,
+        project_name: str | None = None,
+        variant: str = "production",
+    ) -> list["SimpleActionManifest"]:
+        return await get_action_manifests(
+            self,
+            project_name=project_name,
+            variant=variant,
+        )
+
+    async def execute_action(
+        self,
+        executor: "ActionExecutor",
+    ) -> "ExecuteResponseModel":
+        """Execute an action provided by the addon"""
+        app_name = executor.identifier[len(IDENTIFIER_PREFIX):]
+        context = executor.context
+        project_name = context.project_name
+        task_id = context.entity_ids[0]
+
+        return await executor.get_launcher_action_response(
+            args=[
+                "addon", "applications", "launch-by-id",
+                "--app", app_name,
+                "--project", project_name,
+                "--task-id", task_id,
+            ]
+        )
 
     async def get_default_settings(self):
         return self.get_settings_model()(**DEFAULT_VALUES)
@@ -153,7 +195,7 @@ class ApplicationsAddon(BaseServerAddon):
         for group in groups:
             group_name = group["name"]
             group_label = group.get(
-                "label", APP_LABELS_BY_GROUP.get(group_name)
+                "label", LABELS_BY_GROUP_NAME.get(group_name)
             ) or group_name
             for variant in group["variants"]:
                 variant_name = variant["name"]
