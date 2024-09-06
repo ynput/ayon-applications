@@ -210,7 +210,7 @@
                             "/Applications/Nuke15.0v2/Nuke15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -280,7 +280,7 @@
                             "/Applications/Nuke15.0v2/NukeAssist15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -362,7 +362,7 @@
                             "/Applications/Nuke15.0v2/NukeX15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -444,7 +444,7 @@
                             "/Applications/Nuke15.0v2/NukeStudio15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -526,7 +526,7 @@
                             "/Applications/Nuke15.0v2/Hiero15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
