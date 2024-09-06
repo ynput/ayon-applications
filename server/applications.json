@@ -839,23 +839,6 @@
             "environment": "{\n    \"AVALON_PHOTOSHOP_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
                 {
-                    "name": "2022",
-                    "label": "2022",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Adobe\\Adobe Photoshop 2022\\Photoshop.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
                     "name": "2023",
                     "label": "2023",
                     "executables": {
