@@ -176,7 +176,7 @@
         "nuke": {
             "enabled": true,
             "host_name": "nuke",
-            "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "15-0",
@@ -246,7 +246,7 @@
         "nukeassist": {
             "enabled": true,
             "host_name": "nuke",
-            "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "15-0",
@@ -328,7 +328,7 @@
         "nukex": {
             "enabled": true,
             "host_name": "nuke",
-            "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "15-0",
@@ -1089,7 +1089,7 @@
         "wrap": {
             "enabled": true,
             "host_name": "wrap",
-            "environment": "{\n    \n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2023",
@@ -1105,14 +1105,14 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n   \n}"
+                    "environment": "{}"
                 }
             ]
         },
         "openrv": {
             "enabled": true,
             "host_name": "openrv",
-            "environment": "{\n    \n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "1.0.0",
@@ -1126,14 +1126,14 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n   \n}"
+                    "environment": "{}"
                 }
             ]
         },
         "zbrush": {
             "enabled": true,
             "host_name": "zbrush",
-            "environment": "{\n    \"ZBRUSH_PLUGIN_PATH\": [\n        \"{ZBRUSH_PLUGIN_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/zbrush/api/zscripts\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2024",
