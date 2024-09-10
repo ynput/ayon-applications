@@ -67,27 +67,6 @@
                         "linux": []
                     },
                     "environment": "{\n  \"MAYA_VERSION\": \"2023\"\n}"
-                },
-                {
-                    "name": "2022",
-                    "label": "2022",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Autodesk\\Maya2022\\bin\\maya.exe"
-                        ],
-                        "darwin": [
-                            "/Applications/Autodesk/maya2022/Maya.app"
-                        ],
-                        "linux": [
-                            "/usr/autodesk/maya2022/bin/maya"
-                        ]
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{\n  \"MAYA_VERSION\": \"2022\"\n}"
                 }
             ]
         },
@@ -172,13 +151,32 @@
                         "linux": []
                     },
                     "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021.1/bin/python2.7\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021.1/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021.1\"\n}"
+                },
+                {
+                    "name": "2024-2",
+                    "label": "2024.2",
+                    "executables": {
+                        "windows": [],
+                        "darwin": [
+                            "/opt/Autodesk/flame_2024.2/bin/flame.app"
+                        ],
+                        "linux": [
+                            "/opt/Autodesk/flame_2024.2/bin/flame"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2024.2/bin/python3.10\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2024.2/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2024.2\"\n}"
                 }
             ]
         },
         "nuke": {
             "enabled": true,
             "host_name": "nuke",
-            "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "15-0",
@@ -191,7 +189,7 @@
                             "/Applications/Nuke15.0v2/Nuke15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -248,7 +246,7 @@
         "nukeassist": {
             "enabled": true,
             "host_name": "nuke",
-            "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "15-0",
@@ -261,7 +259,7 @@
                             "/Applications/Nuke15.0v2/NukeAssist15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -330,7 +328,7 @@
         "nukex": {
             "enabled": true,
             "host_name": "nuke",
-            "environment": "{\n    \"NUKE_PATH\": [\n        \"{NUKE_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/nuke\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "15-0",
@@ -343,7 +341,7 @@
                             "/Applications/Nuke15.0v2/NukeX15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -425,7 +423,7 @@
                             "/Applications/Nuke15.0v2/NukeStudio15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -507,7 +505,7 @@
                             "/Applications/Nuke15.0v2/Hiero15.0v2.app"
                         ],
                         "linux": [
-                            "/usr/local/Nuke5.0v2/Nuke15.0"
+                            "/usr/local/Nuke15.0v2/Nuke15.0"
                         ]
                     },
                     "arguments": {
@@ -576,7 +574,7 @@
         "fusion": {
             "enabled": true,
             "host_name": "fusion",
-            "environment": "{\n    \"FUSION_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python36\",\n        \"darwin\": \"~/Library/Python/3.6/bin\",\n        \"linux\": \"/opt/Python/3.6/bin\"\n    }\n}",
+            "environment": "{\n    \"FUSION_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python39\",\n        \"darwin\": \"~/Library/Python/3.9/bin\",\n        \"linux\": \"/opt/Python/3.9/bin\"\n    }\n}",
             "variants": [
                 {
                     "name": "18",
@@ -611,30 +609,13 @@
                         "linux": []
                     },
                     "environment": "{}"
-                },
-                {
-                    "name": "16",
-                    "label": "16",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Blackmagic Design\\Fusion 16\\Fusion.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
                 }
             ]
         },
         "resolve": {
             "enabled": true,
             "host_name": "resolve",
-            "environment": "{\n    \"RESOLVE_UTILITY_SCRIPTS_SOURCE_DIR\": [],\n    \"RESOLVE_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python36\",\n        \"darwin\": \"~/Library/Python/3.6/bin\",\n        \"linux\": \"/opt/Python/3.6/bin\"\n    }\n}",
+            "environment": "{\n    \"RESOLVE_UTILITY_SCRIPTS_SOURCE_DIR\": [],\n    \"RESOLVE_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python39\",\n        \"darwin\": \"~/Library/Python/3.9/bin\",\n        \"linux\": \"/opt/Python/3.9/bin\"\n    }\n}",
             "variants": [
                 {
                     "name": "stable",
@@ -710,6 +691,23 @@
                         "linux": []
                     },
                     "environment": "{}"
+                },
+                {
+                    "name": "20-5",
+                    "label": "20.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Side Effects Software\\Houdini 20.5.332\\bin\\houdini.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
                 }
             ]
         },
@@ -719,36 +717,15 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "4-2",
-                    "label": "4.2 LTS",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [
-                            "--python-use-system-env"
-                        ],
-                        "darwin": [
-                            "--python-use-system-env"
-                        ],
-                        "linux": [
-                            "--python-use-system-env"
-                        ]
-                    },
-                    "environment": "{}"
-                },
-                {
                     "name": "3-6-5",
                     "label": "3.6.5 LTS",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blender Foundation\\Blender 3.6\\blender.exe"
                         ],
-                        "darwin": [],
+                        "darwin": [
+                            "/Applications/Blender.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
@@ -765,37 +742,16 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "2-90",
-                    "label": "2.90",
+                    "name": "4-2",
+                    "label": "4.2 LTS",
                     "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Blender Foundation\\Blender 2.90\\blender.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [
-                            "--python-use-system-env"
-                        ],
+                        "linux": [],
                         "darwin": [
-                            "--python-use-system-env"
+                            "/Applications/Blender.app"
                         ],
-                        "linux": [
-                            "--python-use-system-env"
-                        ]
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "2-91",
-                    "label": "2.91",
-                    "executables": {
                         "windows": [
-                            "C:\\Program Files\\Blender Foundation\\Blender 2.91\\blender.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
+                            "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe"
+                        ]
                     },
                     "arguments": {
                         "windows": [
@@ -845,44 +801,6 @@
                         ],
                         "darwin": [
                             "/Applications/Toon Boom Harmony 21 Premium/Harmony Premium.app/Contents/MacOS/Harmony Premium"
-                        ],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "20",
-                    "label": "20",
-                    "executables": {
-                        "windows": [
-                            "c:\\Program Files (x86)\\Toon Boom Animation\\Toon Boom Harmony 20 Premium\\win64\\bin\\HarmonyPremium.exe"
-                        ],
-                        "darwin": [
-                            "/Applications/Toon Boom Harmony 20 Premium/Harmony Premium.app/Contents/MacOS/Harmony Premium"
-                        ],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "17",
-                    "label": "17",
-                    "executables": {
-                        "windows": [
-                            "c:\\Program Files (x86)\\Toon Boom Animation\\Toon Boom Harmony 17 Premium\\win64\\bin\\HarmonyPremium.exe"
-                        ],
-                        "darwin": [
-                            "/Applications/Toon Boom Harmony 17 Premium/Harmony Premium.app/Contents/MacOS/Harmony Premium"
                         ],
                         "linux": []
                     },
@@ -942,30 +860,15 @@
             "environment": "{\n    \"AVALON_PHOTOSHOP_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
                 {
-                    "name": "2022",
-                    "label": "2022",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Adobe\\Adobe Photoshop 2022\\Photoshop.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
                     "name": "2023",
                     "label": "2023",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2023\\Photoshop.exe"
                         ],
-                        "darwin": [],
+                        "darwin": [
+                            "/Applications/Adobe Photoshop 2023/Adobe Photoshop 2023.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
@@ -982,7 +885,28 @@
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2024\\Photoshop.exe"
                         ],
+                        "darwin": [
+                            "/Applications/Adobe Photoshop 2024/Adobe Photoshop 2024.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
                         "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2025",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Photoshop 2025\\Photoshop.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Photoshop 2025/Adobe Photoshop 2025.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
@@ -1000,47 +924,15 @@
             "environment": "{\n    \"AVALON_AFTEREFFECTS_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
                 {
-                    "name": "2021",
-                    "label": "2021",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Adobe\\Adobe After Effects 2021\\Support Files\\AfterFX.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "2022",
-                    "label": "2022",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Adobe\\Adobe After Effects 2022\\Support Files\\AfterFX.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
-                },
-                {
                     "name": "2023",
                     "label": "2023",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2023\\Support Files\\AfterFX.exe"
                         ],
-                        "darwin": [],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2023/Adobe After Effects 2023.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
@@ -1057,7 +949,28 @@
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2024\\Support Files\\AfterFX.exe"
                         ],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2024/Adobe After Effects 2024.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
                         "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                },
+                {
+                    "name": "2025",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe After Effects 2025\\Support Files\\AfterFX.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2025/Adobe After Effects 2025.app"
+                        ],
                         "linux": []
                     },
                     "arguments": {
@@ -1116,36 +1029,10 @@
             ]
         },
         "unreal": {
-            "enabled": false,
+            "enabled": true,
             "host_name": "unreal",
             "environment": "{}",
             "variants": [
-                {
-                    "name": "5-0",
-                    "label": "5.0",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Epic Games\\UE_5.0\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {},
-                    "environment": "{}"
-                },
-                {
-                    "name": "5-1",
-                    "label": "5.1",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Epic Games\\UE_5.1\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
-                        ],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "arguments": {},
-                    "environment": "{}"
-                },
                 {
                     "name": "5-2",
                     "label": "5.2",
@@ -1156,7 +1043,45 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "arguments": {},
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "5-3",
+                    "label": "5.3",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Epic Games\\UE_5.3\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "5-4",
+                    "label": "5.4",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Epic Games\\UE_5.4\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
                     "environment": "{}"
                 }
             ]
@@ -1164,7 +1089,7 @@
         "wrap": {
             "enabled": true,
             "host_name": "wrap",
-            "environment": "{\n    \n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2023",
@@ -1180,14 +1105,14 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n   \n}"
+                    "environment": "{}"
                 }
             ]
         },
         "openrv": {
             "enabled": true,
             "host_name": "openrv",
-            "environment": "{\n    \n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "1.0.0",
@@ -1201,14 +1126,14 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n   \n}"
+                    "environment": "{}"
                 }
             ]
         },
         "zbrush": {
             "enabled": true,
             "host_name": "zbrush",
-            "environment": "{\n    \"ZBRUSH_PLUGIN_PATH\": [\n        \"{ZBRUSH_PLUGIN_PATH}\",\n        \"{OPENPYPE_STUDIO_PLUGINS}/zbrush/api/zscripts\"\n    ]\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2024",
@@ -1287,8 +1212,12 @@
                     "name": "main",
                     "label": "Main",
                     "executables": {
-                        "windows": ["cmd.exe"],
-                        "darwin": ["Terminal.app"],
+                        "windows": [
+                            "cmd.exe"
+                        ],
+                        "darwin": [
+                            "Terminal.app"
+                        ],
                         "linux": [
                             "gnome-terminal",
                             "x-terminal-emulator",
