@@ -1,14 +1,32 @@
 import os
+import sys
 import json
+import traceback
+import tempfile
 
 import ayon_api
 
-from ayon_core.addon import AYONAddon, IPluginPaths, click_wrap
+from ayon_core.lib import (
+    run_ayon_launcher_process,
+    is_headless_mode_enabled,
+)
+from ayon_core.addon import (
+    AYONAddon,
+    IPluginPaths,
+    click_wrap,
+    ensure_addons_are_process_ready,
+)
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
 from .defs import LaunchTypes
 from .manager import ApplicationManager
+from .exceptions import (
+    ApplicationLaunchFailed,
+    ApplicationExecutableNotFound,
+    ApplicationNotFound,
+)
+from .utils import get_app_icon_path
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths):
@@ -108,11 +126,16 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         return ApplicationManager(settings)
 
     def get_plugin_paths(self):
+        plugins_dir = os.path.join(APPLICATIONS_ADDON_ROOT, "plugins")
         return {
-            "publish": [
-                os.path.join(APPLICATIONS_ADDON_ROOT, "plugins", "publish")
-            ]
+            "actions": [os.path.join(plugins_dir, "launcher_actions")],
+            "publish": [os.path.join(plugins_dir, "publish")]
         }
+
+    def get_launch_hook_paths(self, app):
+        return [
+            os.path.join(APPLICATIONS_ADDON_ROOT, "hooks")
+        ]
 
     def get_app_icon_path(self, icon_filename):
         """Get icon path.
@@ -124,13 +147,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             Union[str, None]: Icon path or None if not found.
 
         """
-        if not icon_filename:
-            return None
-        icon_name = os.path.basename(icon_filename)
-        path = os.path.join(APPLICATIONS_ADDON_ROOT, "icons", icon_name)
-        if os.path.exists(path):
-            return path
-        return None
+        return get_app_icon_path(icon_filename)
 
     def get_app_icon_url(self, icon_filename, server=False):
         """Get icon path.
@@ -215,13 +232,49 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             task_name (str): Task name.
 
         """
-        app_manager = self.get_applications_manager()
-        return app_manager.launch(
-            app_name,
+        ensure_addons_are_process_ready(
+            addon_name=self.name,
+            addon_version=self.version,
             project_name=project_name,
-            folder_path=folder_path,
-            task_name=task_name,
         )
+        headless = is_headless_mode_enabled()
+
+        # TODO handle raise errors
+        failed = True
+        message = None
+        detail = None
+        try:
+            app_manager = self.get_applications_manager()
+            app_manager.launch(
+                app_name,
+                project_name=project_name,
+                folder_path=folder_path,
+                task_name=task_name,
+            )
+            failed = False
+
+        except (
+            ApplicationLaunchFailed,
+            ApplicationExecutableNotFound,
+            ApplicationNotFound,
+        ) as exc:
+            message = str(exc)
+            self.log.warning(f"Application launch failed: {message}")
+
+        except Exception as exc:
+            message = "An unexpected error happened"
+            detail = "".join(traceback.format_exception(*sys.exc_info()))
+            self.log.warning(
+                f"Application launch failed: {str(exc)}",
+                exc_info=True
+            )
+
+        if not failed:
+            return
+
+        if not headless:
+            self._show_launch_error_dialog(message, detail)
+        sys.exit(1)
 
     def webserver_initialization(self, manager):
         """Initialize webserver.
@@ -252,7 +305,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--project", help="Project name", default=None)
             .option("--folder", help="Folder path", default=None)
             .option("--task", help="Task name", default=None)
-            .option("--app", help="Application name", default=None)
+            .option("--app", help="Full application name", default=None)
             .option(
                 "--envgroup",
                 help="Environment group (e.g. \"farm\")",
@@ -261,14 +314,25 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         )
         (
             main_group.command(
-                self._cli_launch_applications,
+                self._cli_launch_context_names,
                 name="launch",
                 help="Launch application"
             )
-            .option("--app", required=True, help="Application name")
+            .option("--app", required=True, help="Full application name")
             .option("--project", required=True, help="Project name")
             .option("--folder", required=True, help="Folder path")
             .option("--task", required=True, help="Task name")
+        )
+        # Convert main command to click object and add it to parent group
+        (
+            main_group.command(
+                self._cli_launch_with_task_id,
+                name="launch-by-id",
+                help="Launch application"
+            )
+            .option("--app", required=True, help="Full application name")
+            .option("--project", required=True, help="Project name")
+            .option("--task-id", required=True, help="Task id")
         )
         # Convert main command to click object and add it to parent group
         addon_click_group.add_command(
@@ -302,13 +366,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             env = os.environ.copy()
 
         output_dir = os.path.dirname(output_json_path)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
         with open(output_json_path, "w") as file_stream:
             json.dump(env, file_stream, indent=4)
 
-    def _cli_launch_applications(self, project, folder, task, app):
+    def _cli_launch_context_names(self, project, folder, task, app):
         """Launch application.
 
         Args:
@@ -319,3 +382,46 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
 
         """
         self.launch_application(app, project, folder, task)
+
+
+    def _cli_launch_with_task_id(self, project, task_id, app):
+        """Launch application.
+
+        Args:
+            project (str): Project name.
+            task_id (str): Task id.
+            app (str): Full application name e.g. 'maya/2024'.
+
+        """
+        task_entity = ayon_api.get_task_by_id(
+            project, task_id, fields={"name", "folderId"}
+        )
+        folder_entity = ayon_api.get_folder_by_id(
+            project, task_entity["folderId"], fields={"path"}
+        )
+        self.launch_application(
+            app, project, folder_entity["path"], task_entity["name"]
+        )
+
+    def _show_launch_error_dialog(self, message, detail):
+        script_path = os.path.join(
+            APPLICATIONS_ADDON_ROOT, "ui", "launch_failed_dialog.py"
+        )
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp_path = tmp.name
+            json.dump(
+                {"message": message, "detail": detail},
+                tmp.file
+            )
+
+        try:
+            run_ayon_launcher_process(
+                "--skip-bootstrap",
+                script_path,
+                tmp_path,
+                add_sys_paths=True,
+                creationflags=0,
+            )
+
+        finally:
+            os.remove(tmp_path)

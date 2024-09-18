@@ -1,7 +1,10 @@
 import copy
 
 from ayon_core import resources
-from ayon_core.lib import Logger, NestedCacheItem
+from ayon_core.lib import (
+    Logger,
+    NestedCacheItem,
+)
 from ayon_core.settings import get_studio_settings, get_project_settings
 from ayon_core.pipeline.actions import LauncherAction
 
@@ -132,3 +135,17 @@ class ApplicationAction(LauncherAction):
             msg = str(exc)
             self.log.warning(msg, exc_info=True)
             self._show_message_box("Application launch failed", msg)
+
+    # TODO use subprocess
+    # - Launch using subprocess is slower because of AYON launcher bootstrap
+    #   for now was this functionality postponed, but it means the process
+    #   initialization does not happen.
+    # def launch(self, selection):
+    #     args = get_ayon_launcher_args(
+    #         "addon", "applications", "launch",
+    #         "--project", selection.project_name,
+    #         "--folder", selection.folder_path,
+    #         "--task", selection.task_name,
+    #         "--app", self.application.full_name
+    #     )
+    #     run_detached_process(args)
