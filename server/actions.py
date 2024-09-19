@@ -118,9 +118,8 @@ async def get_action_manifests(addon, project_name, variant):
             allowed_apps = list(profile["applications"])
 
         if not profile["task_types"]:
-            if generic_apps is not None:
-                continue
-            generic_apps = allowed_apps
+            if generic_apps is None:
+                generic_apps = allowed_apps
             continue
 
         task_types = set(profile["task_types"]) - used_task_types
@@ -137,7 +136,7 @@ async def get_action_manifests(addon, project_name, variant):
         for task_type in project_entity.task_types
     }
     generic_task_types = project_task_types - used_task_types
-    if generic_task_types:
+    if generic_task_types and generic_apps:
         for app_name in generic_apps:
             task_types_by_app_name[app_name] |= generic_task_types
 
