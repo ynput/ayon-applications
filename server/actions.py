@@ -87,6 +87,8 @@ async def get_action_manifests(addon, project_name, variant):
     app_settings = addon_settings["applications"]
     app_groups = app_settings.pop("additional_apps")
     for group_name, value in app_settings.items():
+        if not value["enabled"]:
+            continue
         value["name"] = group_name
         app_groups.append(value)
 
