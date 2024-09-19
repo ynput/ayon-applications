@@ -62,7 +62,6 @@ async def applications_enum(
     apps_fields = apps_settings.__fields__
     apps_groups = set(apps_fields.keys())
     apps_groups.discard("additional_apps")
-    # apps_dict.update(apps_settings.additional_apps.dict().items())
     all_variants_by_group_label = {}
     for group_name in apps_groups:
         app_group = getattr(apps_settings, group_name)
@@ -79,13 +78,13 @@ async def applications_enum(
         group_label = app_field.field_info.title
 
         app_variants = list(app_group.variants)
-        app_variants.sort(key=lambda x: x.label, reverse=True)
+        app_variants.sort(key=lambda x: x.label or x.name, reverse=True)
         enum_variants = all_variants_by_group_label.setdefault(
             group_label, []
         )
         enum_variants.extend([
             {
-                "label": f"{group_label} {variant.label}",
+                "label": f"{group_label} {variant.label or variant.name}",
                 "value": f"{group_name}/{variant.name}",
             }
             for variant in app_variants
@@ -104,13 +103,13 @@ async def applications_enum(
         if not group_label:
             group_label = group_name
 
-        app_variants.sort(key=lambda x: x.label, reverse=True)
+        app_variants.sort(key=lambda x: x.label or x.name, reverse=True)
         enum_variants = all_variants_by_group_label.setdefault(
             group_label, []
         )
         enum_variants.extend([
             {
-                "label": f"{group_label} {variant.label}",
+                "label": f"{group_label} {variant.label or variant.name}",
                 "value": f"{group_name}/{variant.name}",
             }
             for variant in app_variants
@@ -136,11 +135,11 @@ async def tools_enum(
 
     enum_variants = []
     for tool_group in settings.tool_groups:
-        group_label = tool_group.label
         group_name = tool_group.name
+        group_label = tool_group.label or group_name
         enum_variants.extend([
             {
-                "label": f"{group_label} {variant.label}",
+                "label": f"{group_label} {variant.label or variant.name}",
                 "value": f"{group_name}/{variant.name}",
             }
             for variant in tool_group.variants
