@@ -7,7 +7,7 @@
             "variants": [
                 {
                     "name": "2025",
-                    "label": "2025",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2025\\bin\\maya.exe"
@@ -28,7 +28,7 @@
                 },
                 {
                     "name": "2024",
-                    "label": "2024",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2024\\bin\\maya.exe"
@@ -49,7 +49,7 @@
                 },
                 {
                     "name": "2023",
-                    "label": "2023",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2023\\bin\\maya.exe"
@@ -116,7 +116,7 @@
             "variants": [
                 {
                     "name": "2021",
-                    "label": "2021",
+                    "label": "",
                     "executables": {
                         "windows": [],
                         "darwin": [
@@ -578,7 +578,7 @@
             "variants": [
                 {
                     "name": "18",
-                    "label": "18",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blackmagic Design\\Fusion 18\\Fusion.exe"
@@ -595,7 +595,7 @@
                 },
                 {
                     "name": "17",
-                    "label": "17",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blackmagic Design\\Fusion 17\\Fusion.exe"
@@ -619,7 +619,7 @@
             "variants": [
                 {
                     "name": "stable",
-                    "label": "stable",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:/Program Files/Blackmagic Design/DaVinci Resolve/Resolve.exe"
@@ -775,7 +775,7 @@
             "variants": [
                 {
                     "name": "22",
-                    "label": "22",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "c:\\Program Files (x86)\\Toon Boom Animation\\Toon Boom Harmony 22 Premium\\win64\\bin\\HarmonyPremium.exe"
@@ -794,7 +794,7 @@
                 },
                 {
                     "name": "21",
-                    "label": "21",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "c:\\Program Files (x86)\\Toon Boom Animation\\Toon Boom Harmony 21 Premium\\win64\\bin\\HarmonyPremium.exe"
@@ -861,7 +861,7 @@
             "variants": [
                 {
                     "name": "2023",
-                    "label": "2023",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2023\\Photoshop.exe"
@@ -880,7 +880,7 @@
                 },
                 {
                     "name": "2024",
-                    "label": "2024",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2024\\Photoshop.exe"
@@ -925,7 +925,7 @@
             "variants": [
                 {
                     "name": "2023",
-                    "label": "2023",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2023\\Support Files\\AfterFX.exe"
@@ -944,7 +944,7 @@
                 },
                 {
                     "name": "2024",
-                    "label": "2024",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2024\\Support Files\\AfterFX.exe"
@@ -989,7 +989,7 @@
             "variants": [
                 {
                     "name": "local",
-                    "label": "local",
+                    "label": "",
                     "executables": {
                         "windows": [],
                         "darwin": [],
@@ -1179,7 +1179,7 @@
             "variants": [
                 {
                     "name": "2025",
-                    "label": "2025",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\MotionBuilder 2025\\bin\\x64\\motionbuilder.exe"
@@ -1191,7 +1191,7 @@
                 },
                 {
                     "name": "2024",
-                    "label": "2024",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\MotionBuilder 2024\\bin\\x64\\motionbuilder.exe"
