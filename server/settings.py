@@ -79,13 +79,13 @@ async def applications_enum(
         group_label = app_field.field_info.title
 
         app_variants = list(app_group.variants)
-        app_variants.sort(key=lambda x: x.label, reverse=True)
+        app_variants.sort(key=lambda x: x.label or x.name, reverse=True)
         enum_variants = all_variants_by_group_label.setdefault(
             group_label, []
         )
         enum_variants.extend([
             {
-                "label": f"{group_label} {variant.label}",
+                "label": f"{group_label} {variant.label or variant.name}",
                 "value": f"{group_name}/{variant.name}",
             }
             for variant in app_variants
@@ -104,13 +104,13 @@ async def applications_enum(
         if not group_label:
             group_label = group_name
 
-        app_variants.sort(key=lambda x: x.label, reverse=True)
+        app_variants.sort(key=lambda x: x.label or x.name, reverse=True)
         enum_variants = all_variants_by_group_label.setdefault(
             group_label, []
         )
         enum_variants.extend([
             {
-                "label": f"{group_label} {variant.label}",
+                "label": f"{group_label} {variant.label or variant.name}",
                 "value": f"{group_name}/{variant.name}",
             }
             for variant in app_variants
