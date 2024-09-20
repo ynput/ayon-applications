@@ -121,7 +121,7 @@
                     "name": "6.10.01",
                     "label": "",
                     "host_names": [
-                        ""
+                        "maya"
                     ],
                     "environment": "{\n    \"VRAY_VERSION\": \"6.10.01\"\n}",
                     "app_variants": []
