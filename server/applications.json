@@ -1203,6 +1203,49 @@
                 }
             ]
         },
+        "cinema4d": {
+            "enabled": true,
+            "host_name": "cinema4d",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2025",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Maxon Cinema 4D 2025\\Cinema 4D.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2024",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Maxon Cinema 4D 2024\\Cinema 4D.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2023",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Maxon Cinema 4D 2023\\Cinema 4D.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "terminal": {
             "enabled": true,
             "host_name": "",
