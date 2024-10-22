@@ -440,12 +440,14 @@ class ApplicationsAddonSettings(BaseSettingsModel):
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Applications Definitions",
+        description="(Legacy) - Show / hide apps based on project's anatomy attributes.",
         scope=["studio"],
         section="Definitions"
     )
     tool_groups: list[ToolGroupModel] = SettingsField(
         default_factory=list,
         title="Tools Definitions",
+        description="Configure your tools / plugins, e.g.renderer, hair addon etc.",
         scope=["studio"]
     )
     project_applications: ProjectApplicationsModel = SettingsField(
