@@ -44,6 +44,7 @@ DEFAULT_APP_GROUPS = {
     "motionbuilder",
     "cinema4d",
     "terminal",
+    "loki"
 }
 
 
@@ -322,6 +323,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Motion Builder")
     cinema4d: AppGroup = SettingsField(
         default_factory=AppGroup, title="Cinema4D")
+    loki: AppGroup = SettingsField(
+        default_factory=AppGroup, title="ShapeFX Loki")
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",
