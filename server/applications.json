@@ -1254,6 +1254,25 @@
                 }
             ]
         },
+        "loki": {
+            "enabled": true,
+            "host_name": "loki",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "1-0-0",
+                    "label": "1.0.0",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\ShapeFX Loki\\loki.bat"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "terminal": {
             "enabled": true,
             "host_name": "",
