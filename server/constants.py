@@ -18,6 +18,7 @@ LABELS_BY_GROUP_NAME = {
     "nukex": "Nuke X",
     "openrv": "OpenRV",
     "photoshop": "Photoshop",
+    "premiere": "Premiere",
     "resolve": "Resolve",
     "substancepainter": "Substance Painter",
     "terminal": "Terminal",
