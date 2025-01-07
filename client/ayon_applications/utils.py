@@ -679,7 +679,7 @@ def _prepare_last_workfile(data, workdir, addons_manager):
         start_last_workfile = should_use_last_workfile_on_launch(
             project_name, app.host_name, task_name, task_type
         )
-    else:
+    elif start_last_workfile is False:
         log.info("Opening of last workfile was disabled by user")
 
     data["start_last_workfile"] = start_last_workfile
