@@ -44,6 +44,7 @@ DEFAULT_APP_GROUPS = {
     "equalizer",
     "motionbuilder",
     "cinema4d",
+    "silhouette",
     "terminal",
     "premiere"
 }
@@ -326,6 +327,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Motion Builder")
     cinema4d: AppGroup = SettingsField(
         default_factory=AppGroup, title="Cinema4D")
+    silhouette: AppGroup = SettingsField(
+        default_factory=AppGroup, title="BorisFX Silhouette")
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",
