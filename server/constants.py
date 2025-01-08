@@ -26,6 +26,7 @@ LABELS_BY_GROUP_NAME = {
     "unreal": "Unreal Editor",
     "wrap": "Wrap",
     "zbrush": "Zbrush",
+    "mochapro": "Mocha Pro",
 }
 ICONS_BY_GROUP_NAME = {
     "adsk_3dsmax": "3dsmax.png",
@@ -53,4 +54,5 @@ ICONS_BY_GROUP_NAME = {
     "unreal": "ue4.png",
     "wrap": "wrap.png",
     "zbrush": "zbrush.png",
+    "mochapro": "mocha-pro.png",
 }

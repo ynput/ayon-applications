@@ -45,7 +45,8 @@ DEFAULT_APP_GROUPS = {
     "motionbuilder",
     "cinema4d",
     "terminal",
-    "premiere"
+    "premiere",
+    "mochapro",
 }
 
 
@@ -326,6 +327,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Motion Builder")
     cinema4d: AppGroup = SettingsField(
         default_factory=AppGroup, title="Cinema4D")
+    mochapro: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Mocha Pro")
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",

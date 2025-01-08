@@ -1358,6 +1358,64 @@
                 }
             ]
         },
+        "mochapro": {
+            "enabled": true,
+            "host_name": "mochapro",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "12-0-0",
+                    "label": "Mocha Pro 2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Boris FX\\Mocha Pro 2025\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "11-5-0",
+                    "label": "Mocha Pro 2024.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Boris FX\\Mocha Pro 2024.5\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "8-0-0",
+                    "label": "Mocha Pro 2021",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Boris FX\\Mocha Pro 2021\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "additional_apps": []
     }
 }
