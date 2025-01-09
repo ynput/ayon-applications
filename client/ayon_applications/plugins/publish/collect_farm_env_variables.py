@@ -10,7 +10,7 @@ except ImportError:
 
 
 class CollectApplicationsJobEnvVars(pyblish.api.ContextPlugin):
-    """Collect set of environment variables to submit with deadline jobs"""
+    """Collect set of environment variables for farm jobs"""
     order = pyblish.api.CollectorOrder - 0.45
     label = "Collect Applications farm environment variables"
     targets = ["local"]
