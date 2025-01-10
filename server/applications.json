@@ -1365,7 +1365,7 @@
             "variants": [
                 {
                     "name": "12-0-0",
-                    "label": "Mocha Pro 2025",
+                    "label": "2025",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2025\\bin\\mochapro.exe"
@@ -1382,7 +1382,7 @@
                 },
                 {
                     "name": "11-5-0",
-                    "label": "Mocha Pro 2024.5",
+                    "label": "2024.5",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2024.5\\bin\\mochapro.exe"
@@ -1399,7 +1399,7 @@
                 },
                 {
                     "name": "8-0-0",
-                    "label": "Mocha Pro 2021",
+                    "label": "2021",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2021\\bin\\mochapro.exe"
