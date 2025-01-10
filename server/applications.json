@@ -1368,7 +1368,7 @@
                     "label": "Mocha Pro 2025",
                     "executables": {
                         "windows": [
-                            "C:\\Program Files\\Boris FX\\Mocha Pro 2025\\mochapro.exe"
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2025\\bin\\mochapro.exe"
                         ],
                         "darwin": [],
                         "linux": []
@@ -1385,7 +1385,7 @@
                     "label": "Mocha Pro 2024.5",
                     "executables": {
                         "windows": [
-                            "C:\\Program Files\\Boris FX\\Mocha Pro 2024.5\\mochapro.exe"
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2024.5\\bin\\mochapro.exe"
                         ],
                         "darwin": [],
                         "linux": []
@@ -1402,7 +1402,7 @@
                     "label": "Mocha Pro 2021",
                     "executables": {
                         "windows": [
-                            "C:\\Program Files\\Boris FX\\Mocha Pro 2021\\mochapro.exe"
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2021\\bin\\mochapro.exe"
                         ],
                         "darwin": [],
                         "linux": []

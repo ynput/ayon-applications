@@ -54,5 +54,5 @@ ICONS_BY_GROUP_NAME = {
     "unreal": "ue4.png",
     "wrap": "wrap.png",
     "zbrush": "zbrush.png",
-    "mochapro": "mocha-pro.png",
+    "mochapro": "mochapro.png",
 }
