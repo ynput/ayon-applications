@@ -173,6 +173,23 @@
                 }
             ]
         },
+        "gaffer": {
+            "enabled": true,
+            "host_name": "gaffer",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "1.5.2",
+                    "label": "1.5.2",
+                    "executables": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "nuke": {
             "enabled": true,
             "host_name": "nuke",
