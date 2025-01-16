@@ -990,6 +990,70 @@
                 }
             ]
         },
+        "premiere": {
+            "enabled": true,
+            "host_name": "premiere",
+            "environment": "{\n    \"AYON_PREMIERE_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
+            "variants": [
+                {
+                    "name": "2023",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2023\\Adobe Premiere Pro.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Premiere Pro 2023/Adobe Premiere Pro.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                },
+                {
+                    "name": "2024",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2024\\Adobe Premiere Pro.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Premiere Pro 2024/Adobe Premiere Pro.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                },
+                {
+                    "name": "2025",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2025\\Adobe Premiere Pro.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Premiere Pro 2025/Adobe Premiere Pro.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                }
+            ]
+        },
         "celaction": {
             "enabled": true,
             "host_name": "celaction",
