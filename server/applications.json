@@ -182,9 +182,9 @@
                     "name": "1.5.2",
                     "label": "1.5.2",
                     "executables": {
-                        "windows": [],
+                        "windows": ["C:\\software\\gaffer-1.5.2.0-windows\\bin\\gaffer.cmd"],
                         "darwin": [],
-                        "linux": []
+                        "linux": ["/opt/gaffer-1.5.2.0-linux/bin/gaffer"]
                     },
                     "environment": "{}"
                 }
