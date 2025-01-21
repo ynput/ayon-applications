@@ -1318,6 +1318,25 @@
                 }
             ]
         },
+        "silhouette": {
+            "enabled": true,
+            "host_name": "silhouette",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2024-5",
+                    "label": "2024.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Silhouette 2024.5\\Silhouette.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "terminal": {
             "enabled": true,
             "host_name": "",
