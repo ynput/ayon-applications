@@ -1100,6 +1100,30 @@
                 }
             ]
         },
+        "substancedesigner": {
+            "enabled": true,
+            "host_name": "substancedesigner",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2025",
+                    "label": "2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Substance 3D Designer\\Adobe Substance 3D Designer.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "unreal": {
             "enabled": true,
             "host_name": "unreal",
