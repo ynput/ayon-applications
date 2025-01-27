@@ -37,6 +37,7 @@ DEFAULT_APP_GROUPS = {
     "premiere",
     "celaction",
     "substancepainter",
+    "substancedesigner",
     "unreal",
     "wrap",
     "openrv",
@@ -44,6 +45,7 @@ DEFAULT_APP_GROUPS = {
     "equalizer",
     "motionbuilder",
     "cinema4d",
+    "silhouette",
     "terminal",
     "premiere",
     "mochapro",
@@ -313,6 +315,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Celaction 2D")
     substancepainter: AppGroup = SettingsField(
         default_factory=AppGroup, title="Substance Painter")
+    substancedesigner: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Substance Designer")
     unreal: AppGroup = SettingsField(
         default_factory=AppGroup, title="Unreal Editor")
     wrap: AppGroup = SettingsField(
@@ -329,6 +333,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Cinema4D")
     mochapro: AppGroup = SettingsField(
         default_factory=AppGroup, title="Mocha Pro")
+    silhouette: AppGroup = SettingsField(
+        default_factory=AppGroup, title="BorisFX Silhouette")
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",
