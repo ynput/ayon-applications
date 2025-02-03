@@ -73,7 +73,7 @@
         "adsk_3dsmax": {
             "enabled": true,
             "host_name": "max",
-            "environment": "",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2024",
