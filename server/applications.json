@@ -73,7 +73,7 @@
         "adsk_3dsmax": {
             "enabled": true,
             "host_name": "max",
-            "environment": "{\n    \"ADSK_3DSMAX_STARTUPSCRIPTS_ADDON_DIR\": \"{OPENPYPE_ROOT}/openpype/hosts/max/startup\"\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2024",
