@@ -4,7 +4,6 @@ import json
 import platform
 import collections
 
-import six
 import acre
 import ayon_api
 
@@ -113,7 +112,7 @@ def parse_environments(env_data, env_group=None, platform_name=None):
             value = os.pathsep.join(value)
 
         # Set key to output if value is string
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             output[key] = value
     return output
 
