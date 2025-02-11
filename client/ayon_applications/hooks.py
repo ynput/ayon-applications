@@ -1,15 +1,12 @@
 import platform
-from abc import ABCMeta, abstractmethod
-
-import six
+from abc import ABC, abstractmethod
 
 from ayon_core.lib import Logger
 
 from .defs import LaunchTypes
 
 
-@six.add_metaclass(ABCMeta)
-class LaunchHook:
+class LaunchHook(ABC):
     """Abstract base class of launch hook."""
     # Order of prelaunch hook, will be executed as last if set to None.
     order = None
