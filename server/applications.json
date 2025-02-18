@@ -73,7 +73,7 @@
         "adsk_3dsmax": {
             "enabled": true,
             "host_name": "max",
-            "environment": "{\n    \"ADSK_3DSMAX_STARTUPSCRIPTS_ADDON_DIR\": \"{OPENPYPE_ROOT}/openpype/hosts/max/startup\"\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2024",
@@ -1117,6 +1117,30 @@
                 }
             ]
         },
+        "substancedesigner": {
+            "enabled": true,
+            "host_name": "substancedesigner",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2025",
+                    "label": "2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Substance 3D Designer\\Adobe Substance 3D Designer.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "unreal": {
             "enabled": true,
             "host_name": "unreal",
@@ -1335,6 +1359,25 @@
                 }
             ]
         },
+        "silhouette": {
+            "enabled": true,
+            "host_name": "silhouette",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2024-5",
+                    "label": "2024.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Silhouette 2024.5\\Silhouette.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "terminal": {
             "enabled": true,
             "host_name": "",
@@ -1365,6 +1408,64 @@
                             "urxvt",
                             "xterm"
                         ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
+        "mochapro": {
+            "enabled": true,
+            "host_name": "mochapro",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "12-0-0",
+                    "label": "2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2025\\bin\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "11-5-0",
+                    "label": "2024.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2024.5\\bin\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "8-0-0",
+                    "label": "2021",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2021\\bin\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
                     },
                     "arguments": {
                         "windows": [],

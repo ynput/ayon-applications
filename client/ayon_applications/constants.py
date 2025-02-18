@@ -29,11 +29,14 @@ LABELS_BY_GROUP_NAME = {
     "premiere": "Premiere",
     "resolve": "Resolve",
     "terminal": "Terminal",
+    "silhouette": "Silhouette",
     "substancepainter": "Substance Painter",
+    "substancedesigner": "Substance Designer",
     "tvpaint": "TVPaint",
     "unreal": "Unreal Editor",
     "wrap": "Wrap",
     "zbrush": "Zbrush",
+    "mochapro": "Mocha Pro",
 }
 ICONS_BY_GROUP_NAME = {
     "adsk_3dsmax": "3dsmax.png",
@@ -58,10 +61,13 @@ ICONS_BY_GROUP_NAME = {
     "photoshop": "photoshop.png",
     "premiere": "premiere.png",
     "resolve": "resolve.png",
+    "silhouette": "silhouette.png",
     "substancepainter": "substancepainter.png",
+    "substancedesigner": "substancedesigner.png",
     "terminal": "terminal.png",
     "tvpaint": "tvpaint.png",
     "unreal": "ue4.png",
     "wrap": "wrap.png",
     "zbrush": "zbrush.png",
+    "mochapro": "mochapro.png",
 }
