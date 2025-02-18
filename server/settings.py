@@ -21,6 +21,7 @@ DEFAULT_APP_GROUPS = {
     "maya",
     "adsk_3dsmax",
     "flame",
+    "gaffer",
     "nuke",
     "nukeassist",
     "nukex",
@@ -283,6 +284,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="3ds Max")
     flame: AppGroup = SettingsField(
         default_factory=AppGroup, title="Flame")
+    gaffer: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Gaffer")
     nuke: AppGroup = SettingsField(
         default_factory=AppGroup, title="Nuke")
     nukeassist: AppGroup = SettingsField(
