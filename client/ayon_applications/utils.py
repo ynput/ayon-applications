@@ -28,6 +28,18 @@ from .constants import (
 from .exceptions import MissingRequiredKey, ApplicationLaunchFailed
 from .manager import ApplicationManager
 
+# NOTE Remove try -> except block, when ayon-core > 1.1.1 is required,
+#   or require the version to remove it.
+try:
+    from ayon_core.lib import (
+        merge_env_variables,
+        compute_env_variables_structure,
+    )
+except ImportError:
+    merge_env_variables = None
+    compute_env_variables_structure = None
+
+
 
 def parse_environments(env_data, env_group=None, platform_name=None):
     """Parse environment values from settings byt group and platform.
@@ -193,7 +205,14 @@ def get_app_environments_for_context(
 
 
 def _merge_env(env, current_env):
-    """Modified function(merge) from acre module."""
+    """Modified function(merge) from acre module.
+
+    DEPRECATED Remove when import of 'merge_env_variables' is
+        not in try -> except block.
+    """
+    if merge_env_variables is not None:
+        return merge_env_variables(env, current_env)
+
     result = current_env.copy()
     for key, value in env.items():
         # Keep missing keys by not filling `missing` kwarg
@@ -466,8 +485,10 @@ def prepare_app_environments(
         env_values = _merge_env(tool_env, env_values)
 
     merged_env = _merge_env(env_values, source_env)
-
-    loaded_env = acre.compute(merged_env, cleanup=False)
+    if compute_env_variables_structure is None:
+        loaded_env = acre.compute(merged_env, cleanup=False)
+    else:
+        loaded_env = compute_env_variables_structure(merged_env)
 
     final_env = None
     # Add host specific environments
