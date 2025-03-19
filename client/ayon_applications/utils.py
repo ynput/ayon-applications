@@ -31,6 +31,7 @@ from .manager import ApplicationManager
 # NOTE Remove try -> except block, when ayon-core > 1.1.1 is required,
 #   or require the version to remove it.
 try:
+    # Was introduced in ayon-core 1.1.2
     from ayon_core.lib import (
         merge_env_variables,
         compute_env_variables_structure,
