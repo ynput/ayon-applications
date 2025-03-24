@@ -4,7 +4,6 @@ import json
 import platform
 import collections
 
-import acre
 import ayon_api
 
 from ayon_core import AYON_CORE_ROOT
@@ -27,6 +26,29 @@ from .constants import (
 )
 from .exceptions import MissingRequiredKey, ApplicationLaunchFailed
 from .manager import ApplicationManager
+
+# NOTE Remove try -> except block, when ayon-core > 1.1.1 is required,
+#   or require the version to remove it.
+try:
+    # Was introduced in ayon-core 1.1.2
+    from ayon_core.lib import (
+        merge_env_variables,
+        compute_env_variables_structure,
+    )
+except ImportError:
+    import acre
+
+    def merge_env_variables(env, current_env):
+        result = current_env.copy()
+        for key, value in env.items():
+            # Keep missing keys by not filling `missing` kwarg
+            value = acre.lib.partial_format(value, data=current_env)
+            result[key] = value
+        return result
+
+
+    def compute_env_variables_structure(merged_env):
+        return acre.compute(merged_env, cleanup=False)
 
 
 def parse_environments(env_data, env_group=None, platform_name=None):
@@ -190,16 +212,6 @@ def get_app_environments_for_context(
     )
     context.run_prelaunch_hooks()
     return context.env
-
-
-def _merge_env(env, current_env):
-    """Modified function(merge) from acre module."""
-    result = current_env.copy()
-    for key, value in env.items():
-        # Keep missing keys by not filling `missing` kwarg
-        value = acre.lib.partial_format(value, data=current_env)
-        result[key] = value
-    return result
 
 
 def _add_python_version_paths(app, env, logger, addons_manager):
@@ -463,11 +475,10 @@ def prepare_app_environments(
                 tool_env[key] = value
 
         # Merge dictionaries
-        env_values = _merge_env(tool_env, env_values)
+        env_values = merge_env_variables(tool_env, env_values)
 
-    merged_env = _merge_env(env_values, source_env)
-
-    loaded_env = acre.compute(merged_env, cleanup=False)
+    merged_env = merge_env_variables(env_values, source_env)
+    loaded_env = compute_env_variables_structure(merged_env)
 
     final_env = None
     # Add host specific environments
@@ -524,9 +535,8 @@ def apply_project_environments_value(
     if env_value:
         env_value = json.loads(env_value)
         parsed_value = parse_environments(env_value, env_group)
-        env.update(acre.compute(
-            _merge_env(parsed_value, env),
-            cleanup=False
+        env.update(compute_env_variables_structure(
+            merge_env_variables(parsed_value, env)
         ))
     return env
 
