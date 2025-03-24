@@ -1172,51 +1172,6 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "6000.0.32f1",
-                    "label": "6.0",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Unity\\Hub\\Editor\\6000.0.32f1\\Editor\\Unity.exe"
-                        ],
-                        "darwin": [
-                            "/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app"
-                        ],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                },
-                {
-                    "name": "2021-3",
-                    "label": "2021.3.5f1",
-                    "executables": {
-                        "windows": [
-                            "C:\\Program Files\\Unity\\Hub\\Editor\\2021.3.5f1\\Editor\\Unity.exe"
-                        ],
-                        "darwin": [
-                            "/Applications/Unity/Hub/Editor/2021.3.5f1/Unity.app"
-                        ],
-                        "linux": []
-                    },
-                    "arguments": {
-                        "windows": [],
-                        "darwin": [],
-                        "linux": []
-                    },
-                    "environment": "{}"
-                }
-            ]
-        },
-        "unity": {
-            "enabled": true,
-            "host_name": "unity",
-            "environment": "{}",
-            "variants": [
-                {
                     "name": "2021-2",
                     "label": "2021.2",
                     "executables": {

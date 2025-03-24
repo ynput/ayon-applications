@@ -1,10 +1,3 @@
-import os
-
-APPLICATIONS_ADDON_ROOT = os.path.dirname(os.path.abspath(__file__))
-
-PLATFORM_NAMES = {"windows", "linux", "darwin"}
-DEFAULT_ENV_SUBGROUP = "standard"
-
 LABELS_BY_GROUP_NAME = {
     "adsk_3dsmax": "3ds Max",
     "aftereffects": "After Effects",
@@ -14,7 +7,6 @@ LABELS_BY_GROUP_NAME = {
     "equalizer": "3DEqualizer",
     "flame": "Flame",
     "fusion": "Fusion",
-    "gaffer": "Gaffer",
     "harmony": "Harmony",
     "hiero": "Hiero",
     "houdini": "Houdini",
@@ -28,10 +20,9 @@ LABELS_BY_GROUP_NAME = {
     "photoshop": "Photoshop",
     "premiere": "Premiere",
     "resolve": "Resolve",
-    "terminal": "Terminal",
-    "silhouette": "Silhouette",
     "substancepainter": "Substance Painter",
     "substancedesigner": "Substance Designer",
+    "terminal": "Terminal",
     "tvpaint": "TVPaint",
     "unity": "Unity",
     "unreal": "Unreal Editor",
@@ -48,7 +39,6 @@ ICONS_BY_GROUP_NAME = {
     "equalizer": "3de4.png",
     "flame": "flame.png",
     "fusion": "fusion.png",
-    "gaffer": "gaffer.png",
     "harmony": "harmony.png",
     "hiero": "hiero.png",
     "houdini": "houdini.png",
@@ -60,12 +50,9 @@ ICONS_BY_GROUP_NAME = {
     "nukex": "nukex.png",
     "openrv": "openrv.png",
     "photoshop": "photoshop.png",
-    "premiere": "premiere.png",
     "resolve": "resolve.png",
-    "silhouette": "silhouette.png",
     "substancepainter": "substancepainter.png",
     "substancedesigner": "substancedesigner.png",
-    "terminal": "terminal.png",
     "tvpaint": "tvpaint.png",
     "unity": "unity.png",
     "unreal": "ue4.png",
