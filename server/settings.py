@@ -39,6 +39,7 @@ DEFAULT_APP_GROUPS = {
     "celaction",
     "substancepainter",
     "substancedesigner",
+    "speedtree",
     "unreal",
     "wrap",
     "openrv",
@@ -320,6 +321,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Substance Painter")
     substancedesigner: AppGroup = SettingsField(
         default_factory=AppGroup, title="Substance Designer")
+    speedtree: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Speedtree")
     unreal: AppGroup = SettingsField(
         default_factory=AppGroup, title="Unreal Editor")
     wrap: AppGroup = SettingsField(
