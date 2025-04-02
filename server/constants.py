@@ -11,6 +11,7 @@ LABELS_BY_GROUP_NAME = {
     "hiero": "Hiero",
     "houdini": "Houdini",
     "maya": "Maya",
+    "mochapro": "Mocha Pro",
     "motionbuilder": "Motion Builder",
     "nuke": "Nuke",
     "nukeassist": "Nuke Assist",
@@ -28,7 +29,6 @@ LABELS_BY_GROUP_NAME = {
     "unreal": "Unreal Editor",
     "wrap": "Wrap",
     "zbrush": "Zbrush",
-    "mochapro": "Mocha Pro",
 }
 ICONS_BY_GROUP_NAME = {
     "adsk_3dsmax": "3dsmax.png",
@@ -44,6 +44,7 @@ ICONS_BY_GROUP_NAME = {
     "hiero": "hiero.png",
     "houdini": "houdini.png",
     "maya": "maya.png",
+    "mochapro": "mochapro.png",
     "motionbuilder": "motionbuilder.png",
     "nuke": "nuke.png",
     "nukeassist": "nuke.png",
@@ -62,5 +63,4 @@ ICONS_BY_GROUP_NAME = {
     "unreal": "ue4.png",
     "wrap": "wrap.png",
     "zbrush": "zbrush.png",
-    "mochapro": "mochapro.png",
 }
