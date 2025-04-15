@@ -151,6 +151,25 @@ class ApplicationsAddon(BaseServerAddon):
         logger.trace(f"Creating config hash from {hash_content}")
         return hash_data(hash_content)
 
+    async def set_action_config(
+        self,
+        identifier: str,
+        context: ActionContext,
+        user: UserEntity,
+        variant: str,
+        config: dict[str, Any],
+    ) -> None:
+        # Unset 'skip_last_workfile' if it is set to 'False'
+        if config.get("skip_last_workfile") is False:
+            config.pop("skip_last_workfile")
+        return await super().set_action_config(
+            identifier,
+            context,
+            user,
+            variant,
+            config
+        )
+
     async def convert_settings_overrides(
         self,
         source_version: str,
