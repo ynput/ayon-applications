@@ -1211,6 +1211,17 @@
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Unity\\Hub\\Editor\\2020.3.0f1\\Editor\\Unity.exe"
+        "speedtree": {
+            "enabled": true,
+            "host_name": "speedtree",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "10-0",
+                    "label": "10.0",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\SpeedTree\\SpeedTree Modeler v10.0.0\\win64\\SpeedTree_Modeler.exe"
                         ],
                         "darwin": [],
                         "linux": []
