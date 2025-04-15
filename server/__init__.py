@@ -29,7 +29,11 @@ import semver
 
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.entities.core import attribute_library
+from ayon_server.entities.user import UserEntity
+from ayon_server.actions.context import ActionContext
 from ayon_server.lib.postgres import Postgres
+from ayon_server.utils import hash_data
+from ayon_server.logging import logger
 
 if TYPE_CHECKING:
     from ayon_server.actions import (
@@ -128,6 +132,24 @@ class ApplicationsAddon(BaseServerAddon):
             if version_obj < ATTRIBUTES_VERSION_MILESTONE:
                 addon = app_defs.versions[addon_version]
                 addon._update_enums = self._update_enums
+
+    async def create_config_hash(
+        self,
+        identifier: str,
+        context: ActionContext,
+        user: UserEntity,
+        variant: str,
+    ) -> str:
+        """Create a hash for action config store"""
+        hash_content = [
+            user.name,
+            identifier,
+            context.project_name,
+        ]
+        if context.entity_ids:
+            hash_content.append(context.entity_ids[0])
+        logger.trace(f"Creating config hash from {hash_content}")
+        return hash_data(hash_content)
 
     async def convert_settings_overrides(
         self,
