@@ -594,6 +594,40 @@
             "environment": "{\n    \"FUSION_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python39\",\n        \"darwin\": \"~/Library/Python/3.9/bin\",\n        \"linux\": \"/opt/Python/3.9/bin\"\n    }\n}",
             "variants": [
                 {
+                    "name": "20",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Blackmagic Design\\Fusion 20\\Fusion.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "19",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Blackmagic Design\\Fusion 19\\Fusion.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
                     "name": "18",
                     "label": "",
                     "executables": {
