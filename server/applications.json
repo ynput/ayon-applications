@@ -6,6 +6,27 @@
             "environment": "{\n  \"MAYA_DISABLE_CLIC_IPM\": \"Yes\",\n  \"MAYA_DISABLE_CIP\": \"Yes\",\n  \"MAYA_DISABLE_CER\": \"Yes\",\n  \"PYMEL_SKIP_MEL_INIT\": \"Yes\",\n  \"LC_ALL\": \"C\"\n}\n",
             "variants": [
                 {
+                    "name": "2026",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Autodesk\\Maya2026\\bin\\maya.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Autodesk/maya2026/Maya.app"
+                        ],
+                        "linux": [
+                            "/usr/autodesk/maya2026/bin/maya"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"MAYA_VERSION\": \"2026\"\n}"
+                },
+                {
                     "name": "2025",
                     "label": "",
                     "executables": {
