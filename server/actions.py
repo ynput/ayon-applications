@@ -4,6 +4,11 @@ import copy
 
 from ayon_server.actions import SimpleActionManifest
 from ayon_server.entities import ProjectEntity
+try:
+    # Added in ayon-backend 1.8.0
+    from ayon_server.forms import SimpleForm
+except ImportError:
+    SimpleForm = None
 
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
@@ -142,6 +147,14 @@ async def get_action_manifests(addon, project_name, variant):
         for app_name in generic_apps:
             task_types_by_app_name[app_name] |= generic_task_types
 
+    kwargs = {}
+    if SimpleForm is not None:
+        kwargs["config_fields"] = SimpleForm().boolean(
+            "skip_last_workfile",
+            label="Skip last workfile",
+            value=False,
+        )
+
     output = []
     for app_item in app_items:
         app_name = app_item["value"]
@@ -158,6 +171,7 @@ async def get_action_manifests(addon, project_name, variant):
                 entity_type="task",
                 entity_subtypes=list(task_types),
                 allow_multiselection=False,
+                **kwargs
             )
         )
     return output
