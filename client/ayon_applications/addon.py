@@ -236,7 +236,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project_name (str): Project name.
             folder_path (str): Folder path.
             task_name (str): Task name.
-            skip_last_workfile (Optional[Literal["0", "1"]): Explicitly tell
+            skip_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
                 to skip last workfile.
 
         """
@@ -402,7 +402,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             folder (str): Folder path.
             task (str): Task name.
             app (str): Full application name e.g. 'maya/2024'.
-            skip_last_workfile (Optional[Literal["0", "1"]): Explicitly tell
+            skip_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
                 to skip last workfile.
 
         """
@@ -424,7 +424,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project (str): Project name.
             task_id (str): Task id.
             app (str): Full application name e.g. 'maya/2024'.
-            skip_last_workfile (Optional[Literal["0", "1"]): Explicitly tell
+            skip_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
                 to skip last workfile.
 
         """
