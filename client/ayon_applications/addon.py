@@ -227,7 +227,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         project_name,
         folder_path,
         task_name,
-        skip_last_workfile=None,
+        use_last_workfile=None,
     ):
         """Launch application.
 
@@ -236,8 +236,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project_name (str): Project name.
             folder_path (str): Folder path.
             task_name (str): Task name.
-            skip_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
-                to skip last workfile.
+            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+                to use last workfile.
 
         """
         ensure_addons_are_process_ready(
@@ -252,8 +252,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             "folder_path": folder_path,
             "task_name": task_name,
         }
-        if skip_last_workfile is not None:
-            data["skip_last_workfile"] = skip_last_workfile
+        if use_last_workfile is not None:
+            data["start_last_workfile"] = use_last_workfile
 
         # TODO handle raise errors
         failed = True
@@ -334,8 +334,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--folder", required=True, help="Folder path")
             .option("--task", required=True, help="Task name")
             .option(
-                "--skip-last-workfile",
-                help="Skip last workfile",
+                "--use-last-workfile",
+                help="Use last workfile",
                 default=None,
             )
         )
@@ -350,8 +350,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--project", required=True, help="Project name")
             .option("--task-id", required=True, help="Task id")
             .option(
-                "--skip-last-workfile",
-                help="Skip last workfile",
+                "--use-last-workfile",
+                help="Use last workfile",
                 default=None,
             )
         )
@@ -393,7 +393,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             json.dump(env, file_stream, indent=4)
 
     def _cli_launch_context_names(
-        self, project, folder, task, app, skip_last_workfile
+        self, project, folder, task, app, use_last_workfile
     ):
         """Launch application.
 
@@ -402,21 +402,21 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             folder (str): Folder path.
             task (str): Task name.
             app (str): Full application name e.g. 'maya/2024'.
-            skip_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
-                to skip last workfile.
+            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+                to use last workfile.
 
         """
-        if skip_last_workfile is not None:
-            skip_last_workfile = env_value_to_bool(
-                skip_last_workfile, default=None
+        if use_last_workfile is not None:
+            use_last_workfile = env_value_to_bool(
+                use_last_workfile, default=None
             )
         self.launch_application(
-            app, project, folder, task, skip_last_workfile,
+            app, project, folder, task, use_last_workfile,
         )
 
 
     def _cli_launch_with_task_id(
-        self, project, task_id, app, skip_last_workfile
+        self, project, task_id, app, use_last_workfile
     ):
         """Launch application using project name, task id and full app name.
 
@@ -424,13 +424,13 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project (str): Project name.
             task_id (str): Task id.
             app (str): Full application name e.g. 'maya/2024'.
-            skip_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
-                to skip last workfile.
+            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+                to use last workfile.
 
         """
-        if skip_last_workfile is not None:
-            skip_last_workfile = env_value_to_bool(
-                value=skip_last_workfile, default=None
+        if use_last_workfile is not None:
+            use_last_workfile = env_value_to_bool(
+                value=use_last_workfile, default=None
             )
 
         task_entity = ayon_api.get_task_by_id(
@@ -444,7 +444,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project,
             folder_entity["path"],
             task_entity["name"],
-            skip_last_workfile,
+            use_last_workfile,
         )
 
     def _show_launch_error_dialog(self, message, detail):

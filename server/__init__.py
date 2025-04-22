@@ -122,7 +122,7 @@ class ApplicationsAddon(BaseServerAddon):
         skip_last_workfile = config.get("skip_last_workfile")
         if skip_last_workfile is not None:
             args.extend([
-                "--skip-last-workfile", str(int(skip_last_workfile))
+                "--use-last-workfile", str(int(not skip_last_workfile))
             ])
 
         return await executor.get_launcher_action_response(args=args)
