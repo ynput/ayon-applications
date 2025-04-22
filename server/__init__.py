@@ -32,8 +32,17 @@ from ayon_server.entities.core import attribute_library
 from ayon_server.entities.user import UserEntity
 from ayon_server.actions.context import ActionContext
 from ayon_server.lib.postgres import Postgres
-from ayon_server.utils import hash_data
 from ayon_server.logging import logger
+try:
+    # Added in ayon-backend 1.8.0
+    from ayon_server.utils import hash_data
+except ImportError:
+    import hashlib
+    import json
+    def hash_data(data):
+        if not isinstance(data, str):
+            data = json.dumps(data)
+        return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 if TYPE_CHECKING:
     from ayon_server.actions import (
