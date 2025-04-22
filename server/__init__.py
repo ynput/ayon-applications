@@ -161,6 +161,9 @@ class ApplicationsAddon(BaseServerAddon):
         variant: str,
     ) -> str:
         """Create a hash for action config store"""
+        if identifier.startswith(IDENTIFIER_PREFIX):
+            # Change identifier to only app name
+            identifier = identifier[len(IDENTIFIER_PREFIX):]
         hash_content = [
             user.name,
             identifier,
