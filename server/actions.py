@@ -86,7 +86,9 @@ async def get_action_manifests(addon, project_name, variant):
     if not project_name:
         return []
 
-    settings_model = await addon.get_studio_settings(variant=variant)
+    settings_model = await addon.get_project_settings(
+        project_name, variant=variant
+    )
     addon_settings = settings_model.dict()
 
     app_settings = addon_settings["applications"]
