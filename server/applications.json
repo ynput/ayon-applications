@@ -1221,6 +1221,51 @@
                 }
             ]
         },
+        "unity": {
+            "enabled": true,
+            "host_name": "unity",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2021-2",
+                    "label": "2021.2",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Unity\\Hub\\Editor\\2021.2.0f1\\Editor\\Unity.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2021-1",
+                    "label": "2021.1",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Unity\\Hub\\Editor\\2021.1.0f1\\Editor\\Unity.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2020-3",
+                    "label": "2020.3",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Unity\\Hub\\Editor\\2020.3.0f1\\Editor\\Unity.exe"
         "speedtree": {
             "enabled": true,
             "host_name": "speedtree",

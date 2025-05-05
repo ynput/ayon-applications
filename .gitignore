@@ -161,5 +161,10 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# vscode
+.history/
+.vscode/
+*.code-workspace
+
 # ignore mkdocs build
 site/
