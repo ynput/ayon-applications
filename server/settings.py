@@ -40,6 +40,7 @@ DEFAULT_APP_GROUPS = {
     "substancepainter",
     "substancedesigner",
     "speedtree",
+    "unity",
     "unreal",
     "wrap",
     "openrv",
@@ -323,6 +324,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Substance Designer")
     speedtree: AppGroup = SettingsField(
         default_factory=AppGroup, title="Speedtree")
+    unity: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Unity")
     unreal: AppGroup = SettingsField(
         default_factory=AppGroup, title="Unreal Editor")
     wrap: AppGroup = SettingsField(
