@@ -13,10 +13,11 @@ except ImportError:
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 IDENTIFIER_PREFIX = "application.launch."
+
 _manifest_fields = getattr(SimpleActionManifest, "__fields__", None)
 if _manifest_fields is None:
     _manifest_fields = getattr(SimpleActionManifest, "model_fields", set)()
-
+# Backwards compatibility for AYON server older than 1.8.0
 _GROUP_LABEL_AVAILABLE = "group_label" in _manifest_fields
 
 
