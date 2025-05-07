@@ -13,6 +13,11 @@ except ImportError:
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 IDENTIFIER_PREFIX = "application.launch."
+_manifest_fields = getattr(SimpleActionManifest, "__fields__", None)
+if _manifest_fields is None:
+    _manifest_fields = getattr(SimpleActionManifest, "model_fields", set)()
+
+_GROUP_LABEL_AVAILABLE = "group_label" in _manifest_fields
 
 
 def _sort_getter(item):
@@ -60,7 +65,7 @@ def get_items_for_app_groups(groups):
 def _prepare_label_kwargs(item):
     group_label = item["group_label"]
     variant_label = item["variant_label"]
-    if hasattr(SimpleActionManifest, "group_label"):
+    if _GROUP_LABEL_AVAILABLE:
         return {
             "label": variant_label,
             "group_label": group_label,
