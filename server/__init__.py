@@ -124,7 +124,9 @@ class ApplicationsAddon(BaseServerAddon):
             args.extend([
                 "--use-last-workfile", str(int(not skip_last_workfile))
             ])
-
+        if hasattr(executor, "get_launcher_response"):
+            return await executor.get_launcher_response(args=args)
+        # Keep for backwards compatibility
         return await executor.get_launcher_action_response(args=args)
 
     async def get_default_settings(self):
