@@ -124,9 +124,10 @@ class ApplicationsAddon(BaseServerAddon):
             args.extend([
                 "--use-last-workfile", str(int(not skip_last_workfile))
             ])
+        # 'get_launcher_response' is available since AYON 1.8.3
         if hasattr(executor, "get_launcher_response"):
             return await executor.get_launcher_response(args=args)
-        # Keep for backwards compatibility
+        # Backwards compatibility
         return await executor.get_launcher_action_response(args=args)
 
     async def get_default_settings(self):
