@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 
 import semver
 
+from ayon_server.actions.config import set_action_config
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.entities.core import attribute_library
 from ayon_server.entities.user import UserEntity
@@ -164,9 +165,13 @@ class ApplicationsAddon(BaseServerAddon):
         variant: str,
     ) -> str:
         """Create a hash for action config store"""
-        if identifier.startswith(IDENTIFIER_PREFIX):
-            # Change identifier to only app name
-            identifier = identifier[len(IDENTIFIER_PREFIX):]
+        if not identifier.startswith(IDENTIFIER_PREFIX):
+            return await super().create_action_config_hash(
+                identifier, context, user, variant
+            )
+
+        # Change identifier to only app name and one task id
+        identifier = identifier[len(IDENTIFIER_PREFIX):]
         hash_content = [
             user.name,
             identifier,
@@ -185,16 +190,36 @@ class ApplicationsAddon(BaseServerAddon):
         variant: str,
         config: dict[str, Any],
     ) -> None:
+        if not identifier.startswith(IDENTIFIER_PREFIX):
+            await super().set_action_config(
+                identifier, context, user, variant, config
+            )
+            return
+
+        if not context.entity_ids:
+            return
+
         # Unset 'skip_last_workfile' if it is set to 'False'
         if config.get("skip_last_workfile") is False:
             config.pop("skip_last_workfile")
-        return await super().set_action_config(
-            identifier,
-            context,
-            user,
-            variant,
-            config
-        )
+
+        identifier = identifier[len(IDENTIFIER_PREFIX):]
+        for entity_id in context.entity_ids:
+            config_hash = hash_data([
+                user.name,
+                identifier,
+                context.project_name,
+                entity_id,
+            ])
+            await set_action_config(
+                config_hash,
+                config,
+                addon_name=self.name,
+                addon_version=self.version,
+                identifier=identifier,
+                project_name=context.project_name,
+                user_name=user.name,
+            )
 
     async def convert_settings_overrides(
         self,
