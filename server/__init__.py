@@ -157,7 +157,7 @@ class ApplicationsAddon(BaseServerAddon):
                 addon = app_defs.versions[addon_version]
                 addon._update_enums = self._update_enums
 
-    async def create_config_hash(
+    async def create_action_config_hash(
         self,
         identifier: str,
         context: ActionContext,
@@ -176,9 +176,8 @@ class ApplicationsAddon(BaseServerAddon):
             user.name,
             identifier,
             context.project_name,
+            context.entity_ids[0],
         ]
-        if context.entity_ids:
-            hash_content.append(context.entity_ids[0])
         logger.trace(f"Creating config hash from {hash_content}")
         return hash_data(hash_content)
 
