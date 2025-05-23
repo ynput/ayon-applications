@@ -103,7 +103,7 @@ class ApplicationsAddon(BaseServerAddon):
         executor: "ActionExecutor",
     ) -> "ExecuteResponseModel":
         """Execute an action provided by the addon"""
-        app_name = executor.identifier[len(IDENTIFIER_PREFIX):]
+        app_name = executor.identifier.removeprefix(IDENTIFIER_PREFIX)
         context = executor.context
         project_name = context.project_name
         task_id = context.entity_ids[0]
@@ -171,7 +171,7 @@ class ApplicationsAddon(BaseServerAddon):
             )
 
         # Change identifier to only app name and one task id
-        identifier = identifier[len(IDENTIFIER_PREFIX):]
+        identifier = identifier.removeprefix(IDENTIFIER_PREFIX)
         hash_content = [
             user.name,
             identifier,
@@ -202,7 +202,7 @@ class ApplicationsAddon(BaseServerAddon):
         if config.get("skip_last_workfile") is False:
             config.pop("skip_last_workfile")
 
-        identifier = identifier[len(IDENTIFIER_PREFIX):]
+        identifier = identifier.removeprefix(IDENTIFIER_PREFIX)
         for entity_id in context.entity_ids:
             config_hash = hash_data([
                 user.name,
