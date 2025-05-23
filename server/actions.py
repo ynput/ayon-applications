@@ -188,7 +188,7 @@ async def get_action_manifests(addon, project_name, variant):
                 **_prepare_label_kwargs(app_item),
                 category="Applications",
                 icon=app_item["icon"],
-                order=100,
+                order=0,
                 entity_type="task",
                 entity_subtypes=list(task_types),
                 allow_multiselection=False,
