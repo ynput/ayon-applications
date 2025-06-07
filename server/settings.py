@@ -215,6 +215,10 @@ class AppGroup(BaseSettingsModel):
         ensure_unique_names(value)
         return value
 
+    @validator("environment")
+    def validate_json(cls, value):
+        return validate_json_dict(value)
+
 
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
@@ -237,6 +241,10 @@ class AdditionalAppGroup(BaseSettingsModel):
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
         return value
+
+    @validator("environment")
+    def validate_json(cls, value):
+        return validate_json_dict(value)
 
 
 class ToolVariantModel(BaseSettingsModel):
