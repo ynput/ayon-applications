@@ -236,8 +236,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project_name (str): Project name.
             folder_path (str): Folder path.
             task_name (str): Task name.
-            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
-                to use last workfile.
+            use_last_workfile (Optional[bool]): Explicitly tell to use or
+                not use last workfile.
 
         """
         ensure_addons_are_process_ready(
