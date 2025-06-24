@@ -384,7 +384,7 @@ class ProjectApplicationsProfile(BaseSettingsModel):
         "applications",
         title="Allow",
         enum_resolver=_get_allow_type,
-        conditionalEnum=True,
+        conditional_enum=True,
     )
     applications: list[str] = SettingsField(
         default_factory=list,
