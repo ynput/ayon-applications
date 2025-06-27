@@ -1482,6 +1482,30 @@
                 }
             ]
         },
+        "marmoset":{
+            "enabled": true,
+            "host_name": "marmoset",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "5",
+                    "label": "5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Marmoset\\Toolbag 5\\toolbag.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "terminal": {
             "enabled": true,
             "host_name": "",
