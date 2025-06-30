@@ -1045,7 +1045,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 },
                 {
                     "name": "2024",
@@ -1064,7 +1064,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 },
                 {
                     "name": "2025",
@@ -1083,7 +1083,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 }
             ]
         },
@@ -1109,7 +1109,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 },
                 {
                     "name": "2024",
@@ -1128,7 +1128,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 },
                 {
                     "name": "2025",
@@ -1147,7 +1147,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 }
             ]
         },
