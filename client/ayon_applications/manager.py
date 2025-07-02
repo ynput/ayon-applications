@@ -7,8 +7,6 @@ import platform
 import inspect
 import subprocess
 
-import six
-
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.settings import get_studio_settings
 from ayon_core.lib import (
@@ -357,7 +355,7 @@ class ApplicationLaunchContext:
                 continue
 
             # Convert string to list
-            if isinstance(hook_paths, six.string_types):
+            if isinstance(hook_paths, str):
                 hook_paths = [hook_paths]
 
             # Skip invalid types

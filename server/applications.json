@@ -6,6 +6,27 @@
             "environment": "{\n  \"MAYA_DISABLE_CLIC_IPM\": \"Yes\",\n  \"MAYA_DISABLE_CIP\": \"Yes\",\n  \"MAYA_DISABLE_CER\": \"Yes\",\n  \"PYMEL_SKIP_MEL_INIT\": \"Yes\",\n  \"LC_ALL\": \"C\"\n}\n",
             "variants": [
                 {
+                    "name": "2026",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Autodesk\\Maya2026\\bin\\maya.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Autodesk/maya2026/Maya.app"
+                        ],
+                        "linux": [
+                            "/usr/autodesk/maya2026/bin/maya"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"MAYA_VERSION\": \"2026\"\n}"
+                },
+                {
                     "name": "2025",
                     "label": "",
                     "executables": {
@@ -73,7 +94,7 @@
         "adsk_3dsmax": {
             "enabled": true,
             "host_name": "max",
-            "environment": "{\n    \"ADSK_3DSMAX_STARTUPSCRIPTS_ADDON_DIR\": \"{OPENPYPE_ROOT}/openpype/hosts/max/startup\"\n}",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "2024",
@@ -170,6 +191,23 @@
                         "linux": []
                     },
                     "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2024.2/bin/python3.10\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2024.2/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2024.2\"\n}"
+                }
+            ]
+        },
+        "gaffer": {
+            "enabled": true,
+            "host_name": "gaffer",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "1.5.2",
+                    "label": "1.5.2",
+                    "executables": {
+                        "windows": ["C:\\software\\gaffer-1.5.2.0-windows\\bin\\gaffer.cmd"],
+                        "darwin": [],
+                        "linux": ["/opt/gaffer-1.5.2.0-linux/bin/gaffer"]
+                    },
+                    "environment": "{}"
                 }
             ]
         },
@@ -577,6 +615,40 @@
             "environment": "{\n    \"FUSION_PYTHON3_HOME\": {\n        \"windows\": \"{LOCALAPPDATA}/Programs/Python/Python39\",\n        \"darwin\": \"~/Library/Python/3.9/bin\",\n        \"linux\": \"/opt/Python/3.9/bin\"\n    }\n}",
             "variants": [
                 {
+                    "name": "20",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Blackmagic Design\\Fusion 20\\Fusion.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "19",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Blackmagic Design\\Fusion 19\\Fusion.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
                     "name": "18",
                     "label": "",
                     "executables": {
@@ -773,6 +845,31 @@
                         ]
                     },
                     "environment": "{}"
+                },
+                {
+                    "name": "4-4",
+                    "label": "4.4",
+                    "executables": {
+                        "linux": [],
+                        "darwin": [
+                            "/Applications/Blender.app"
+                        ],
+                        "windows": [
+                            "C:\\Program Files\\Blender Foundation\\Blender 4.4\\blender.exe"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [
+                            "--python-use-system-env"
+                        ],
+                        "darwin": [
+                            "--python-use-system-env"
+                        ],
+                        "linux": [
+                            "--python-use-system-env"
+                        ]
+                    },
+                    "environment": "{\n    \"AYON_BLENDER_USE_SYSTEM_PATH\": \"1\"\n}"
                 }
             ]
         },
@@ -948,7 +1045,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 },
                 {
                     "name": "2024",
@@ -967,7 +1064,7 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
                 },
                 {
                     "name": "2025",
@@ -986,7 +1083,71 @@
                         "darwin": [],
                         "linux": []
                     },
-                    "environment": "{\n  \"MULTIPROCESS\": \"No\"\n}"
+                    "environment": "{}"
+                }
+            ]
+        },
+        "premiere": {
+            "enabled": true,
+            "host_name": "premiere",
+            "environment": "{\n    \"AYON_PREMIERE_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
+            "variants": [
+                {
+                    "name": "2023",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2023\\Adobe Premiere Pro.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Premiere Pro 2023/Adobe Premiere Pro.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2024",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2024\\Adobe Premiere Pro.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Premiere Pro 2024/Adobe Premiere Pro.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2025",
+                    "label": "",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2025\\Adobe Premiere Pro.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe Premiere Pro 2025/Adobe Premiere Pro.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
                 }
             ]
         },
@@ -1023,6 +1184,54 @@
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Substance 3D Painter\\Adobe Substance 3D Painter.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
+        "substancedesigner": {
+            "enabled": true,
+            "host_name": "substancedesigner",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2025",
+                    "label": "2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe Substance 3D Designer\\Adobe Substance 3D Designer.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
+        "speedtree": {
+            "enabled": true,
+            "host_name": "speedtree",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "10-0",
+                    "label": "10.0",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\SpeedTree\\SpeedTree Modeler v10.0.0\\win64\\SpeedTree_Modeler.exe"
                         ],
                         "darwin": [],
                         "linux": []
@@ -1254,6 +1463,25 @@
                 }
             ]
         },
+        "silhouette": {
+            "enabled": true,
+            "host_name": "silhouette",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2024-5",
+                    "label": "2024.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Silhouette 2024.5\\Silhouette.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "loki": {
             "enabled": true,
             "host_name": "loki",
@@ -1303,6 +1531,64 @@
                             "urxvt",
                             "xterm"
                         ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
+        "mochapro": {
+            "enabled": true,
+            "host_name": "mochapro",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "12-0-0",
+                    "label": "2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2025\\bin\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "11-5-0",
+                    "label": "2024.5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2024.5\\bin\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "8-0-0",
+                    "label": "2021",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\BorisFX\\Mocha Pro 2021\\bin\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
                     },
                     "arguments": {
                         "windows": [],

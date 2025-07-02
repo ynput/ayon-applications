@@ -27,9 +27,23 @@ from typing import TYPE_CHECKING
 
 import semver
 
+from ayon_server.actions.config import set_action_config
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.entities.core import attribute_library
+from ayon_server.entities.user import UserEntity
+from ayon_server.actions.context import ActionContext
 from ayon_server.lib.postgres import Postgres
+from ayon_server.logging import logger
+try:
+    # Added in ayon-backend 1.8.0
+    from ayon_server.utils import hash_data
+except ImportError:
+    import hashlib
+    import json
+    def hash_data(data):
+        if not isinstance(data, str):
+            data = json.dumps(data)
+        return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 if TYPE_CHECKING:
     from ayon_server.actions import (
@@ -89,19 +103,33 @@ class ApplicationsAddon(BaseServerAddon):
         executor: "ActionExecutor",
     ) -> "ExecuteResponseModel":
         """Execute an action provided by the addon"""
-        app_name = executor.identifier[len(IDENTIFIER_PREFIX):]
+        app_name = executor.identifier.removeprefix(IDENTIFIER_PREFIX)
         context = executor.context
         project_name = context.project_name
         task_id = context.entity_ids[0]
 
-        return await executor.get_launcher_action_response(
-            args=[
-                "addon", "applications", "launch-by-id",
-                "--app", app_name,
-                "--project", project_name,
-                "--task-id", task_id,
-            ]
+        config = await self.get_action_config(
+            executor.identifier,
+            executor.context,
+            executor.user,
+            executor.variant,
         )
+        args = [
+            "addon", "applications", "launch-by-id",
+            "--app", app_name,
+            "--project", project_name,
+            "--task-id", task_id,
+        ]
+        skip_last_workfile = config.get("skip_last_workfile")
+        if skip_last_workfile is not None:
+            args.extend([
+                "--use-last-workfile", str(int(not skip_last_workfile))
+            ])
+        # 'get_launcher_response' is available since AYON 1.8.3
+        if hasattr(executor, "get_launcher_response"):
+            return await executor.get_launcher_response(args=args)
+        # Backwards compatibility
+        return await executor.get_launcher_action_response(args=args)
 
     async def get_default_settings(self):
         return self.get_settings_model()(**DEFAULT_VALUES)
@@ -128,6 +156,69 @@ class ApplicationsAddon(BaseServerAddon):
             if version_obj < ATTRIBUTES_VERSION_MILESTONE:
                 addon = app_defs.versions[addon_version]
                 addon._update_enums = self._update_enums
+
+    async def create_action_config_hash(
+        self,
+        identifier: str,
+        context: ActionContext,
+        user: UserEntity,
+        variant: str,
+    ) -> str:
+        """Create a hash for action config store"""
+        if not identifier.startswith(IDENTIFIER_PREFIX):
+            return await super().create_action_config_hash(
+                identifier, context, user, variant
+            )
+
+        # Change identifier to only app name and one task id
+        identifier = identifier.removeprefix(IDENTIFIER_PREFIX)
+        hash_content = [
+            user.name,
+            identifier,
+            context.project_name,
+            context.entity_ids[0],
+        ]
+        logger.trace(f"Creating config hash from {hash_content}")
+        return hash_data(hash_content)
+
+    async def set_action_config(
+        self,
+        identifier: str,
+        context: ActionContext,
+        user: UserEntity,
+        variant: str,
+        config: dict[str, Any],
+    ) -> None:
+        if not identifier.startswith(IDENTIFIER_PREFIX):
+            await super().set_action_config(
+                identifier, context, user, variant, config
+            )
+            return
+
+        if not context.entity_ids:
+            return
+
+        # Unset 'skip_last_workfile' if it is set to 'False'
+        if config.get("skip_last_workfile") is False:
+            config.pop("skip_last_workfile")
+
+        identifier = identifier.removeprefix(IDENTIFIER_PREFIX)
+        for entity_id in context.entity_ids:
+            config_hash = hash_data([
+                user.name,
+                identifier,
+                context.project_name,
+                entity_id,
+            ])
+            await set_action_config(
+                config_hash,
+                config,
+                addon_name=self.name,
+                addon_version=self.version,
+                identifier=identifier,
+                project_name=context.project_name,
+                user_name=user.name,
+            )
 
     async def convert_settings_overrides(
         self,

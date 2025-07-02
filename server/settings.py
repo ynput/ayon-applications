@@ -21,6 +21,7 @@ DEFAULT_APP_GROUPS = {
     "maya",
     "adsk_3dsmax",
     "flame",
+    "gaffer",
     "nuke",
     "nukeassist",
     "nukex",
@@ -34,8 +35,11 @@ DEFAULT_APP_GROUPS = {
     "tvpaint",
     "photoshop",
     "aftereffects",
+    "premiere",
     "celaction",
     "substancepainter",
+    "substancedesigner",
+    "speedtree",
     "unreal",
     "wrap",
     "openrv",
@@ -43,8 +47,11 @@ DEFAULT_APP_GROUPS = {
     "equalizer",
     "motionbuilder",
     "cinema4d",
+    "silhouette",
     "terminal",
-    "loki"
+    "premiere",
+    "mochapro",
+    "loki",
 }
 
 
@@ -209,6 +216,10 @@ class AppGroup(BaseSettingsModel):
         ensure_unique_names(value)
         return value
 
+    @validator("environment")
+    def validate_json(cls, value):
+        return validate_json_dict(value)
+
 
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
@@ -231,6 +242,10 @@ class AdditionalAppGroup(BaseSettingsModel):
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
         return value
+
+    @validator("environment")
+    def validate_json(cls, value):
+        return validate_json_dict(value)
 
 
 class ToolVariantModel(BaseSettingsModel):
@@ -279,6 +294,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="3ds Max")
     flame: AppGroup = SettingsField(
         default_factory=AppGroup, title="Flame")
+    gaffer: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Gaffer")
     nuke: AppGroup = SettingsField(
         default_factory=AppGroup, title="Nuke")
     nukeassist: AppGroup = SettingsField(
@@ -305,10 +322,16 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Photoshop")
     aftereffects: AppGroup = SettingsField(
         default_factory=AppGroup, title="After Effects")
+    premiere: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Premiere")
     celaction: AppGroup = SettingsField(
         default_factory=AppGroup, title="Celaction 2D")
     substancepainter: AppGroup = SettingsField(
         default_factory=AppGroup, title="Substance Painter")
+    substancedesigner: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Substance Designer")
+    speedtree: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Speedtree")
     unreal: AppGroup = SettingsField(
         default_factory=AppGroup, title="Unreal Editor")
     wrap: AppGroup = SettingsField(
@@ -323,6 +346,10 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Motion Builder")
     cinema4d: AppGroup = SettingsField(
         default_factory=AppGroup, title="Cinema4D")
+    mochapro: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Mocha Pro")
+    silhouette: AppGroup = SettingsField(
+        default_factory=AppGroup, title="BorisFX Silhouette")
     loki: AppGroup = SettingsField(
         default_factory=AppGroup, title="ShapeFX Loki")
     terminal: AppGroup = SettingsField(
@@ -360,7 +387,7 @@ class ProjectApplicationsProfile(BaseSettingsModel):
         "applications",
         title="Allow",
         enum_resolver=_get_allow_type,
-        conditionalEnum=True,
+        conditional_enum=True,
     )
     applications: list[str] = SettingsField(
         default_factory=list,

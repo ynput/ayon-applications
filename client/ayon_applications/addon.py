@@ -9,6 +9,7 @@ import ayon_api
 from ayon_core.lib import (
     run_ayon_launcher_process,
     is_headless_mode_enabled,
+    env_value_to_bool,
 )
 from ayon_core.addon import (
     AYONAddon,
@@ -221,7 +222,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         return actions
 
     def launch_application(
-        self, app_name, project_name, folder_path, task_name
+        self,
+        app_name,
+        project_name,
+        folder_path,
+        task_name,
+        use_last_workfile=None,
     ):
         """Launch application.
 
@@ -230,6 +236,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project_name (str): Project name.
             folder_path (str): Folder path.
             task_name (str): Task name.
+            use_last_workfile (Optional[bool]): Explicitly tell to use or
+                not use last workfile.
 
         """
         ensure_addons_are_process_ready(
@@ -239,18 +247,21 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         )
         headless = is_headless_mode_enabled()
 
+        data = {
+            "project_name": project_name,
+            "folder_path": folder_path,
+            "task_name": task_name,
+        }
+        if use_last_workfile is not None:
+            data["start_last_workfile"] = use_last_workfile
+
         # TODO handle raise errors
         failed = True
         message = None
         detail = None
         try:
             app_manager = self.get_applications_manager()
-            app_manager.launch(
-                app_name,
-                project_name=project_name,
-                folder_path=folder_path,
-                task_name=task_name,
-            )
+            app_manager.launch(app_name, **data)
             failed = False
 
         except (
@@ -322,6 +333,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--project", required=True, help="Project name")
             .option("--folder", required=True, help="Folder path")
             .option("--task", required=True, help="Task name")
+            .option(
+                "--use-last-workfile",
+                help="Use last workfile",
+                default=None,
+            )
         )
         # Convert main command to click object and add it to parent group
         (
@@ -333,6 +349,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             .option("--app", required=True, help="Full application name")
             .option("--project", required=True, help="Project name")
             .option("--task-id", required=True, help="Task id")
+            .option(
+                "--use-last-workfile",
+                help="Use last workfile",
+                default=None,
+            )
         )
         # Convert main command to click object and add it to parent group
         addon_click_group.add_command(
@@ -371,7 +392,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         with open(output_json_path, "w") as file_stream:
             json.dump(env, file_stream, indent=4)
 
-    def _cli_launch_context_names(self, project, folder, task, app):
+    def _cli_launch_context_names(
+        self, project, folder, task, app, use_last_workfile
+    ):
         """Launch application.
 
         Args:
@@ -379,20 +402,37 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             folder (str): Folder path.
             task (str): Task name.
             app (str): Full application name e.g. 'maya/2024'.
+            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+                to use last workfile.
 
         """
-        self.launch_application(app, project, folder, task)
+        if use_last_workfile is not None:
+            use_last_workfile = env_value_to_bool(
+                use_last_workfile, default=None
+            )
+        self.launch_application(
+            app, project, folder, task, use_last_workfile,
+        )
 
 
-    def _cli_launch_with_task_id(self, project, task_id, app):
-        """Launch application.
+    def _cli_launch_with_task_id(
+        self, project, task_id, app, use_last_workfile
+    ):
+        """Launch application using project name, task id and full app name.
 
         Args:
             project (str): Project name.
             task_id (str): Task id.
             app (str): Full application name e.g. 'maya/2024'.
+            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+                to use last workfile.
 
         """
+        if use_last_workfile is not None:
+            use_last_workfile = env_value_to_bool(
+                value=use_last_workfile, default=None
+            )
+
         task_entity = ayon_api.get_task_by_id(
             project, task_id, fields={"name", "folderId"}
         )
@@ -400,7 +440,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             project, task_entity["folderId"], fields={"path"}
         )
         self.launch_application(
-            app, project, folder_entity["path"], task_entity["name"]
+            app,
+            project,
+            folder_entity["path"],
+            task_entity["name"],
+            use_last_workfile,
         )
 
     def _show_launch_error_dialog(self, message, detail):

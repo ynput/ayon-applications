@@ -4,15 +4,29 @@ import copy
 
 from ayon_server.actions import SimpleActionManifest
 from ayon_server.entities import ProjectEntity
+try:
+    # Added in ayon-backend 1.8.0
+    from ayon_server.forms import SimpleForm
+except ImportError:
+    SimpleForm = None
 
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 IDENTIFIER_PREFIX = "application.launch."
 
+_manifest_fields = getattr(SimpleActionManifest, "__fields__", None)
+if _manifest_fields is None:
+    _manifest_fields = getattr(SimpleActionManifest, "model_fields", set)()
+# Backwards compatibility for AYON server older than 1.8.0
+_GROUP_LABEL_AVAILABLE = "group_label" in _manifest_fields
+
+
+def _sort_getter(item):
+    return item["group_label"], item["variant_label"]
+
 
 def get_items_for_app_groups(groups):
-    label_by_name = {}
-    icon_by_name = {}
+    items = []
     for group in groups:
         group_name = group["name"]
         group_label = group.get(
@@ -38,18 +52,29 @@ def get_items_for_app_groups(groups):
                 continue
             variant_label = variant["label"] or variant_name
             full_name = f"{group_name}/{variant_name}"
-            full_label = f"{group_label} {variant_label}"
-            label_by_name[full_name] = full_label
-            icon_by_name[full_name] = icon
+            items.append({
+                "value": full_name,
+                "group_label": group_label,
+                "variant_label": variant_label,
+                "icon": icon,
+            })
 
-    return [
-        {
-            "value": full_name,
-            "label": label_by_name[full_name],
-            "icon": icon_by_name[full_name],
+    items.sort(key=_sort_getter)
+    return items
+
+
+def _prepare_label_kwargs(item):
+    group_label = item["group_label"]
+    variant_label = item["variant_label"]
+    if _GROUP_LABEL_AVAILABLE:
+        return {
+            "label": variant_label,
+            "group_label": group_label,
         }
-        for full_name in sorted(label_by_name)
-    ]
+
+    return {
+        "label": f"{group_label} {variant_label}",
+    }
 
 
 async def _get_action_manifests_with_attributes(app_groups, project_entity):
@@ -61,11 +86,10 @@ async def _get_action_manifests_with_attributes(app_groups, project_entity):
         app_full_name = item["value"]
         if app_full_name not in project_apps:
             continue
-
         output.append(
             SimpleActionManifest(
                 identifier=f"{IDENTIFIER_PREFIX}{app_full_name}",
-                label=item["label"],
+                **_prepare_label_kwargs(item),
                 category="Applications",
                 icon=item["icon"],
                 order=100,
@@ -81,7 +105,9 @@ async def get_action_manifests(addon, project_name, variant):
     if not project_name:
         return []
 
-    settings_model = await addon.get_studio_settings(variant=variant)
+    settings_model = await addon.get_project_settings(
+        project_name, variant=variant
+    )
     addon_settings = settings_model.dict()
 
     app_settings = addon_settings["applications"]
@@ -142,6 +168,14 @@ async def get_action_manifests(addon, project_name, variant):
         for app_name in generic_apps:
             task_types_by_app_name[app_name] |= generic_task_types
 
+    kwargs = {}
+    if SimpleForm is not None:
+        kwargs["config_fields"] = SimpleForm().boolean(
+            "skip_last_workfile",
+            label="Skip last workfile",
+            value=False,
+        )
+
     output = []
     for app_item in app_items:
         app_name = app_item["value"]
@@ -151,13 +185,14 @@ async def get_action_manifests(addon, project_name, variant):
         output.append(
             SimpleActionManifest(
                 identifier=f"{IDENTIFIER_PREFIX}{app_name}",
-                label=app_item["label"],
+                **_prepare_label_kwargs(app_item),
                 category="Applications",
                 icon=app_item["icon"],
-                order=100,
+                order=0,
                 entity_type="task",
                 entity_subtypes=list(task_types),
                 allow_multiselection=False,
+                **kwargs
             )
         )
     return output
