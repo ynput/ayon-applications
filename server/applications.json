@@ -1492,7 +1492,7 @@
                     "label": "1.0.0",
                     "executables": {
                         "windows": [
-                            "C:\\Program Files\\ShapeFX Loki\\loki.bat"
+                            "C:\\Program Files\\ShapeFX Loki\\bin\\loki.exe"
                         ],
                         "darwin": [],
                         "linux": []
