@@ -52,6 +52,7 @@ DEFAULT_APP_GROUPS = {
     "premiere",
     "mochapro",
     "marmoset",
+    "loki",
 }
 
 
@@ -352,6 +353,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="BorisFX Silhouette")
     marmoset: AppGroup = SettingsField(
         default_factory=AppGroup, title="Marmoset Toolbag")
+    loki: AppGroup = SettingsField(
+        default_factory=AppGroup, title="ShapeFX Loki")
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",

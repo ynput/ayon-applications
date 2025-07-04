@@ -1482,7 +1482,7 @@
                 }
             ]
         },
-        "marmoset":{
+        "marmoset": {
             "enabled": true,
             "host_name": "marmoset",
             "environment": "{}",
@@ -1493,6 +1493,30 @@
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Marmoset\\Toolbag 5\\toolbag.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
+        "loki": {
+            "enabled": true,
+            "host_name": "loki",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "1-0-0",
+                    "label": "1.0.0",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\ShapeFX Loki\\bin\\loki.exe"
                         ],
                         "darwin": [],
                         "linux": []
