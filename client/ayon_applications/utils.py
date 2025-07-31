@@ -27,28 +27,17 @@ from .constants import (
 from .exceptions import MissingRequiredKey, ApplicationLaunchFailed
 from .manager import ApplicationManager
 
-# NOTE Remove try -> except block, when ayon-core > 1.1.1 is required,
-#   or require the version to remove it.
 try:
-    # Was introduced in ayon-core 1.1.2
+    # Functions were not in '__init__.py'
     from ayon_core.lib import (
         merge_env_variables,
         compute_env_variables_structure,
     )
 except ImportError:
-    import acre
-
-    def merge_env_variables(env, current_env):
-        result = current_env.copy()
-        for key, value in env.items():
-            # Keep missing keys by not filling `missing` kwarg
-            value = acre.lib.partial_format(value, data=current_env)
-            result[key] = value
-        return result
-
-
-    def compute_env_variables_structure(merged_env):
-        return acre.compute(merged_env, cleanup=False)
+    from ayon_core.lib.env_tools import (
+        merge_env_variables,
+        compute_env_variables_structure,
+    )
 
 
 def parse_environments(env_data, env_group=None, platform_name=None):
