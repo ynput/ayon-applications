@@ -57,6 +57,7 @@ from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
     get_action_manifests,
     IDENTIFIER_PREFIX,
+    DEBUG_TERMINAL_ID,
 )
 
 ATTRIBUTES_VERSION_MILESTONE = (1, 0, 0)
@@ -103,10 +104,21 @@ class ApplicationsAddon(BaseServerAddon):
         executor: "ActionExecutor",
     ) -> "ExecuteResponseModel":
         """Execute an action provided by the addon"""
-        app_name = executor.identifier.removeprefix(IDENTIFIER_PREFIX)
         context = executor.context
         project_name = context.project_name
         task_id = context.entity_ids[0]
+
+        if executor.identifier == DEBUG_TERMINAL_ID:
+            args = [
+                "addon", "applications", "launch-debug-terminal",
+                "--project", project_name,
+                "--task-id", task_id,
+            ]
+            return await executor.get_launcher_action_response(
+                args=args
+            )
+
+        app_name = executor.identifier.removeprefix(IDENTIFIER_PREFIX)
 
         config = await self.get_action_config(
             executor.identifier,
