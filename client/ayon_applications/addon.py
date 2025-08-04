@@ -369,12 +369,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
                 help="Full application name",
                 default=None,
             )
-            .option(
-                "--use-last-workfile",
-                help="Use last workfile",
-                required=False,
-                default=None,
-            )
         )
         # Convert main command to click object and add it to parent group
         addon_click_group.add_command(
@@ -473,26 +467,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         project: str,
         task_id: str,
         app: Optional[str],
-        use_last_workfile: Optional[bool],
     ):
-        if use_last_workfile is not None:
-            use_last_workfile = env_value_to_bool(
-                value=use_last_workfile, default=None
-            )
+        from .ui.debug_terminal_launch import run_with_debug_terminal
 
-        task_entity = ayon_api.get_task_by_id(
-            project, task_id, fields={"name", "folderId"}
-        )
-        folder_entity = ayon_api.get_folder_by_id(
-            project, task_entity["folderId"], fields={"path"}
-        )
-        if app is None:
-            from .ui.choose_app import choose_app
+        run_with_debug_terminal(self, project, task_id, app)
 
-            app = choose_app(self)
-            if app is None:
-                self.log.warning("Application was not selected. Closing.")
-                sys.exit(1)
     def _show_launch_error_dialog(self, message, detail):
         script_path = os.path.join(
             APPLICATIONS_ADDON_ROOT, "ui", "launch_failed_dialog.py"
