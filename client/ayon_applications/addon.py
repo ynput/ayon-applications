@@ -3,6 +3,7 @@ import sys
 import json
 import traceback
 import tempfile
+from typing import Optional
 
 import ayon_api
 
