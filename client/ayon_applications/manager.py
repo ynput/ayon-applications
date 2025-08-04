@@ -1,11 +1,16 @@
+from dataclasses import dataclass
 import os
 import sys
 import copy
+from hashlib import sha256
 import json
+from pathlib import Path
 import tempfile
 import platform
 import inspect
+import sqlite3
 import subprocess
+from typing import Optional
 
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.settings import get_studio_settings
@@ -14,6 +19,7 @@ from ayon_core.lib import (
     modules_from_path,
     classes_from_module,
     get_linux_launcher_args,
+    get_local_site_id,
 )
 from ayon_core.addon import AddonsManager
 
@@ -26,6 +32,30 @@ from .hooks import PostLaunchHook, PreLaunchHook
 from .defs import EnvironmentToolGroup, ApplicationGroup, LaunchTypes
 
 
+@dataclass
+class ProcessInfo:
+    """Information about a process launched by the addon.
+
+    Attributes:
+        name (str): Name of the process.
+        args (list[str]): Arguments for the process.
+        env (dict[str, str]): Environment variables for the process.
+        cwd (str): Current working directory for the process.
+        pid (int): Process ID of the launched process.
+        output (Path): Output of the process.
+
+    """
+
+    name: str
+    args: list[str]
+    env: dict[str, str]
+    cwd: str
+    pid: Optional[int] = None
+    output: Optional[Path] = None
+    created_at: Optional[str] = None
+    site_id: Optional[str] = None
+
+
 class ApplicationManager:
     """Load applications and tools and store them by their full name.
 
@@ -34,6 +64,9 @@ class ApplicationManager:
             will always use these values. Gives ability to create manager
             using different settings.
     """
+    # holds connection to the process info storage
+    # - this is used to store process information about launched applications
+    _process_storage: Optional[sqlite3.Connection] = None
 
     def __init__(self, studio_settings=None):
         self.log = Logger.get_logger(self.__class__.__name__)
@@ -46,6 +79,154 @@ class ApplicationManager:
         self._studio_settings = studio_settings
 
         self.refresh()
+
+    @staticmethod
+    def get_process_info_storage_location() -> Path:
+        """Get path to process info storage.
+
+        Returns:
+            Path: Path to process handlers storage.
+
+        """
+        return Path(
+            os.getenv("AYON_LAUNCHER_LOCAL_DIR")) / "process_handlers.db"
+
+    def _get_process_storage_connection(self) -> sqlite3.Connection:
+        """Store process handlers in the addon.
+
+        Returns:
+            sqlite3.Connection: Connection to the process handlers storage.
+
+        """
+        cnx = sqlite3.connect(self.get_process_info_storage_location())
+        cursor = cnx.cursor()
+        cursor.execute(
+            "CREATE TABLE IF NOT EXISTS process_info ("
+            "hash TEXT PRIMARY KEY, "
+            "name TEXT, "
+            "args TEXT DEFAULT NULL, "
+            "env TEXT DEFAULT NULL, "
+            "cwd TEXT DEFAULT NULL, "
+            "pid INTEGER DEFAULT NULL, "
+            "output_file TEXT DEFAULT NULL, "
+            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+            "site_id TEXT DEFAULT NULL"
+            ")"
+        )
+
+        return cnx
+
+    @staticmethod
+    def get_process_info_hash(process_info: ProcessInfo) -> str:
+        """Get hash of the process information.
+
+        Returns:
+            str: Hash of the process information.
+        """
+        return sha256(
+            f"{process_info.name}{process_info.pid}".encode()).hexdigest()
+
+
+    def store_process_info(self, process_info: ProcessInfo) -> None:
+        """Store process information.
+
+        Args:
+            process_info (ProcessInfo): Process handler to store.
+        """
+        if self._process_storage is None:
+            self._process_storage = self._get_process_storage_connection()
+
+        cursor = self._process_storage.cursor()
+        process_hash = self.get_process_info_hash(process_info)
+        cursor.execute(
+            "INSERT OR REPLACE INTO process_info "
+            "(hash, name, args, env, cwd, pid, output_file, site_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                process_hash,
+                process_info.name,
+                json.dumps(process_info.args),
+                json.dumps(process_info.env),
+                process_info.cwd,
+                process_info.pid,
+                (
+                    process_info.output.as_posix()
+                    if process_info.output else None
+                ),
+                process_info.site_id
+            )
+        )
+        self._process_storage.commit()
+
+    def get_process_info(self, process_hash: str) -> Optional[ProcessInfo]:
+        """Get process information by hash.
+
+        Args:
+            process_hash (str): Hash of the process.
+
+        Returns:
+            Optional[ProcessInfo]: Process information or None if not found.
+        """
+        if self._process_storage is None:
+            self._process_storage = self._get_process_storage_connection()
+
+        cursor = self._process_storage.cursor()
+        cursor.execute(
+            "SELECT * FROM process_info WHERE hash = ?",
+            (process_hash,)
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        return ProcessInfo(
+            name=row[1],
+            args=json.loads(row[2]),
+            env=json.loads(row[3]),
+            cwd=row[4],
+            pid=row[5],
+            output=Path(row[6]) if row[6] else None,
+            created_at=row[7],
+            site_id=row[8]
+        )
+
+    def get_process_info_by_name(
+        self, name: str, site_id: Optional[str] = None
+    ) -> Optional[ProcessInfo]:
+        """Get process information by name.
+
+        Args:
+            name (str): Name of the process.
+            site_id (Optional[str]): Site ID to filter processes.
+
+        Returns:
+            Optional[ProcessInfo]: Process information or None if not found.
+        """
+        if self._process_storage is None:
+            self._process_storage = self._get_process_storage_connection()
+
+        cursor = self._process_storage.cursor()
+        query = "SELECT * FROM handlers WHERE name = ?"
+        params = [name]
+        if site_id:
+            query += " AND site_id = ?"
+            params.append(site_id)
+
+        cursor.execute(query, params)
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        return ProcessInfo(
+            name=row[1],
+            args=json.loads(row[2]),
+            env=json.loads(row[3]),
+            cwd=row[4],
+            pid=row[5],
+            output=Path(row[6]) if row[6] else None,
+            created_at=row[7],
+            site_id=row[8]
+        )
 
     def set_studio_settings(self, studio_settings):
         """Ability to change init system settings.
@@ -508,11 +689,23 @@ class ApplicationLaunchContext:
         return self.application.manager
 
     def _run_process(self):
+        """Run the process with the given launch arguments and keyword args.
+
+        This method will handle the process differently based on the platform
+        it is running on. It will create a temporary file for output on
+        Windows and MacOS, while on Linux it will use a mid-process to launch
+        the application with the provided arguments and environment variables.
+
+        Todo (antirotor): store process info to the database on linux.
+
+        Returns:
+            subprocess.Popen: The process object created by Popen.
+
+        """
         # Windows and MacOS have easier process start
         low_platform = platform.system().lower()
         if low_platform in ("windows", "darwin"):
-            return subprocess.Popen(self.launch_args, **self.kwargs)
-
+            return self._execute_with_stdout()
         # Linux uses mid process
         # - it is possible that the mid process executable is not
         #   available for this version of AYON in that case use standard
@@ -537,9 +730,9 @@ class ApplicationLaunchContext:
                 if key in app_env
             }
 
-        # Create temp file
+        # Create the temp file
         json_temp = tempfile.NamedTemporaryFile(
-            mode="w", prefix="op_app_args", suffix=".json", delete=False
+            mode="w", prefix="ay_app_args", suffix=".json", delete=False
         )
         json_temp.close()
         json_temp_filpath = json_temp.name
@@ -556,6 +749,41 @@ class ApplicationLaunchContext:
         # Remove the temp file
         os.remove(json_temp_filpath)
         # Return process which is already terminated
+        return process
+
+    def _execute_with_stdout(self):
+        """Run the process with stdout and stderr redirected to a file.
+
+        Stores process information to the database.
+
+        Returns:
+            subprocess.Popen: The process object created by Popen.
+        """
+        temp_file = tempfile.NamedTemporaryFile(
+            mode="w",
+            prefix=f"ayon_{self.application.host_name}_output_",
+            suffix=".txt",
+            delete=False
+        )
+        temp_file_path = temp_file.name
+        temp_file.close()
+        tmp_file = open(temp_file_path, "w")
+        self.kwargs["stdout"] = tmp_file
+        self.kwargs["stderr"] = tmp_file
+        process = subprocess.Popen(self.launch_args, **self.kwargs)
+
+        process_info = ProcessInfo(
+            name=self.application.full_name,
+            args=self.launch_args,
+            env=self.kwargs.get("env", {}),
+            cwd=os.getcwd(),
+            pid=process.pid,
+            output=Path(temp_file_path),
+            site_id=get_local_site_id()
+        )
+        # Store process info to the database
+        self.manager.store_process_info(process_info)
+
         return process
 
     def run_prelaunch_hooks(self):
