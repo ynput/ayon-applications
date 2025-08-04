@@ -129,7 +129,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
     def get_plugin_paths(self):
         plugins_dir = os.path.join(APPLICATIONS_ADDON_ROOT, "plugins")
         return {
-            "actions": [os.path.join(plugins_dir, "launcher_actions")],
             "publish": [os.path.join(plugins_dir, "publish")]
         }
 
