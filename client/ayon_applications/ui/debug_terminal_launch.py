@@ -104,9 +104,6 @@ class ChooseAppDialog(QtWidgets.QDialog):
         empty_pix = QtGui.QPixmap(128, 128)
         empty_pix.fill(QtCore.Qt.transparent)
         empty_icon = QtGui.QIcon(empty_pix)
-        apps_manager: ApplicationManager = (
-            self._addon.get_applications_manager()
-        )
 
         items = []
         icons_by_name = {}
