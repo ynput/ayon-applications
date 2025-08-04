@@ -90,10 +90,6 @@ class ApplicationAction(LauncherAction):
         )
         if self.application.full_name not in apps:
             return False
-
-        only_available = project_settings["applications"]["only_available"]
-        if only_available and not self.application.find_executable():
-            return False
         return True
 
     def _show_message_box(self, title, message, details=None):
