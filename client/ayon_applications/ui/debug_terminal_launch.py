@@ -232,7 +232,7 @@ class DebugTerminalStarter:
         terminal_applications = list(
             apps_manager.app_groups["terminal"].variants.values()
         )
-        print(len(terminal_applications))
+
         if len(terminal_applications) == 0:
             # This is not reported -> Should be
             print(
