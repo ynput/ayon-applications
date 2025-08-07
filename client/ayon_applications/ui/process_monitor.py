@@ -1,5 +1,6 @@
 from __future__ import annotations
 import contextlib
+from logging import getLogger
 import os
 from pathlib import Path
 from time import perf_counter
@@ -7,6 +8,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from qtpy import QtWidgets, QtCore, QtGui
 from qtpy.QtCore import QRunnable, Slot, QThreadPool
+from qtpy.QtCore import QModelIndex, QPersistentModelIndex
 
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
@@ -14,7 +16,6 @@ from ayon_core.tools.utils import get_ayon_qt_app
 from ..manager import ApplicationManager
 
 if TYPE_CHECKING:
-    from qtpy.QtCore import QModelIndex, QPersistentModelIndex
     from ..manager import ProcessInfo
 
 
@@ -22,6 +23,7 @@ ModelIndex = Union[QModelIndex, QPersistentModelIndex]
 
 
 class Catchtime:
+    """Context manager to measure execution time."""
     def __enter__(self):
         self.start = perf_counter()
         return self
@@ -29,7 +31,6 @@ class Catchtime:
     def __exit__(self, type, value, traceback):
         self.time = perf_counter() - self.start
         self.readout = f'Time: {self.time:.3f} seconds'
-        print(self.readout)
 
 
 class ProcessRefreshWorkerSignals(QtCore.QObject):
@@ -45,6 +46,7 @@ class ProcessRefreshWorker(QRunnable):
         self.signals = ProcessRefreshWorkerSignals()
         self.signature = self.__class__.__name__
         self._manager = manager
+        self._log = getLogger(self.signature)
 
     @Slot()
     def run(self) -> None:
@@ -55,7 +57,7 @@ class ProcessRefreshWorker(QRunnable):
                 self.signals.finished.emit(processes)
             except Exception as e:
                 self.signals.error.emit(str(e))
-        print(f"{self.signature}: Refresh from db completed in {timer.readout}")
+        self._log.debug("Refresh from db completed in %", timer.readout)
 
 class FileContentWorkerSignals(QtCore.QObject):
     """Signals for FileContentWorker."""
@@ -71,11 +73,12 @@ class FileContentWorker(QRunnable):
         self.signals = FileContentWorkerSignals()
         self.signature = self.__class__.__name__
         self._file_path = file_path
+        self._log = getLogger(self.signature)
 
     @Slot()
     def run(self) -> None:
         """Load file content in background thread."""
-        print(f"{self.signature}: Loading file content from {self._file_path}")
+        self._log.debug("Loading file content from %", self._file_path)
         try:
             if not self._file_path or not Path(self._file_path).exists():
                 self.signals.finished.emit("Output file not found")
@@ -105,11 +108,12 @@ class CleanupWorker(QRunnable):
         self._manager = manager
         self._cleanup_type = cleanup_type  # "inactive" or "single"
         self._process_hash = process_hash
+        self._log = getLogger(self.signature)
 
     @Slot()
     def run(self) -> None:
         """Perform cleanup in background thread."""
-        print(f"{self.signature}: Starting cleanup of type: {self._cleanup_type}")
+        self._log.debug("Starting cleanup of type: %", self._cleanup_type)
         try:
             if self._cleanup_type == "inactive":
                 self._cleanup_inactive()
@@ -302,12 +306,13 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._log = getLogger(self.__class__.__name__)
         self.setWindowTitle("AYON Process Monitor")
         self.setMinimumSize(1000, 600)
         self._thread_pool = QThreadPool()
-        print(
-            "Using thread pool with "
-            f"{self._thread_pool.maxThreadCount()} threads")
+        self._log.debug(
+            "Using thread pool with % threads.",
+            self._thread_pool.maxThreadCount())
 
         self._manager = ApplicationManager()
         self._current_process = None
@@ -316,7 +321,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._setup_ui()
 
     def _setup_ui(self):
-        """Setup the user interface."""
+        """Set up the user interface."""
         # central_widget = QtWidgets.QWidget()
         central_widget = self
         # self.setCentralWidget(central_widget)
@@ -457,7 +462,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         # self.statusBar().showMessage(f"Loaded {count} processes")
         self._set_loading_state(False)
-        print("Process table updated with new data")
+        self._log.debug("Process table updated with new data")
 
     def _on_refresh_error(self, error_msg):
         """Handle refresh error."""
@@ -657,15 +662,12 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
     def showEvent(self, event):
         """Apply stylesheet when the window is shown."""
         self.setStyleSheet(load_stylesheet())
-
-        print("ProcessMonitorWindow showEvent triggered")
         super().showEvent(event)
         self._setup_timers()
         self._refresh_data()
 
     def closeEvent(self, event):
         """Clean up timers and threads when closing."""
-        print("ProcessMonitorWindow closeEvent triggered")
         if self._refresh_timer:
             self._refresh_timer.stop()
         if self._file_reload_timer:

@@ -32,18 +32,7 @@ from .utils import get_app_icon_path
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
-    @property
-    def label(self) -> str:
-        return "Process Monitor"
 
-    def on_action_trigger(self) -> None:
-        """Action triggered when the tray icon is clicked."""
-        print("Applications addon action triggered.")
-        from ayon_applications.ui.process_monitor import ProcessMonitorWindow
-
-        self._process_monitor_window = ProcessMonitorWindow()
-        self._process_monitor_window.show()
-        self._process_monitor_window.activateWindow()
 
     name = "applications"
     version = __version__
@@ -51,6 +40,23 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     def initialize(self, settings):
         # TODO remove when addon is removed from ayon-core
         self.enabled = self.name in settings
+
+    def tray_init(self) -> None:
+        """Initialize the tray action."""
+
+    @property
+    def label(self) -> str:
+        return "Process Monitor"
+
+    def on_action_trigger(self) -> None:
+        """Action triggered when the tray icon is clicked."""
+        from ayon_applications.ui.process_monitor import (
+            ProcessMonitorWindow,
+        )
+
+        self._process_monitor_window = ProcessMonitorWindow()
+        self._process_monitor_window.show()
+        self._process_monitor_window.activateWindow()
 
     def get_app_environments_for_context(
         self,
