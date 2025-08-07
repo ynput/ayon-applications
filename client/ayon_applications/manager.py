@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 import os
 import sys
@@ -31,6 +32,12 @@ from .exceptions import (
 from .hooks import PostLaunchHook, PreLaunchHook
 from .defs import EnvironmentToolGroup, ApplicationGroup, LaunchTypes
 
+# Check if psutil is available
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 
 @dataclass
 class ProcessInfo:
@@ -42,6 +49,7 @@ class ProcessInfo:
         env (dict[str, str]): Environment variables for the process.
         cwd (str): Current working directory for the process.
         pid (int): Process ID of the launched process.
+        active (bool): Whether the process is currently active.
         output (Path): Output of the process.
 
     """
@@ -51,6 +59,7 @@ class ProcessInfo:
     env: dict[str, str]
     cwd: str
     pid: Optional[int] = None
+    active: bool = False
     output: Optional[Path] = None
     created_at: Optional[str] = None
     site_id: Optional[str] = None
@@ -82,14 +91,20 @@ class ApplicationManager:
 
     @staticmethod
     def get_process_info_storage_location() -> Path:
-        """Get path to process info storage.
+        """Get the path to process info storage.
 
         Returns:
-            Path: Path to process handlers storage.
+            Path: Path to the process handlers storage.
 
         """
-        return Path(
-            os.getenv("AYON_LAUNCHER_LOCAL_DIR")) / "process_handlers.db"
+        storage_root = os.getenv("AYON_LAUNCHER_LOCAL_DIR")
+        if not storage_root:
+            msg = (
+                "Cannot determine process handlers storage location. "
+                "Environment variable 'AYON_LAUNCHER_LOCAL_DIR' is not set. "
+            )
+            raise RuntimeError(msg)
+        return Path(storage_root) / "process_handlers.db"
 
     def _get_process_storage_connection(self) -> sqlite3.Connection:
         """Store process handlers in the addon.
@@ -206,7 +221,7 @@ class ApplicationManager:
             self._process_storage = self._get_process_storage_connection()
 
         cursor = self._process_storage.cursor()
-        query = "SELECT * FROM handlers WHERE name = ?"
+        query = "SELECT * FROM process_info WHERE name = ?"
         params = [name]
         if site_id:
             query += " AND site_id = ?"
@@ -344,12 +359,167 @@ class ApplicationManager:
             ApplicationExecutableNotFound: Executables in application definition
                 were not found on this machine.
             ApplicationLaunchFailed: Something important for application launch
-                failed. Exception should contain explanation message,
+                failed. Exception should contain an explanation message,
                 traceback should not be needed.
         """
 
         context = self.create_launch_context(app_name, **data)
         return self.launch_with_context(context)
+    def get_all_process_info(self) -> list[ProcessInfo]:
+        """Get all process information from the database.
+
+        Returns:
+            list[ProcessInfo]: List of all process information.
+        """
+        if self._process_storage is None:
+            self._process_storage = self._get_process_storage_connection()
+
+        cursor = self._process_storage.cursor()
+        cursor.execute("SELECT * FROM process_info ORDER BY created_at DESC")
+        rows = cursor.fetchall()
+
+        processes: list[ProcessInfo] = []
+        processes.extend(
+            ProcessInfo(
+                name=row[1],
+                args=json.loads(row[2]) if row[2] else [],
+                env=json.loads(row[3]) if row[3] else {},
+                cwd=row[4],
+                pid=row[5],
+                output=Path(row[6]) if row[6] else None,
+                created_at=row[7],
+                site_id=row[8],
+            )
+            for row in rows
+        )
+        # Check if processes are still running
+        pids = [proc.pid for proc in processes if proc.pid is not None]
+        if pids:
+            running_status = self._are_processes_running(pids)
+            for proc, is_running in zip(processes, running_status):
+                proc.active = is_running[1]
+
+        return processes
+
+    def delete_process_info(self, process_hash: str) -> bool:
+        """Delete process information by hash.
+
+        Args:
+            process_hash (str): Hash of the process to delete.
+
+        Returns:
+            bool: True if deleted, False if not found.
+        """
+        if self._process_storage is None:
+            self._process_storage = self._get_process_storage_connection()
+
+        cursor = self._process_storage.cursor()
+        cursor.execute("DELETE FROM process_info WHERE hash = ?", (process_hash,))
+        self._process_storage.commit()
+        return cursor.rowcount > 0
+
+    def delete_inactive_processes(self) -> int:
+        """Delete all inactive process information.
+
+        Returns:
+            int: Number of deleted processes.
+        """
+        if self._process_storage is None:
+            self._process_storage = self._get_process_storage_connection()
+
+        # Get all processes and check which ones are inactive
+        all_processes = self.get_all_process_info()
+        inactive_hashes = []
+
+        for process in all_processes:
+            if not process.active:
+                process_hash = self.get_process_info_hash(process)
+                inactive_hashes.append(process_hash)
+
+        if not inactive_hashes:
+            return 0
+
+        cursor = self._process_storage.cursor()
+        placeholders = ','.join('?' * len(inactive_hashes))
+        cursor.execute(
+            f"DELETE FROM process_info WHERE hash IN ({placeholders})",
+            inactive_hashes
+        )
+        self._process_storage.commit()
+        return cursor.rowcount
+
+    @staticmethod
+    def _is_process_running_psutils(pid: int) -> bool:
+        """Check if a process is running using psutil.
+
+        Args:
+            pid (int): Process ID to check.
+
+        Returns:
+            bool: True if the process is running, False otherwise.
+
+        """
+        # import check should be done before invoking this method
+        if not psutil:
+            msg = "psutil module is not available."
+            raise RuntimeError(msg)
+
+        return psutil.pid_exists(pid)
+
+    @staticmethod
+    def _are_processes_running(pids: list[int]) -> list[tuple[int, bool]]:
+        """Check if the processes are still running.
+
+        Args:
+            pids (list[int]): Processes ID to check.
+
+        Returns:
+            list[tuple[int, bool]]: List of tuples with process ID and
+                boolean indicating if the process is running.
+        """
+        result: list[tuple[int, bool]] = []
+
+        if not pids:
+            return result
+
+        try:
+            import psutil
+            for pid in pids:
+                is_running = psutil.pid_exists(pid)
+                result.append((pid, is_running))
+
+            return result
+
+        except ImportError:
+            # Fallback for systems without psutil
+            if platform.system().lower() == "windows":
+                filters: list[str] = []
+                filters.extend(f"/FI PID eq {pid}" for pid in pids)
+                import subprocess
+
+                try:
+                    tasklist_result = subprocess.run(
+                        ["tasklist", *filters], capture_output=True, text=True
+                    )
+                    for line in tasklist_result.stdout.splitlines():
+                        for pid in pids:
+                            if f"{pid}" in line:
+                                result.append((pid, True))
+                                break
+                except subprocess.SubprocessError:
+                    return []
+            else:
+                for pid in pids:
+                    # Check if the process is running by sending signal 0
+                    # - this does not send any signal, just checks if the
+                    # process exists
+                    try:
+                        os.kill(pid, 0)
+                    except OSError:
+                        result.append((pid, False))
+                    else:
+                        result.append((pid, True))
+        return result
 
 
 class ApplicationLaunchContext:

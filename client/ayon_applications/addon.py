@@ -14,6 +14,7 @@ from ayon_core.lib import (
 from ayon_core.addon import (
     AYONAddon,
     IPluginPaths,
+    ITrayAction,
     click_wrap,
     ensure_addons_are_process_ready,
 )
@@ -30,7 +31,20 @@ from .exceptions import (
 from .utils import get_app_icon_path
 
 
-class ApplicationsAddon(AYONAddon, IPluginPaths):
+class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
+    @property
+    def label(self) -> str:
+        return "Process Monitor"
+
+    def on_action_trigger(self) -> None:
+        """Action triggered when the tray icon is clicked."""
+        print("Applications addon action triggered.")
+        from ayon_applications.ui.process_monitor import ProcessMonitorWindow
+
+        self._process_monitor_window = ProcessMonitorWindow()
+        self._process_monitor_window.show()
+        self._process_monitor_window.activateWindow()
+
     name = "applications"
     version = __version__
 
