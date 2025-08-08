@@ -325,9 +325,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
     def _setup_ui(self):
         """Set up the user interface."""
-        # central_widget = QtWidgets.QWidget()
         central_widget = self
-        # self.setCentralWidget(central_widget)
 
         # Main layout
         main_layout = QtWidgets.QVBoxLayout(central_widget)
