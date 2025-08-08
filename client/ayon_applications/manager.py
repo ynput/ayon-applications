@@ -940,7 +940,7 @@ class ApplicationLaunchContext:
                     env=self.kwargs.get("env", {}),
                     cwd=os.getcwd(),
                     pid=json_data.get("pid"),
-                    output=Path(temp_file.as_posix()),
+                    output=Path(temp_file.name),
                     site_id=get_local_site_id()
                 )
                 # Store process info to the database
