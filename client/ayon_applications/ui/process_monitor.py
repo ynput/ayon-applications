@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 ModelIndex = Union[QModelIndex, QPersistentModelIndex]
 
 
-class Catchtime:
+class CatchTime:
     """Context manager to measure execution time."""
     def __enter__(self):
         self.start = perf_counter()
@@ -51,13 +51,14 @@ class ProcessRefreshWorker(QRunnable):
     @Slot()
     def run(self) -> None:
         """Refresh process data in background thread."""
-        with Catchtime() as timer:
+        with CatchTime() as timer:
             try:
                 processes = self._manager.get_all_process_info()
                 self.signals.finished.emit(processes)
             except Exception as e:
                 self.signals.error.emit(str(e))
-        self._log.debug("Refresh from db completed in %", timer.readout)
+        self._log.debug(
+            "Refresh from db completed in %s", timer.readout)
 
 class FileContentWorkerSignals(QtCore.QObject):
     """Signals for FileContentWorker."""
@@ -78,7 +79,7 @@ class FileContentWorker(QRunnable):
     @Slot()
     def run(self) -> None:
         """Load file content in background thread."""
-        self._log.debug("Loading file content from %", self._file_path)
+        self._log.debug("Loading file content from %s", self._file_path)
         try:
             if not self._file_path or not Path(self._file_path).exists():
                 self.signals.finished.emit("Output file not found")
@@ -92,7 +93,8 @@ class FileContentWorker(QRunnable):
 
 class CleanupWorkerSignals(QtCore.QObject):
     """Signals for CleanupWorker."""
-    finished = QtCore.Signal(int, int)  # Emits (deleted_processes, deleted_files)
+    # Emits (deleted_processes, deleted_files)
+    finished = QtCore.Signal(int, int)
     error = QtCore.Signal(str)
 
 class CleanupWorker(QRunnable):
@@ -113,7 +115,8 @@ class CleanupWorker(QRunnable):
     @Slot()
     def run(self) -> None:
         """Perform cleanup in background thread."""
-        self._log.debug("Starting cleanup of type: %", self._cleanup_type)
+        self._log.debug(
+            "Starting cleanup of type: %s", self._cleanup_type)
         try:
             if self._cleanup_type == "inactive":
                 self._cleanup_inactive()
@@ -311,7 +314,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self.setMinimumSize(1000, 600)
         self._thread_pool = QThreadPool()
         self._log.debug(
-            "Using thread pool with % threads.",
+            "Using thread pool with %s threads.",
             self._thread_pool.maxThreadCount())
 
         self._manager = ApplicationManager()
@@ -424,7 +427,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         # Timer for refreshing table data
         self._refresh_timer = QtCore.QTimer()
         self._refresh_timer.timeout.connect(self._refresh_data)
-        self._refresh_timer.start(10000)  # Refresh every 5 seconds
+        self._refresh_timer.start(5000)  # Refresh every 5 seconds
 
         # Timer for reloading file content
         self._file_reload_timer = QtCore.QTimer()
