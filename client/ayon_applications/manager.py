@@ -902,7 +902,7 @@ class ApplicationLaunchContext:
             "cwd": os.getcwd(),
             "args": self.launch_args,
             "env": app_env,
-            "output": temp_file.as_posix()
+            "output": temp_file.name
         }
         if app_env:
             # Filter environments of subprocess
