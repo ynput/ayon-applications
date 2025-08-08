@@ -487,7 +487,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         # Start auto-reload timer if the process is running and
         # auto-reload is enabled
         if (self._auto_reload_checkbox.isChecked() and
-                process.pid and process.active == "Active"):
+                process.pid and process.active):
             self._file_reload_timer.start(2000)  # Reload every 2 seconds
         else:
             self._file_reload_timer.stop()
