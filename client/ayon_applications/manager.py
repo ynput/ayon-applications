@@ -888,9 +888,21 @@ class ApplicationLaunchContext:
         # - store arguments to a json and pass path to json as last argument
         # - pass environments to set
         app_env = self.kwargs.pop("env", {})
+        # create temporaty file path passed to midprocess
+        temp_file = tempfile.NamedTemporaryFile(
+            mode="w",
+            prefix=f"ayon_{self.application.host_name}_output_",
+            suffix=".txt",
+            delete=False
+        )
+
         json_data = {
+            "name": self.application.full_name,
+            "site_id": get_local_site_id(),
+            "cwd": os.getcwd(),
             "args": self.launch_args,
-            "env": app_env
+            "env": app_env,
+            "output": temp_file.as_posix()
         }
         if app_env:
             # Filter environments of subprocess
@@ -905,19 +917,42 @@ class ApplicationLaunchContext:
             mode="w", prefix="ay_app_args", suffix=".json", delete=False
         )
         json_temp.close()
-        json_temp_filpath = json_temp.name
-        with open(json_temp_filpath, "w") as stream:
+        json_temp_filepath = json_temp.name
+        with open(json_temp_filepath, "w") as stream:
             json.dump(json_data, stream)
 
-        launch_args.append(json_temp_filpath)
+        launch_args.append(json_temp_filepath)
 
         # Create mid-process which will launch application
         process = subprocess.Popen(launch_args, **self.kwargs)
         # Wait until the process finishes
         #   - This is important! The process would stay in "open" state.
         process.wait()
+
+        # read back pid from the json file
+        try:
+            with open(json_temp_filepath, "r") as stream:
+                json_data = json.load(stream)
+
+                process_info = ProcessInfo(
+                    name=self.application.full_name,
+                    args=self.launch_args,
+                    env=self.kwargs.get("env", {}),
+                    cwd=os.getcwd(),
+                    pid=json_data.get("pid"),
+                    output=Path(temp_file.as_posix()),
+                    site_id=get_local_site_id()
+                )
+                # Store process info to the database
+                self.manager.store_process_info(process_info)
+        except OSError as e:
+            self.log.error(
+                "Failed to read process info from JSON file: %s", e,
+                exc_info=True
+            )
+
         # Remove the temp file
-        os.remove(json_temp_filpath)
+        os.remove(json_temp_filepath)
         # Return process which is already terminated
         return process
 
@@ -937,22 +972,22 @@ class ApplicationLaunchContext:
         )
         temp_file_path = temp_file.name
         temp_file.close()
-        tmp_file = open(temp_file_path, "w")
-        self.kwargs["stdout"] = tmp_file
-        self.kwargs["stderr"] = tmp_file
-        process = subprocess.Popen(self.launch_args, **self.kwargs)
+        with open(temp_file_path, "w") as tmp_file:
+            self.kwargs["stdout"] = tmp_file
+            self.kwargs["stderr"] = tmp_file
+            process = subprocess.Popen(self.launch_args, **self.kwargs)
 
-        process_info = ProcessInfo(
-            name=self.application.full_name,
-            args=self.launch_args,
-            env=self.kwargs.get("env", {}),
-            cwd=os.getcwd(),
-            pid=process.pid,
-            output=Path(temp_file_path),
-            site_id=get_local_site_id()
-        )
-        # Store process info to the database
-        self.manager.store_process_info(process_info)
+            process_info = ProcessInfo(
+                name=self.application.full_name,
+                args=self.launch_args,
+                env=self.kwargs.get("env", {}),
+                cwd=os.getcwd(),
+                pid=process.pid,
+                output=Path(temp_file_path),
+                site_id=get_local_site_id()
+            )
+            # Store process info to the database
+            self.manager.store_process_info(process_info)
 
         return process
 
