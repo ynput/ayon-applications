@@ -888,7 +888,7 @@ class ApplicationLaunchContext:
         # - store arguments to a json and pass path to json as last argument
         # - pass environments to set
         app_env = self.kwargs.pop("env", {})
-        # create temporaty file path passed to midprocess
+        # create temporary file path passed to midprocess
         temp_file = tempfile.NamedTemporaryFile(
             mode="w",
             prefix=f"ayon_{self.application.host_name}_output_",
