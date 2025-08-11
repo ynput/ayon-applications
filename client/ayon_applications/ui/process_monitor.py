@@ -325,9 +325,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
     def _setup_ui(self):
         """Set up the user interface."""
-        # central_widget = QtWidgets.QWidget()
         central_widget = self
-        # self.setCentralWidget(central_widget)
 
         # Main layout
         main_layout = QtWidgets.QVBoxLayout(central_widget)
@@ -487,7 +485,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         # Start auto-reload timer if the process is running and
         # auto-reload is enabled
         if (self._auto_reload_checkbox.isChecked() and
-                process.pid and process.active == "Active"):
+                process.pid and process.active):
             self._file_reload_timer.start(2000)  # Reload every 2 seconds
         else:
             self._file_reload_timer.stop()

@@ -909,7 +909,7 @@ class ApplicationLaunchContext:
         # - store arguments to a json and pass path to json as last argument
         # - pass environments to set
         app_env = self.kwargs.pop("env", {})
-        # create temporaty file path passed to midprocess
+        # create temporary file path passed to midprocess
         temp_file = tempfile.NamedTemporaryFile(
             mode="w",
             prefix=f"ayon_{self.application.host_name}_output_",
@@ -923,7 +923,7 @@ class ApplicationLaunchContext:
             "cwd": os.getcwd(),
             "args": self.launch_args,
             "env": app_env,
-            "output": temp_file.as_posix()
+            "output": temp_file.name
         }
         if app_env:
             # Filter environments of subprocess
@@ -961,7 +961,7 @@ class ApplicationLaunchContext:
                     env=self.kwargs.get("env", {}),
                     cwd=os.getcwd(),
                     pid=json_data.get("pid"),
-                    output=Path(temp_file.as_posix()),
+                    output=Path(temp_file.name),
                     site_id=get_local_site_id()
                 )
                 # Store process info to the database
