@@ -4,7 +4,7 @@ from logging import getLogger
 import os
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
 from qtpy import QtWidgets, QtCore, QtGui
 from qtpy.QtCore import QRunnable, Slot, QThreadPool
@@ -13,10 +13,7 @@ from qtpy.QtCore import QModelIndex, QPersistentModelIndex
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
 
-from ..manager import ApplicationManager
-
-if TYPE_CHECKING:
-    from ..manager import ProcessInfo
+from ..manager import ApplicationManager, ProcessInfo
 
 
 ModelIndex = Union[QModelIndex, QPersistentModelIndex]
