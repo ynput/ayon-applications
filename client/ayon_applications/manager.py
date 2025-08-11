@@ -393,6 +393,11 @@ class ApplicationManager:
             for row in rows
         )
         # Check if processes are still running
+        # This is done by checking the pid of the process.
+        # It is using `_are_processes_running` method which that
+        # checks for processes in batch, mostly because of the fallback
+        # on systems without `psutil` module. See `_are_processes_running`
+        # documentation for more details.
         pids = [proc.pid for proc in processes if proc.pid is not None]
         if pids:
             running_status = self._are_processes_running(pids)
@@ -469,6 +474,22 @@ class ApplicationManager:
     @staticmethod
     def _are_processes_running(pids: list[int]) -> list[tuple[int, bool]]:
         """Check if the processes are still running.
+
+        This checks for presence of `psutil` module and uses it if available.
+        If `psutil` is not available, it falls back to using `os.kill` on Unix
+        systems or `tasklist` command on Windows to check if the processes
+        are running. `psutil` is preferred because it is more reliable and
+        provides a consistent interface across platforms. But since it is a
+        not pure Python module, it may not be available on all systems.
+
+        The batch check is done to avoid multiple calls to the system
+        to check for each process individually, which can be inefficient -
+        especially on Windows where `tasklist` can be slow for many processes.
+        `tasklist` supports querying multiple processes at once using
+        the `/FI` filter option.
+
+        We should refactor this method once we find out that the fallback
+        method is not needed anymore.
 
         Args:
             pids (list[int]): Processes ID to check.
@@ -972,7 +993,7 @@ class ApplicationLaunchContext:
         )
         temp_file_path = temp_file.name
         temp_file.close()
-        with open(temp_file_path, "w") as tmp_file:
+        with open(temp_file_path, "wb") as tmp_file:
             self.kwargs["stdout"] = tmp_file
             self.kwargs["stderr"] = tmp_file
             process = subprocess.Popen(self.launch_args, **self.kwargs)
