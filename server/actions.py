@@ -123,7 +123,7 @@ async def get_action_manifests(addon, project_name, variant):
 
     output = [
         SimpleActionManifest(
-            order=-1,
+            order=100,
             identifier=DEBUG_TERMINAL_ID,
             label="Terminal",
             category="Applications",
