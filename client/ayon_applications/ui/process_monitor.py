@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 
 ModelIndex = Union[QModelIndex, QPersistentModelIndex]
+# type alias for data returned by ProcessTableModel.data()
+ProcessTableModelData = Optional[Union[str, QtGui.QColor, ProcessInfo]]
 
 
 class CatchTime:
@@ -276,7 +278,8 @@ class ProcessTableModel(QtCore.QAbstractTableModel):
 
     def data(
             self, index: ModelIndex,
-            role: int = QtCore.Qt.ItemDataRole.DisplayRole) -> Optional[Union[str, QtGui.QColor, ProcessInfo]]:  # noqa: E501
+            role: int = QtCore.Qt.ItemDataRole.DisplayRole
+    ) -> ProcessTableModelData:
         """Return data for the specified index and role."""
         if not index.isValid() or index.row() >= len(self._processes):
             return None
