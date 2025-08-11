@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import json
@@ -124,10 +126,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         return ApplicationManager(settings)
 
     def get_plugin_paths(self):
-        plugins_dir = os.path.join(APPLICATIONS_ADDON_ROOT, "plugins")
-        return {
-            "publish": [os.path.join(plugins_dir, "publish")]
-        }
+        return {}
+
+    def get_publish_plugin_paths(self, host_name: str) -> list[str]:
+        return [
+            os.path.join(APPLICATIONS_ADDON_ROOT, "plugins", "publish")
+        ]
 
     def get_launch_hook_paths(self, app):
         return [
