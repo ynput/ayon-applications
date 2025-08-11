@@ -35,10 +35,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
     name = "applications"
     version = __version__
 
-    def initialize(self, settings):
-        # TODO remove when addon is removed from ayon-core
-        self.enabled = self.name in settings
-
     def get_app_environments_for_context(
         self,
         project_name,
