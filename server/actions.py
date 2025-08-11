@@ -13,6 +13,7 @@ except ImportError:
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 IDENTIFIER_PREFIX = "application.launch."
+DEBUG_TERMINAL_ID = "application.debug_terminal"
 
 _manifest_fields = getattr(SimpleActionManifest, "__fields__", None)
 if _manifest_fields is None:
@@ -119,10 +120,26 @@ async def get_action_manifests(addon, project_name, variant):
         app_groups.append(value)
 
     project_entity = await ProjectEntity.load(project_name)
+
+    output = [
+        SimpleActionManifest(
+            order=100,
+            identifier=DEBUG_TERMINAL_ID,
+            label="Terminal",
+            category="Applications",
+            entity_type = "task",
+            allow_multiselection = False,
+            icon={
+                "type": "material-symbols",
+                "name": "terminal",
+                "color": "#e8770e",
+            },
+        ),
+    ]
     if not addon_settings["project_applications"]["enabled"]:
-        output = await _get_action_manifests_with_attributes(
+        output.extend(await _get_action_manifests_with_attributes(
             app_groups, project_entity
-        )
+        ))
         return output
 
     # This is very simplified profiles logic
@@ -176,7 +193,6 @@ async def get_action_manifests(addon, project_name, variant):
             value=False,
         )
 
-    output = []
     for app_item in app_items:
         app_name = app_item["value"]
         task_types = task_types_by_app_name[app_name]

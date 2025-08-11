@@ -3,6 +3,7 @@ import sys
 import json
 import traceback
 import tempfile
+from typing import Optional
 
 import ayon_api
 
@@ -129,7 +130,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
     def get_plugin_paths(self):
         plugins_dir = os.path.join(APPLICATIONS_ADDON_ROOT, "plugins")
         return {
-            "actions": [os.path.join(plugins_dir, "launcher_actions")],
             "publish": [os.path.join(plugins_dir, "publish")]
         }
 
@@ -355,6 +355,21 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
                 default=None,
             )
         )
+        (
+            main_group.command(
+                self._cli_launch_with_debug_terminal,
+                name="launch-debug-terminal",
+                help="Launch with debug terminal"
+            )
+            .option("--project", required=True, help="Project name")
+            .option("--task-id", required=True, help="Task id")
+            .option(
+                "--app",
+                required=False,
+                help="Full application name",
+                default=None,
+            )
+        )
         # Convert main command to click object and add it to parent group
         addon_click_group.add_command(
             main_group.to_click_obj()
@@ -446,6 +461,16 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             task_entity["name"],
             use_last_workfile,
         )
+
+    def _cli_launch_with_debug_terminal(
+        self,
+        project: str,
+        task_id: str,
+        app: Optional[str],
+    ):
+        from .ui.debug_terminal_launch import run_with_debug_terminal
+
+        run_with_debug_terminal(self, project, task_id, app)
 
     def _show_launch_error_dialog(self, message, detail):
         script_path = os.path.join(
