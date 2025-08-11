@@ -125,7 +125,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         """
         return ApplicationManager(settings)
 
-    def get_plugin_paths(self):
+    def get_plugin_paths(self) -> dict[str, list[str]]:
         return {}
 
     def get_publish_plugin_paths(self, host_name: str) -> list[str]:
