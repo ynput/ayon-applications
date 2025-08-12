@@ -150,7 +150,7 @@ class ApplicationManager:
 
     def launch_with_context(
         self, launch_context: "ApplicationLaunchContext"
-    ):
+    ) -> Optional[subprocess.Popen]:
         """Launch application using existing launch context.
 
         Args:
@@ -162,7 +162,7 @@ class ApplicationManager:
             raise ApplicationExecutableNotFound(launch_context.application)
         return launch_context.launch()
 
-    def launch(self, app_name, **data):
+    def launch(self, app_name, **data) -> Optional[subprocess.Popen]:
         """Launch procedure.
 
         For host application it's expected to contain "project_name",
@@ -181,8 +181,8 @@ class ApplicationManager:
             ApplicationLaunchFailed: Something important for application launch
                 failed. Exception should contain explanation message,
                 traceback should not be needed.
-        """
 
+        """
         context = self.create_launch_context(app_name, **data)
         return self.launch_with_context(context)
 
@@ -333,9 +333,9 @@ class ApplicationLaunchContext:
         can expect application as argument or nothing.
 
         Returns:
-            List[str]: Paths to launch hook directories.
-        """
+            list[str]: Paths to launch hook directories.
 
+        """
         expected_types = (list, tuple, set)
 
         output = []
