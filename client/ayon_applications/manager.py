@@ -668,8 +668,6 @@ class ApplicationLaunchContext:
             list: Unpacked arguments.
 
         """
-        if isinstance(args, str):
-            return args
         all_cleared = False
         while not all_cleared:
             all_cleared = True
