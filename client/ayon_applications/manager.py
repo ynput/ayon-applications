@@ -312,7 +312,7 @@ class ApplicationLaunchContext:
     @env.setter
     def env(self, value: dict[str, str]) -> None:
         if not isinstance(value, dict):
-            raise ValueError(
+            raise TypeError(
                 f"'env' attribute expect 'dict' object. Got: {type(value)}"
             )
         self.kwargs["env"] = value
