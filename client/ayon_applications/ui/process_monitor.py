@@ -33,7 +33,10 @@ class CatchTime:
 
 
 class ProcessRefreshWorkerSignals(QtCore.QObject):
-    """Signals for ProcessRefreshWorker."""
+    """Signals for ProcessRefreshWorker.
+
+    Signals can be defined only in classes derived from QObject.
+    """
     finished = QtCore.Signal(list)  # Emits list of ProcessInfo
     error = QtCore.Signal(str)
 
@@ -60,7 +63,10 @@ class ProcessRefreshWorker(QRunnable):
             "Refresh from db completed in %s", timer.readout)
 
 class FileContentWorkerSignals(QtCore.QObject):
-    """Signals for FileContentWorker."""
+    """Signals for FileContentWorker.
+
+    Signals can be defined only in classes derived from QObject.
+    """
     finished = QtCore.Signal(str)  # Emits file content
     error = QtCore.Signal(str)
 
@@ -91,7 +97,10 @@ class FileContentWorker(QRunnable):
 
 
 class CleanupWorkerSignals(QtCore.QObject):
-    """Signals for CleanupWorker."""
+    """Signals for CleanupWorker.
+
+    Signals can be defined only in classes derived from QObject.
+    """
     # Emits (deleted_processes, deleted_files)
     finished = QtCore.Signal(int, int)
     error = QtCore.Signal(str)
@@ -299,9 +308,38 @@ class ProcessTableModel(QtCore.QAbstractTableModel):
     def get_process_at_row(self, row: int) -> Optional[ProcessInfo]:
         """Get process info at specific row."""
         return (
-            self._processes[row]
-            if 0 <= row < len(self._processes) else None
+            self._processes[row] if 0 <= row < len(self._processes) else None
         )
+
+    def sort(
+        self,
+        column: int,
+        order: QtCore.Qt.SortOrder = QtCore.Qt.SortOrder.AscendingOrder,
+    ) -> None:
+        """Sort the processes based on the specified column and order."""
+        if not self._processes:
+            return
+
+        reverse = order == QtCore.Qt.SortOrder.DescendingOrder
+
+        def key_func(process: ProcessInfo):
+            if column == 0:  # Name
+                return process.name or ""
+            elif column == 1:  # PID
+                return process.pid or 0
+            elif column == 2:  # Status
+                return process.active
+            elif column == 3:  # Created
+                return process.created_at or ""
+            elif column == 4:  # Site ID
+                return process.site_id or ""
+            elif column == 5:  # Output File
+                return process.output or ""
+            return ""
+
+        self.beginResetModel()
+        self._processes.sort(key=key_func, reverse=reverse)
+        self.endResetModel()
 
 
 class ProcessMonitorWindow(QtWidgets.QDialog):
@@ -418,7 +456,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         main_layout.addWidget(splitter)
 
         # Status bar
-        # self.statusBar().showMessage("Ready")
+        self._status_bar = QtWidgets.QStatusBar()
+        self._status_bar.setSizeGripEnabled(False)
+        main_layout.addWidget(self._status_bar)
+        self._status_bar.showMessage("Ready")
 
     def _setup_timers(self):
         """Setup periodic refresh timers."""
@@ -461,7 +502,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         """Handle refresh completion."""
         self._table_model.update_processes(processes)
 
-        # self.statusBar().showMessage(f"Loaded {count} processes")
+        self._status_bar.showMessage(f"Loaded {len(processes)} processes")
         self._set_loading_state(False)
         self._log.debug("Process table updated with new data")
 
@@ -649,8 +690,8 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
             self._refresh_data()  # Refresh the table
         else:
-            # self.statusBar().showMessage(
-            # "Failed to delete process from database")
+            self._status_bar.showMessage(
+                "Failed to delete process from database")
             self._set_loading_state(False)
 
     def _on_cleanup_error(self, error_msg):
