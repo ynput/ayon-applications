@@ -48,7 +48,7 @@ class ApplicationExecutable:
         return self.executable_path
 
     def __repr__(self):
-        return "<{}> {}".format(self.__class__.__name__, self.executable_path)
+        return f"<{self.__class__.__name__}> {self.executable_path}"
 
     @staticmethod
     def macos_executable_prep(executable):
@@ -127,7 +127,7 @@ class UndefinedApplicationExecutable(ApplicationExecutable):
         return self.__class__.__name__
 
     def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+        return f"<{self.__class__.__name__}>"
 
     def as_args(self):
         return []
@@ -189,7 +189,7 @@ class ApplicationGroup:
         self.variants = variants
 
     def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__}> - {self.name}"
 
     def __iter__(self):
         for variant in self.variants.values():
@@ -251,14 +251,14 @@ class Application:
         self.enabled = enabled
         self.use_python_2 = data.get("use_python_2", False)
 
-        self.full_name = "/".join((group.name, name))
+        self.full_name = f"{group.name}/{name}"
         self.full_label = full_label
         self.arguments = arguments
         self.executables = executables
         self._environment = env
 
     def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.full_name)
+        return f"<{self.__class__.__name__}> - {self.full_name}"
 
     @property
     def environment(self):
@@ -344,7 +344,7 @@ class EnvironmentToolGroup:
         self.variants = variants_by_name
 
     def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__}> - {self.name}"
 
     def __iter__(self):
         for variant in self.variants.values():
@@ -392,7 +392,7 @@ class EnvironmentTool:
         self.full_name = "/".join((group.name, name))
 
     def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.full_name)
+        return f"<{self.__class__.__name__}> - {self.full_name}"
 
     @property
     def environment(self):

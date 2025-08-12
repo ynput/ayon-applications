@@ -618,18 +618,16 @@ def prepare_context_environments(data, env_group=None, addons_manager=None):
 
     except Exception as exc:
         raise ApplicationLaunchFailed(
-            "Error in anatomy.format: {}".format(str(exc))
+            f"Error in anatomy.format: {exc}"
         )
 
     if not os.path.exists(workdir):
-        log.debug(
-            "Creating workdir folder: \"{}\"".format(workdir)
-        )
+        log.debug(f"Creating workdir folder: \"{workdir}\"")
         try:
             os.makedirs(workdir)
         except Exception as exc:
             raise ApplicationLaunchFailed(
-                "Couldn't create workdir because: {}".format(str(exc))
+                f"Couldn't create workdir because: {exc}"
             )
 
     data["env"]["AYON_WORKDIR"] = workdir
@@ -697,7 +695,7 @@ def _prepare_last_workfile(data, workdir, addons_manager):
 
     _sub_msg = "" if start_last_workfile else " not"
     log.debug(
-        "Last workfile should{} be opened on start.".format(_sub_msg)
+        f"Last workfile should{_sub_msg} be opened on start."
     )
 
     # Last workfile path
@@ -739,7 +737,7 @@ def _prepare_last_workfile(data, workdir, addons_manager):
             " yet but path will be set."
         ))
     log.debug(
-        "Setting last workfile path: {}".format(last_workfile_path)
+        f"Setting last workfile path: {last_workfile_path}"
     )
 
     data["env"]["AYON_LAST_WORKFILE"] = last_workfile_path

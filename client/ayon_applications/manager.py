@@ -6,6 +6,7 @@ import tempfile
 import platform
 import inspect
 import subprocess
+import logging
 
 from typing import Optional, Any
 
@@ -87,10 +88,10 @@ class ApplicationManager:
         for additional_app in additional_apps:
             app_name = additional_app.pop("name")
             if app_name in app_defs:
-                self.log.warning((
-                    "Additional application '{}' is already"
+                self.log.warning(
+                    f"Additional application '{app_name}' is already"
                     " in built-in applications."
-                ).format(app_name))
+                )
             app_defs[app_name] = additional_app
 
         for group_name, variant_defs in app_defs.items():
@@ -234,9 +235,9 @@ class ApplicationLaunchContext:
         self.addons_manager: AddonsManager = AddonsManager()
 
         # Logger
-        logger_name = "{}-{}".format(self.__class__.__name__,
-                                     self.application.full_name)
-        self.log = Logger.get_logger(logger_name)
+        self.log: logging.Logger = Logger.get_logger(
+            f"{self.__class__.__name__}-{application.full_name}"
+        )
 
         self.executable: ApplicationExecutable = executable
 
@@ -263,10 +264,10 @@ class ApplicationLaunchContext:
         # Handle launch environemtns
         src_env = self.data.pop("env", None)
         if src_env is not None and not isinstance(src_env, dict):
-            self.log.warning((
-                "Passed `env` kwarg has invalid type: {}. Expected: `dict`."
-                " Using `os.environ` instead."
-            ).format(str(type(src_env))))
+            self.log.warning(
+                f"Passed `env` kwarg has invalid type: {type(src_env)}."
+                " Expected: `dict`. Using `os.environ` instead."
+            )
             src_env = None
 
         if src_env is None:
@@ -312,9 +313,7 @@ class ApplicationLaunchContext:
     def env(self, value: dict[str, str]) -> None:
         if not isinstance(value, dict):
             raise ValueError(
-                "'env' attribute expect 'dict' object. Got: {}".format(
-                    str(type(value))
-                )
+                f"'env' attribute expect 'dict' object. Got: {type(value)}"
             )
         self.kwargs["env"] = value
 
@@ -375,10 +374,10 @@ class ApplicationLaunchContext:
 
             # Skip invalid types
             if not isinstance(hook_paths, expected_types):
-                self.log.warning((
-                    "Result of `get_launch_hook_paths`"
-                    " has invalid type {}. Expected {}"
-                ).format(type(hook_paths), expected_types))
+                self.log.warning(
+                    "Result of `get_launch_hook_paths` has invalid"
+                    f" type {type(hook_paths)}. Expected {expected_types}"
+                )
                 continue
 
             output.extend(hook_paths)
@@ -435,7 +434,7 @@ class ApplicationLaunchContext:
 
         paths = self.paths_to_launch_hooks()
         self.log.debug("Paths searched for launch hooks:\n{}".format(
-            "\n".join("- {}".format(path) for path in paths)
+            "\n".join(f"- {path}" for path in paths)
         ))
 
         all_classes = {
@@ -445,7 +444,7 @@ class ApplicationLaunchContext:
         for path in paths:
             if not os.path.exists(path):
                 self.log.info(
-                    "Path to launch hooks does not exist: \"{}\"".format(path)
+                    f"Path to launch hooks does not exist: \"{path}\""
                 )
                 continue
 
@@ -466,15 +465,15 @@ class ApplicationLaunchContext:
                     hook = klass(self)
                     if not hook.is_valid:
                         self.log.debug(
-                            "Skipped hook invalid for current launch context: "
-                            "{}".format(klass.__name__)
+                            "Skipped hook invalid for current launch context:"
+                            f" {klass.__name__}"
                         )
                         continue
 
                     if inspect.isabstract(hook):
-                        self.log.debug("Skipped abstract hook: {}".format(
-                            klass.__name__
-                        ))
+                        self.log.debug(
+                            f"Skipped abstract hook: {klass.__name__}"
+                        )
                         continue
 
                     # Separate hooks by pre/post class
@@ -485,8 +484,7 @@ class ApplicationLaunchContext:
 
                 except Exception:
                     self.log.warning(
-                        "Initialization of hook failed: "
-                        "{}".format(klass.__name__),
+                        f"Initialization of hook failed: {klass.__name__}",
                         exc_info=True
                     )
 
@@ -502,9 +500,10 @@ class ApplicationLaunchContext:
             else:
                 self.postlaunch_hooks = ordered_hooks
 
-        self.log.debug("Found {} prelaunch and {} postlaunch hooks.".format(
-            len(self.prelaunch_hooks), len(self.postlaunch_hooks)
-        ))
+        self.log.debug(
+            f"Found {len(self.prelaunch_hooks)} prelaunch"
+            f" and {len(self.postlaunch_hooks)} postlaunch hooks."
+        )
 
     @property
     def app_name(self) -> str:
@@ -587,11 +586,11 @@ class ApplicationLaunchContext:
         self.discover_launch_hooks()
 
         # Execute prelaunch hooks
-        for prelaunch_hook in self.prelaunch_hooks:
-            self.log.debug("Executing prelaunch hook: {}".format(
-                str(prelaunch_hook.__class__.__name__)
-            ))
-            prelaunch_hook.execute()
+        for hook in self.prelaunch_hooks:
+            self.log.debug(
+                f"Executing prelaunch hook: {hook.__class__.__name__}"
+            )
+            hook.execute()
         self._prelaunch_hooks_executed = True
 
     def launch(self) -> Optional[subprocess.Popen]:
@@ -618,11 +617,10 @@ class ApplicationLaunchContext:
             args = self.launch_args
         else:
             args = self.clear_launch_args(self.launch_args)
-            args_len_str = " ({})".format(len(args))
+            args_len_str = f" ({len(args)})"
         self.log.info(
-            "Launching \"{}\" with args{}: {}".format(
-                self.application.full_name, args_len_str, args
-            )
+            f"Launching \"{self.application.full_name}\""
+            f" with args{args_len_str}: {args}"
         )
         self.launch_args = args
 
@@ -630,15 +628,15 @@ class ApplicationLaunchContext:
         self.process = self._run_process()
 
         # Process post launch hooks
-        for postlaunch_hook in self.postlaunch_hooks:
-            self.log.debug("Executing postlaunch hook: {}".format(
-                str(postlaunch_hook.__class__.__name__)
-            ))
+        for hook in self.postlaunch_hooks:
+            self.log.debug(
+                f"Executing postlaunch hook: {hook.__class__.__name__}"
+            )
 
             # TODO how to handle errors?
             # - store to variable to let them accessible?
             try:
-                postlaunch_hook.execute()
+                hook.execute()
 
             except Exception:
                 self.log.warning(
@@ -646,9 +644,7 @@ class ApplicationLaunchContext:
                     exc_info=True
                 )
 
-        self.log.debug("Launch of {} finished.".format(
-            self.application.full_name
-        ))
+        self.log.debug(f"Launch of {self.application.full_name} finished.")
 
         return self.process
 
