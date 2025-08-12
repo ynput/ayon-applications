@@ -13,7 +13,7 @@ from qtpy.QtCore import QModelIndex, QPersistentModelIndex
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
 
-from ..manager import ApplicationManager, ProcessInfo
+from ayon_applications.manager import ApplicationManager, ProcessInfo
 
 
 ModelIndex = Union[QModelIndex, QPersistentModelIndex]
@@ -137,16 +137,15 @@ class CleanupWorker(QRunnable):
         """Clean up inactive processes."""
         # Get all processes to check which files to delete
         all_processes = self._manager.get_all_process_info()
-        files_to_delete: list[Path] = []
 
-        files_to_delete.extend(
+        files_to_delete = [
             process.output
             for process in all_processes
             if (
                 not process.active
                 and (process.output and Path(process.output).exists())
             )
-        )
+        ]
         # Delete from database
         deleted_count = self._manager.delete_inactive_processes()
 
@@ -219,6 +218,7 @@ class ProcessTableModel(QtCore.QAbstractTableModel):
         """Return the number of rows in the model.
 
         Args:
+            parent: ModelIndex: Parent index (not used here).
 
         Returns:
             int: Number of processes in the model.
