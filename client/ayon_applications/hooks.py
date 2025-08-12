@@ -3,6 +3,7 @@ from __future__ import annotations
 import platform
 import logging
 from abc import ABC, abstractmethod
+import warnings
 import typing
 from typing import Optional, Any
 
@@ -119,7 +120,14 @@ class LaunchHook(ABC):
         """
         Deprecated:
             Use 'addons_wrapper' instead.
+
         """
+        warnings.warn(
+            "Used deprecated 'modules_manager' attribute,"
+            " use 'addons_manager' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.addons_manager
 
     def validate(self) -> bool:
