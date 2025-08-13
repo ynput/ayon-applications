@@ -162,7 +162,7 @@ class ApplicationsAddon(BaseServerAddon):
         # Update older versions of applications addon to use new
         #   '_update_enums'
         # - new function skips newer addon versions without 'has_attributes'
-        version_objs, invalid_versions = parse_versions(app_defs.versions)
+        version_objs, _invalid_versions = parse_versions(app_defs.versions)
         for addon_version, version_obj in version_objs:
             # Last release with only old attribute system
             if version_obj < ATTRIBUTES_VERSION_MILESTONE:
@@ -323,9 +323,9 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _update_enums(self):
         """Updates applications and tools enums based on the addon settings.
-        This method is called when the addon is started (after we are sure that the
-        'applications' and 'tools' attributes exist) and when the addon settings are
-        updated (using on_settings_updated method).
+        This method is called when the addon is started (after we are sure
+        that the 'applications' and 'tools' attributes exist) and when
+        the addon settings are updated (using on_settings_updated method).
         """
 
         instance = AddonLibrary.getinstance()
