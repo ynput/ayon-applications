@@ -451,7 +451,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             app, project, folder, task, use_last_workfile,
         )
 
-
     def _cli_launch_with_task_id(
         self,
         project: str,

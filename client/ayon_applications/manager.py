@@ -178,8 +178,8 @@ class ApplicationManager:
         Raises:
             ApplicationNotFound: Application was not found by entered
                 argument `app_name`.
-            ApplicationExecutableNotFound: Executables in application definition
-                were not found on this machine.
+            ApplicationExecutableNotFound: Executables in application
+                definition were not found on this machine.
             ApplicationLaunchFailed: Something important for application launch
                 failed. Exception should contain explanation message,
                 traceback should not be needed.
@@ -684,4 +684,3 @@ class ApplicationLaunchContext:
             args = new_args
 
         return args
-
