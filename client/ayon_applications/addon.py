@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import os
 import sys
 import json
 import traceback
 import tempfile
-from typing import Optional
+import typing
+from typing import Optional, Any
 
 import ayon_api
 
@@ -30,25 +33,28 @@ from .exceptions import (
 )
 from .utils import get_app_icon_path
 
+if typing.TYPE_CHECKING:
+    from typing import Literal
+
+    BoolArg = Literal["1", "0"]
+    from ayon_applications.manager import Application
+    from ayon_core.tools.tray.webserver import WebServerManager
+
 
 class ApplicationsAddon(AYONAddon, IPluginPaths):
     name = "applications"
     version = __version__
 
-    def initialize(self, settings):
-        # TODO remove when addon is removed from ayon-core
-        self.enabled = self.name in settings
-
     def get_app_environments_for_context(
         self,
-        project_name,
-        folder_path,
-        task_name,
-        full_app_name,
-        env_group=None,
-        launch_type=None,
-        env=None,
-    ):
+        project_name: str,
+        folder_path: str,
+        task_name: str,
+        full_app_name: str,
+        env_group: Optional[str] = None,
+        launch_type: Optional[str] = None,
+        env: Optional[dict[str, str]] = None,
+    ) -> dict[str, str]:
         """Calculate environment variables for launch context.
 
         Args:
@@ -82,12 +88,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
 
     def get_farm_publish_environment_variables(
         self,
-        project_name,
-        folder_path,
-        task_name,
-        full_app_name=None,
-        env_group=None,
-    ):
+        project_name: str,
+        folder_path: str,
+        task_name: str,
+        full_app_name: Optional[str] = None,
+        env_group: Optional[str] = None,
+    ) -> dict[str, str]:
         """Calculate environment variables for farm publish.
 
         Args:
@@ -115,7 +121,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             launch_type=LaunchTypes.farm_publish
         )
 
-    def get_applications_manager(self, settings=None):
+    def get_applications_manager(
+        self, settings: Optional[dict[str, Any]] = None
+    ) -> "ApplicationManager":
         """Get applications manager.
 
         Args:
@@ -127,30 +135,34 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         """
         return ApplicationManager(settings)
 
-    def get_plugin_paths(self):
-        plugins_dir = os.path.join(APPLICATIONS_ADDON_ROOT, "plugins")
-        return {
-            "publish": [os.path.join(plugins_dir, "publish")]
-        }
+    def get_plugin_paths(self) -> dict[str, list[str]]:
+        return {}
 
-    def get_launch_hook_paths(self, app):
+    def get_publish_plugin_paths(self, host_name: str) -> list[str]:
+        return [
+            os.path.join(APPLICATIONS_ADDON_ROOT, "plugins", "publish")
+        ]
+
+    def get_launch_hook_paths(self, app: "Application") -> list[str]:
         return [
             os.path.join(APPLICATIONS_ADDON_ROOT, "hooks")
         ]
 
-    def get_app_icon_path(self, icon_filename):
+    def get_app_icon_path(self, icon_filename: str) -> str:
         """Get icon path.
 
         Args:
             icon_filename (str): Icon filename.
 
         Returns:
-            Union[str, None]: Icon path or None if not found.
+            Optional[str]: Icon path or None if not found.
 
         """
         return get_app_icon_path(icon_filename)
 
-    def get_app_icon_url(self, icon_filename, server=False):
+    def get_app_icon_url(
+        self, icon_filename: str, server: bool = False
+    ) -> Optional[str]:
         """Get icon path.
 
         Method does not validate if icon filename exist on server.
@@ -223,11 +235,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
 
     def launch_application(
         self,
-        app_name,
-        project_name,
-        folder_path,
-        task_name,
-        use_last_workfile=None,
+        app_name: str,
+        project_name: str,
+        folder_path: str,
+        task_name: str,
+        use_last_workfile: Optional[bool] = None,
     ):
         """Launch application.
 
@@ -287,7 +299,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             self._show_launch_error_dialog(message, detail)
         sys.exit(1)
 
-    def webserver_initialization(self, manager):
+    def webserver_initialization(self, manager: "WebServerManager") -> None:
         """Initialize webserver.
 
         Args:
@@ -300,7 +312,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         )
 
     # --- CLI ---
-    def cli(self, addon_click_group):
+    def cli(self, addon_click_group) -> None:
         main_group = click_wrap.group(
             self._cli_main, name=self.name, help="Applications addon"
         )
@@ -339,7 +351,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
                 default=None,
             )
         )
-        # Convert main command to click object and add it to parent group
         (
             main_group.command(
                 self._cli_launch_with_task_id,
@@ -375,12 +386,18 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             main_group.to_click_obj()
         )
 
-    def _cli_main(self):
+    def _cli_main(self) -> None:
         pass
 
     def _cli_extract_environments(
-        self, output_json_path, project, folder, task, app, envgroup
-    ):
+        self,
+        output_json_path: str,
+        project: str,
+        folder: str,
+        task: str,
+        app: str,
+        envgroup: str,
+    ) -> None:
         """Produces json file with environment based on project and app.
 
         Called by farm integration to propagate environment into farm jobs.
@@ -408,8 +425,13 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             json.dump(env, file_stream, indent=4)
 
     def _cli_launch_context_names(
-        self, project, folder, task, app, use_last_workfile
-    ):
+        self,
+        project: str,
+        folder: str,
+        task: str,
+        app: str,
+        use_last_workfile: Optional["BoolArg"],
+    ) -> None:
         """Launch application.
 
         Args:
@@ -431,8 +453,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
 
 
     def _cli_launch_with_task_id(
-        self, project, task_id, app, use_last_workfile
-    ):
+        self,
+        project: str,
+        task_id: str,
+        app: str,
+        use_last_workfile: Optional["BoolArg"],
+    ) -> None:
         """Launch application using project name, task id and full app name.
 
         Args:
@@ -467,12 +493,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         project: str,
         task_id: str,
         app: Optional[str],
-    ):
+    ) -> None:
         from .ui.debug_terminal_launch import run_with_debug_terminal
 
         run_with_debug_terminal(self, project, task_id, app)
 
-    def _show_launch_error_dialog(self, message, detail):
+    def _show_launch_error_dialog(self, message: str, detail: str) -> None:
         script_path = os.path.join(
             APPLICATIONS_ADDON_ROOT, "ui", "launch_failed_dialog.py"
         )

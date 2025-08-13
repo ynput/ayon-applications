@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 import os
 import copy
 import json
 import platform
 import collections
+import logging
+import typing
+from typing import Optional, Any
 
 import ayon_api
 
@@ -39,8 +44,15 @@ except ImportError:
         compute_env_variables_structure,
     )
 
+if typing.TYPE_CHECKING:
+    from .defs import Application
 
-def parse_environments(env_data, env_group=None, platform_name=None):
+
+def parse_environments(
+    env_data: dict[str, Any],
+    env_group: Optional[str] = None,
+    platform_name: Optional[str] = None,
+) -> dict[str, str]:
     """Parse environment values from settings byt group and platform.
 
     Data may contain up to 2 hierarchical levels of dictionaries. At the end
@@ -135,10 +147,14 @@ class EnvironmentPrepData(dict):
         data (dict): Data must contain required keys.
     """
     required_keys = (
-        "project_entity", "folder_entity", "task_entity", "app", "anatomy"
+        "project_entity",
+        "folder_entity",
+        "task_entity",
+        "app",
+        "anatomy",
     )
 
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]):
         for key in self.required_keys:
             if key not in data:
                 raise MissingRequiredKey(key)
@@ -153,19 +169,19 @@ class EnvironmentPrepData(dict):
         if "project_settings" not in data:
             data["project_settings"] = get_project_settings(project_name)
 
-        super(EnvironmentPrepData, self).__init__(data)
+        super().__init__(data)
 
 
 def get_app_environments_for_context(
-    project_name,
-    folder_path,
-    task_name,
-    app_name,
-    env_group=None,
-    launch_type=None,
-    env=None,
-    addons_manager=None
-):
+    project_name: str,
+    folder_path: str,
+    task_name: str,
+    app_name: str,
+    env_group: Optional[str] = None,
+    launch_type: Optional[str] = None,
+    env: Optional[dict[str, str]] = None,
+    addons_manager: Optional[AddonsManager] = None,
+) -> dict[str, str]:
     """Prepare environment variables by context.
     Args:
         project_name (str): Name of project.
@@ -184,8 +200,8 @@ def get_app_environments_for_context(
 
     Returns:
         dict: Environments for passed context and application.
-    """
 
+    """
     # Prepare app object which can be obtained only from ApplicationManager
     app_manager = ApplicationManager()
     context = app_manager.create_launch_context(
@@ -203,7 +219,12 @@ def get_app_environments_for_context(
     return context.env
 
 
-def _add_python_version_paths(app, env, logger, addons_manager):
+def _add_python_version_paths(
+    app: "Application",
+    env: dict[str, str],
+    logger: logging.Logger,
+    addons_manager: AddonsManager,
+) -> None:
     """Add vendor packages specific for a Python version."""
 
     for addon in addons_manager.get_enabled_addons():
@@ -240,14 +261,16 @@ def _add_python_version_paths(app, env, logger, addons_manager):
     env["PYTHONPATH"] = os.pathsep.join(python_paths)
 
 
-def _get_app_full_names_from_settings(applications_settings):
+def _get_app_full_names_from_settings(
+    applications_settings: dict[str, Any]
+) -> list[str]:
     """Get full names of applications from settings.
 
     Args:
         applications_settings (dict): Applications settings.
 
     Returns:
-        List[str]: Full names of applications.
+        list[str]: Full names of applications.
 
     """
     apps = copy.deepcopy(applications_settings["applications"])
@@ -269,12 +292,12 @@ def _get_app_full_names_from_settings(applications_settings):
 
 
 def get_applications_for_context(
-    project_name,
-    folder_entity,
-    task_entity,
-    project_settings=None,
-    project_entity=None,
-):
+    project_name: str,
+    folder_entity: dict[str, Any],
+    task_entity: dict[str, Any],
+    project_settings: Optional[dict[str, Any]] = None,
+    project_entity: Optional[dict[str, Any]] = None,
+) -> list[str]:
     """Get applications for context based on project settings.
 
     Args:
@@ -285,7 +308,7 @@ def get_applications_for_context(
         project_entity (Optional[dict]): Project entity.
 
     Returns:
-        List[str]: List of applications that can be used in given context.
+        list[str]: List of applications that can be used in given context.
 
     """
     if project_settings is None:
@@ -317,11 +340,11 @@ def get_applications_for_context(
 
 
 def get_tools_for_context(
-    project_name,
-    folder_entity,
-    task_entity,
-    project_settings=None,
-):
+    project_name: str,
+    folder_entity: dict[str, Any],
+    task_entity: dict[str, Any],
+    project_settings: Optional[dict[str, Any]] = None,
+) -> list[str]:
     """Get tools for context based on project settings.
 
     Args:
@@ -331,7 +354,7 @@ def get_tools_for_context(
         project_settings (Optional[dict]): Project settings.
 
     Returns:
-        List[str]: List of applications that can be used in given context.
+        list[str]: List of applications that can be used in given context.
 
     """
     if project_settings is None:
@@ -373,8 +396,11 @@ def get_tools_for_context(
 
 
 def prepare_app_environments(
-    data, env_group=None, implementation_envs=True, addons_manager=None
-):
+    data: dict[str, Any],
+    env_group: Optional[str] = None,
+    implementation_envs: bool = True,
+    addons_manager: Optional[AddonsManager] = None
+) -> None:
     """Modify launch environments based on launched app and context.
 
     Args:
@@ -494,8 +520,11 @@ def prepare_app_environments(
 
 
 def apply_project_environments_value(
-    project_name, env, project_settings=None, env_group=None
-):
+    project_name: str,
+    env: dict[str, str],
+    project_settings: Optional[dict[str, Any]] = None,
+    env_group: Optional[str] = None,
+) -> dict[str, str]:
     """Apply project specific environments on passed environments.
 
     The environments are applied on passed `env` argument value so it is not
@@ -530,7 +559,11 @@ def apply_project_environments_value(
     return env
 
 
-def prepare_context_environments(data, env_group=None, addons_manager=None):
+def prepare_context_environments(
+    data: EnvironmentPrepData,
+    env_group: Optional[str] = None,
+    addons_manager: Optional[AddonsManager] = None,
+) -> None:
     """Modify launch environments with context data for launched host.
 
     Args:
@@ -618,18 +651,16 @@ def prepare_context_environments(data, env_group=None, addons_manager=None):
 
     except Exception as exc:
         raise ApplicationLaunchFailed(
-            "Error in anatomy.format: {}".format(str(exc))
+            f"Error in anatomy.format: {exc}"
         )
 
     if not os.path.exists(workdir):
-        log.debug(
-            "Creating workdir folder: \"{}\"".format(workdir)
-        )
+        log.debug(f"Creating workdir folder: \"{workdir}\"")
         try:
             os.makedirs(workdir)
         except Exception as exc:
             raise ApplicationLaunchFailed(
-                "Couldn't create workdir because: {}".format(str(exc))
+                f"Couldn't create workdir because: {exc}"
             )
 
     data["env"]["AYON_WORKDIR"] = workdir
@@ -637,7 +668,11 @@ def prepare_context_environments(data, env_group=None, addons_manager=None):
     _prepare_last_workfile(data, workdir, addons_manager)
 
 
-def _prepare_last_workfile(data, workdir, addons_manager):
+def _prepare_last_workfile(
+    data: EnvironmentPrepData,
+    workdir: str,
+    addons_manager: AddonsManager,
+) -> None:
     """last workfile workflow preparation.
 
     Function check if should care about last workfile workflow and tries
@@ -697,7 +732,7 @@ def _prepare_last_workfile(data, workdir, addons_manager):
 
     _sub_msg = "" if start_last_workfile else " not"
     log.debug(
-        "Last workfile should{} be opened on start.".format(_sub_msg)
+        f"Last workfile should{_sub_msg} be opened on start."
     )
 
     # Last workfile path
@@ -739,14 +774,14 @@ def _prepare_last_workfile(data, workdir, addons_manager):
             " yet but path will be set."
         ))
     log.debug(
-        "Setting last workfile path: {}".format(last_workfile_path)
+        f"Setting last workfile path: {last_workfile_path}"
     )
 
     data["env"]["AYON_LAST_WORKFILE"] = last_workfile_path
     data["last_workfile_path"] = last_workfile_path
 
 
-def get_app_icon_path(icon_filename):
+def get_app_icon_path(icon_filename: str) -> Optional[str]:
     """Get icon path.
 
     Args:

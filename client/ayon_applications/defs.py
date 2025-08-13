@@ -1,10 +1,18 @@
+from __future__ import annotations
+
 import os
 import platform
 import json
 import copy
+import subprocess
+import typing
+from typing import Optional, Any, Generator
 
 from ayon_core.lib import find_executable
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
+
+if typing.TYPE_CHECKING:
+    from ayon_applications.manager import ApplicationManager
 
 
 class LaunchTypes:
@@ -29,7 +37,7 @@ class LaunchTypes:
 class ApplicationExecutable:
     """Representation of executable loaded from settings."""
 
-    def __init__(self, executable):
+    def __init__(self, executable: str):
         # Try to format executable with environments
         try:
             executable = executable.format(**os.environ)
@@ -44,14 +52,14 @@ class ApplicationExecutable:
 
         self.executable_path = executable
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.executable_path
 
-    def __repr__(self):
-        return "<{}> {}".format(self.__class__.__name__, self.executable_path)
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}> {self.executable_path}"
 
     @staticmethod
-    def macos_executable_prep(executable):
+    def macos_executable_prep(executable: str) -> str:
         """Try to find full path to executable file.
 
         Real executable is stored in '*.app/Contents/MacOS/<executable>'.
@@ -93,10 +101,10 @@ class ApplicationExecutable:
 
         return executable
 
-    def as_args(self):
+    def as_args(self) -> list[str]:
         return [self.executable_path]
 
-    def _realpath(self):
+    def _realpath(self) -> Optional[str]:
         """Check if path is valid executable path."""
         # Check for executable in PATH
         result = find_executable(self.executable_path)
@@ -109,7 +117,7 @@ class ApplicationExecutable:
             return self.executable_path
         return None
 
-    def exists(self):
+    def exists(self) -> bool:
         if not self.executable_path:
             return False
         return bool(self._realpath())
@@ -123,16 +131,16 @@ class UndefinedApplicationExecutable(ApplicationExecutable):
     def __init__(self):
         pass
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__class__.__name__
 
-    def __repr__(self):
-        return "<{}>".format(self.__class__.__name__)
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}>"
 
-    def as_args(self):
+    def as_args(self) -> list[str]:
         return []
 
-    def exists(self):
+    def exists(self) -> bool:
         return True
 
 
@@ -152,8 +160,14 @@ class ApplicationGroup:
         name (str): Groups' name.
         data (dict): Group defying data loaded from settings.
         manager (ApplicationManager): Manager that created the group.
+
     """
-    def __init__(self, name, data, manager):
+    def __init__(
+        self,
+        name: str,
+        data: dict[str, Any],
+        manager: "ApplicationManager",
+    ):
         icon = ICONS_BY_GROUP_NAME.get(name)
         if not icon:
             icon = data.get("icon")
@@ -188,15 +202,15 @@ class ApplicationGroup:
 
         self.variants = variants
 
-    def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.name)
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}> - {self.name}"
 
-    def __iter__(self):
+    def __iter__(self) -> Generator["Application", None, None]:
         for variant in self.variants.values():
             yield variant
 
     @property
-    def environment(self):
+    def environment(self) -> dict[str, str]:
         return copy.deepcopy(self._environment)
 
 
@@ -213,7 +227,7 @@ class Application:
             and under which application belongs.
 
     """
-    def __init__(self, data, group):
+    def __init__(self, data: dict[str, Any], group: ApplicationGroup):
         self._data = data
         name = data["name"]
         label = data["label"] or name
@@ -251,36 +265,36 @@ class Application:
         self.enabled = enabled
         self.use_python_2 = data.get("use_python_2", False)
 
-        self.full_name = "/".join((group.name, name))
+        self.full_name = f"{group.name}/{name}"
         self.full_label = full_label
         self.arguments = arguments
         self.executables = executables
         self._environment = env
 
     def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.full_name)
+        return f"<{self.__class__.__name__}> - {self.full_name}"
 
     @property
-    def environment(self):
+    def environment(self) -> dict[str, str]:
         return copy.deepcopy(self._environment)
 
     @property
-    def manager(self):
+    def manager(self) -> "ApplicationManager":
         return self.group.manager
 
     @property
-    def host_name(self):
+    def host_name(self) -> Optional[str]:
         return self.group.host_name
 
     @property
-    def icon(self):
+    def icon(self) -> Optional[str]:
         return self.group.icon
 
     @property
-    def is_host(self):
+    def is_host(self) -> bool:
         return self.group.is_host
 
-    def find_executable(self):
+    def find_executable(self) -> Optional[ApplicationExecutable]:
         """Try to find existing executable for application.
 
         Returns (str): Path to executable from `executables` or None if any
@@ -291,7 +305,7 @@ class Application:
                 return executable
         return None
 
-    def launch(self, *args, **kwargs):
+    def launch(self, *args, **kwargs) -> Optional[subprocess.Popen]:
         """Launch the application.
 
         For this purpose is used manager's launch method to keep logic at one
@@ -302,6 +316,7 @@ class Application:
 
         Returns:
             subprocess.Popen: Return executed process as Popen object.
+
         """
         return self.manager.launch(self.full_name, *args, **kwargs)
 
@@ -318,9 +333,13 @@ class EnvironmentToolGroup:
     Args:
         data (dict): Group information with variants.
         manager (ApplicationManager): Manager that creates the group.
-    """
 
-    def __init__(self, data, manager):
+    """
+    def __init__(
+        self,
+        data: dict[str, Any],
+        manager: "ApplicationManager",
+    ):
         name = data["name"]
         label = data["label"]
 
@@ -343,15 +362,15 @@ class EnvironmentToolGroup:
             variants_by_name[tool.name] = tool
         self.variants = variants_by_name
 
-    def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.name)
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}> - {self.name}"
 
-    def __iter__(self):
+    def __iter__(self) -> Generator["EnvironmentTool", None, None]:
         for variant in self.variants.values():
             yield variant
 
     @property
-    def environment(self):
+    def environment(self) -> dict[str, str]:
         return copy.deepcopy(self._environment)
 
 
@@ -364,9 +383,13 @@ class EnvironmentTool:
         variant_data (dict): Variant data with environments and
             host and app variant filters.
         group (EnvironmentToolGroup): Name of group which wraps tool.
-    """
 
-    def __init__(self, variant_data, group):
+    """
+    def __init__(
+        self,
+        variant_data: dict[str, Any],
+        group: EnvironmentToolGroup,
+    ):
         # Backwards compatibility 3.9.1 - 3.9.2
         # - 'variant_data' contained only environments but contain also host
         #   and application variant filters
@@ -391,18 +414,19 @@ class EnvironmentTool:
         self._environment = environment
         self.full_name = "/".join((group.name, name))
 
-    def __repr__(self):
-        return "<{}> - {}".format(self.__class__.__name__, self.full_name)
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}> - {self.full_name}"
 
     @property
-    def environment(self):
+    def environment(self) -> dict[str, str]:
         return copy.deepcopy(self._environment)
 
-    def is_valid_for_app(self, app):
-        """Is tool valid for application.
+    def is_valid_for_app(self, app: Application) -> bool:
+        """Is tool valid for an application.
 
         Args:
             app (Application): Application for which are prepared environments.
+
         """
         if self.app_variants and app.full_name not in self.app_variants:
             return False
