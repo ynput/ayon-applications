@@ -454,7 +454,7 @@ class ApplicationManager:
         return cursor.rowcount
 
     @staticmethod
-    def _is_process_running_psutils(pid: int) -> bool:
+    def _is_process_running_psutils(pid: int, executable: str) -> bool:
         """Check if a process is running using psutil.
 
         Args:
@@ -468,6 +468,10 @@ class ApplicationManager:
         if not psutil:
             msg = "psutil module is not available."
             raise RuntimeError(msg)
+
+        # TODO: get executable name from psutils
+        # exists = psutil.pid_exists(pid)
+        # process = psutil.Process(pid)  # This will raise an exception if the process is not running
 
         return psutil.pid_exists(pid)
 
@@ -934,13 +938,11 @@ class ApplicationLaunchContext:
             }
 
         # Create the temp file
-        json_temp = tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile(
             mode="w", prefix="ay_app_args", suffix=".json", delete=False
-        )
-        json_temp.close()
-        json_temp_filepath = json_temp.name
-        with open(json_temp_filepath, "w") as stream:
-            json.dump(json_data, stream)
+        ) as json_temp:
+            json_temp_filepath = json_temp.name
+            json.dump(json_data, json_temp)
 
         launch_args.append(json_temp_filepath)
 
@@ -985,14 +987,14 @@ class ApplicationLaunchContext:
         Returns:
             subprocess.Popen: The process object created by Popen.
         """
-        temp_file = tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile(
             mode="w",
             prefix=f"ayon_{self.application.host_name}_output_",
             suffix=".txt",
             delete=False
-        )
-        temp_file_path = temp_file.name
-        temp_file.close()
+        ) as temp_file:
+            temp_file_path = temp_file.name
+
         with open(temp_file_path, "wb") as tmp_file:
             self.kwargs["stdout"] = tmp_file
             self.kwargs["stderr"] = tmp_file
