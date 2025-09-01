@@ -239,12 +239,50 @@ class ProcessTreeModel(QtCore.QAbstractItemModel):
         process = self._processes[index.row()]
         column = index.column()
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
-            return ProcessTableModel._data_display_role(column, process)
+            return self._data_display_role(column, process)
         elif role == QtCore.Qt.ItemDataRole.BackgroundRole:
-            return ProcessTableModel._data_background_role(process)
+            return self._data_background_role(process)
         elif role == QtCore.Qt.ItemDataRole.UserRole:
             return process
         return None
+
+    @staticmethod
+    def _data_display_role(
+            column: int, process: ProcessInfo) -> Optional[str]:
+        """Return data for the display role based on column index.
+
+        Returns:
+            str: Data for the specified column.
+
+        """
+        if column == 0:
+            return process.name
+        elif column == 1:
+            return str(process.pid) if process.pid else "N/A"
+        elif column == 2:
+            if process.pid:
+                return "Running" if process.active else "Stopped"
+            return "Unknown"
+        elif column == 3:
+            return process.created_at or "N/A"
+        elif column == 4:
+            return process.site_id or "N/A"
+        elif column == 5:
+            return str(process.output) if process.output else "N/A"
+        return None
+
+    @staticmethod
+    def _data_background_role(
+        process: ProcessInfo
+    ) -> Optional[QtGui.QColor]:
+        """Return background color for the process status."""
+        if process.pid:
+            is_running = process.active
+            if is_running:
+                return QtGui.QColor(200, 255, 200)  # Light green
+            else:
+                return QtGui.QColor(255, 200, 200)  # Light red
+        return QtGui.QColor(240, 240, 240)  # Light gray
 
     def get_process_at_row(self, row: int) -> Optional[ProcessInfo]:
         return self._processes[row] if 0 <= row < len(self._processes) else None
@@ -349,7 +387,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         # self._output_text.setReadOnly(True)
         self._output_text.setPlaceholderText(
             "Double-click a process row to view its output file content...")
-        self._output_text.setPlainText("No process selected")
 
         # Auto-reload checkbox
         self._auto_reload_checkbox = QtWidgets.QCheckBox(
