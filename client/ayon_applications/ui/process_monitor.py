@@ -193,158 +193,80 @@ class CleanupWorker(QRunnable):
         self.signals.finished.emit(process_deleted, file_deleted)
 
 
-class ProcessTableModel(QtCore.QAbstractTableModel):
-    """Table model for displaying process information."""
+class ProcessTreeModel(QtCore.QAbstractItemModel):
+    """Tree model for displaying process information."""
 
-    def __init__(
-            self,
-            parent: Optional[QtCore.QObject] = None) -> None:
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         super().__init__(parent)
         self._processes: list[ProcessInfo] = []
         self._headers = [
             "Name", "PID", "Status", "Created", "Site ID", "Output File"
         ]
-        self._manager = ApplicationManager()
+
+    def rowCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
+        if not parent.isValid():
+            return len(self._processes)  # Top-level: processes
+        return 0  # No children
+
+    def columnCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
+        return len(self._headers)
 
     def update_processes(self, processes: list[ProcessInfo]) -> None:
-        """Update process data from background thread."""
         self.beginResetModel()
         self._processes = processes
         self.endResetModel()
 
-    def rowCount(
-            self,
-            parent: ModelIndex=QtCore.QModelIndex()) -> int:
-        """Return the number of rows in the model.
+    def index(self, row, column, parent=QtCore.QModelIndex()):
+        if not self.hasIndex(row, column, parent):
+            return QtCore.QModelIndex()
+        if not parent.isValid():
+            # Top-level: processes
+            return self.createIndex(row, column, None)
+        return QtCore.QModelIndex()
 
-        Args:
-            parent: ModelIndex: Parent index (not used here).
+    def parent(self, index):
+        # Flat list: all items are top-level, so no parent
+        return QtCore.QModelIndex()
 
-        Returns:
-            int: Number of processes in the model.
-
-        """
-        return len(self._processes)
-
-    def columnCount(
-            self,
-            parent: ModelIndex = QtCore.QModelIndex()) -> int:
-        return len(self._headers)
-
-    def headerData(
-            self,
-            section: int,
-            orientation: QtCore.Qt.Orientation,
-            role: int = QtCore.Qt.ItemDataRole.DisplayRole) -> Optional[str]:
-        if (
-            orientation == QtCore.Qt.Orientation.Horizontal
-            and role == QtCore.Qt.ItemDataRole.DisplayRole
-        ):
+    def headerData(self, section, orientation, role=QtCore.Qt.ItemDataRole.DisplayRole):
+        if orientation == QtCore.Qt.Orientation.Horizontal and role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self._headers[section]
         return None
 
-    @staticmethod
-    def _data_display_role(
-            column: int, process: ProcessInfo) -> Optional[str]:
-        """Return data for the display role based on column index.
-
-        Returns:
-            str: Data for the specified column.
-
-        """
-        if column == 0:
-            return process.name
-        elif column == 1:
-            return str(process.pid) if process.pid else "N/A"
-        elif column == 2:
-            if process.pid:
-                return "Running" if process.active else "Stopped"
-            return "Unknown"
-        elif column == 3:
-            return process.created_at or "N/A"
-        elif column == 4:
-            return process.site_id or "N/A"
-        elif column == 5:
-            return str(process.output) if process.output else "N/A"
-        return None
-
-    @staticmethod
-    def _data_background_role(
-        process: ProcessInfo
-    ) -> Optional[QtGui.QColor]:
-        """Return background color for the process status."""
-        if process.pid:
-            is_running = process.active
-            if is_running:
-                return QtGui.QColor(200, 255, 200)  # Light green
-            else:
-                return QtGui.QColor(255, 200, 200)  # Light red
-        return QtGui.QColor(240, 240, 240)  # Light gray
-
-
-    def data(
-            self, index: ModelIndex,
-            role: int = QtCore.Qt.ItemDataRole.DisplayRole
-    ) -> ProcessTableModelData:
-        """Return data for the specified index and role."""
+    def data(self, index, role=QtCore.Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or index.row() >= len(self._processes):
             return None
-
         process = self._processes[index.row()]
         column = index.column()
-
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
-            return self._data_display_role(column, process)
-
+            return ProcessTableModel._data_display_role(column, process)
         elif role == QtCore.Qt.ItemDataRole.BackgroundRole:
-            return self._data_background_role(process)
-
+            return ProcessTableModel._data_background_role(process)
         elif role == QtCore.Qt.ItemDataRole.UserRole:
-            # Return the process info for the row
             return process
-
         return None
 
     def get_process_at_row(self, row: int) -> Optional[ProcessInfo]:
-        """Get process info at specific row."""
-        return (
-            self._processes[row] if 0 <= row < len(self._processes) else None
-        )
+        return self._processes[row] if 0 <= row < len(self._processes) else None
 
-    def sort(
-        self,
-        column: int,
-        order: QtCore.Qt.SortOrder = QtCore.Qt.SortOrder.AscendingOrder,
-    ) -> None:
-        """Sort the processes based on the specified column and order."""
+    def sort(self, column, order=QtCore.Qt.SortOrder.AscendingOrder):
         if not self._processes:
             return
-
         reverse = order == QtCore.Qt.SortOrder.DescendingOrder
-
         def key_func(process: ProcessInfo):
-            if column == 0:  # Name
-                return process.name or ""
-            elif column == 1:  # PID
-                return process.pid or 0
-            elif column == 2:  # Status
-                return process.active
-            elif column == 3:  # Created
-                return process.created_at or ""
-            elif column == 4:  # Site ID
-                return process.site_id or ""
-            elif column == 5:  # Output File
-                return process.output or ""
+            if column == 0: return process.name or ""
+            elif column == 1: return process.pid or 0
+            elif column == 2: return process.active
+            elif column == 3: return process.created_at or ""
+            elif column == 4: return process.site_id or ""
+            elif column == 5: return process.output or ""
             return ""
-
         self.beginResetModel()
         self._processes.sort(key=key_func, reverse=reverse)
         self.endResetModel()
 
 
 class ProcessMonitorWindow(QtWidgets.QDialog):
-    """Main window for monitoring application processes."""
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self._log = getLogger(self.__class__.__name__)
@@ -364,8 +286,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
     def _setup_ui(self):
         """Set up the user interface."""
         central_widget = self
-
-        # Main layout
         main_layout = QtWidgets.QVBoxLayout(central_widget)
 
         # Toolbar
@@ -398,34 +318,25 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         main_layout.addLayout(toolbar_layout)
 
-        # Splitter for table and output
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
 
-        # Process table
-        self._table_model = ProcessTableModel()
-        self._table_view = QtWidgets.QTableView()
-        self._table_view.setModel(self._table_model)
-        self._table_view.setSelectionBehavior(
+        # Process tree view
+        self._tree_model = ProcessTreeModel()
+        self._tree_view = QtWidgets.QTreeView()
+        self._tree_view.setModel(self._tree_model)
+        self._tree_view.setSelectionBehavior(
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
-        self._table_view.setAlternatingRowColors(True)
-        self._table_view.setSortingEnabled(True)
-        self._table_view.doubleClicked.connect(self._on_row_double_clicked)
+        self._tree_view.setAlternatingRowColors(True)
+        self._tree_view.setSortingEnabled(True)
+        self._tree_view.doubleClicked.connect(self._on_row_double_clicked)
 
-        # Set column widths
-        header = self._table_view.horizontalHeader()
+        header = self._tree_view.header()
         header.setStretchLastSection(True)
-        header.setSectionResizeMode(
-            0, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(
-            1, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(
-            2, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(
-            3, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(
-            4, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+        for i in range(len(self._tree_model._headers)):
+            header.setSectionResizeMode(
+                i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
-        splitter.addWidget(self._table_view)
+        splitter.addWidget(self._tree_view)
 
         # Output area
         output_widget = QtWidgets.QWidget()
@@ -435,9 +346,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         output_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
 
         self._output_text = QtWidgets.QPlainTextEdit()
-        self._output_text.setReadOnly(True)
+        # self._output_text.setReadOnly(True)
         self._output_text.setPlaceholderText(
             "Double-click a process row to view its output file content...")
+        self._output_text.setPlainText("No process selected")
 
         # Auto-reload checkbox
         self._auto_reload_checkbox = QtWidgets.QCheckBox(
@@ -496,15 +408,11 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         worker.signals.error.connect(self._on_refresh_error)
         self._thread_pool.start(worker)
 
-
-    def _on_refresh_finished(
-            self, processes: list[ProcessInfo]) -> None:
-        """Handle refresh completion."""
-        self._table_model.update_processes(processes)
-
+    def _on_refresh_finished(self, processes: list[ProcessInfo]) -> None:
+        self._tree_model.update_processes(processes)
         self._status_bar.showMessage(f"Loaded {len(processes)} processes")
         self._set_loading_state(False)
-        self._log.debug("Process table updated with new data")
+        self._log.debug("Process tree updated with new data")
 
     def _on_refresh_error(self, error_msg):
         """Handle refresh error."""
@@ -512,22 +420,16 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._set_loading_state(False)
 
     def _on_row_double_clicked(self, index):
-        """Handle double-click on table row."""
         if not index.isValid() or self._is_loading:
             return
-
-        process = self._table_model.get_process_at_row(index.row())
+        process = self._tree_model.get_process_at_row(index.row())
         if not process:
             return
-
         self._current_process = process
         self._load_output_content()
-
-        # Start auto-reload timer if the process is running and
-        # auto-reload is enabled
         if (self._auto_reload_checkbox.isChecked() and
                 process.pid and process.active):
-            self._file_reload_timer.start(2000)  # Reload every 2 seconds
+            self._file_reload_timer.start(2000)
         else:
             self._file_reload_timer.stop()
 
@@ -547,7 +449,11 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
     def _on_file_content_loaded(self, content):
         """Handle file content loaded."""
-        self._output_text.setPlainText(content)
+        if not content:
+            # file was successfully loaded, but it is empty
+            self._output_text.setPlainText("Output file is empty")
+        else:
+            self._output_text.setPlainText(content)
 
         # Scroll to bottom
         cursor = self._output_text.textCursor()
@@ -610,13 +516,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         worker.signals.error.connect(self._on_cleanup_error)
         self._thread_pool.start(worker)
 
-
     def _delete_selected_process(self):
-        """Delete a selected process from database and its output file."""
         if self._is_loading:
             return
-
-        selection = self._table_view.selectionModel()
+        selection = self._tree_view.selectionModel()
         if not selection.hasSelection():
             QtWidgets.QMessageBox.information(
                 self,
@@ -624,15 +527,12 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
                 "Please select a process to delete."
             )
             return
-
         indexes = selection.selectedRows()
         if not indexes:
             return
-
-        process = self._table_model.get_process_at_row(indexes[0].row())
+        process = self._tree_model.get_process_at_row(indexes[0].row())
         if not process:
             return
-
         reply = QtWidgets.QMessageBox.question(
             self,
             "Confirm Deletion",
