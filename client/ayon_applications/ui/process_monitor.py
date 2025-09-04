@@ -267,11 +267,42 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             "Site ID", "Output File", "Hash"
         ]
         self.columns = enum.IntEnum(  # type: ignore[misc]
-            "columns", {name.replace(" ", "_").upper(): i
-                        for i, name in enumerate(self.headers)}
+            "columns",
+            {
+                name.replace(" ", "_").upper(): i
+                for i, name in enumerate(self.headers)
+            },
         )
         self.setColumnCount(len(self.headers))
         self.setHorizontalHeaderLabels(self.headers)
+
+    @staticmethod
+    def _status_icon(process: ProcessInfo, size: int = 12) -> QtGui.QIcon:
+        """Return a small colored circle icon representing process status.
+
+        Args:
+            process (ProcessInfo): ProcessInfo object.
+            size (int): Size of the icon in pixels.
+
+        Returns:
+            QtGui.QIcon: Colored circle icon.
+
+        """
+        pix = QtGui.QPixmap(size, size)
+        pix.fill(QtCore.Qt.GlobalColor.transparent)
+        painter = QtGui.QPainter(pix)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        if process.pid and process.active:
+            color = QtGui.QColor(0, 180, 0)  # green = running
+        elif process.pid:
+            color = QtGui.QColor(200, 0, 0)  # red = stopped
+        else:
+            color = QtGui.QColor(140, 140, 140) # gray = unknown
+        painter.setBrush(QtGui.QBrush(color))
+        painter.setPen(QtCore.Qt.PenStyle.NoPen)
+        painter.drawEllipse(1, 1, size - 2, size - 2)
+        painter.end()
+        return QtGui.QIcon(pix)
 
     def update_processes(self, processes: list[ProcessInfo]) -> None:
         """Replace current content with provided processes.
@@ -290,11 +321,13 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             for col in range(len(self.headers)):
                 text = self._data_display_role(col, process)
                 item = QtGui.QStandardItem(
-                    str(text) if text is not None else "")
+                    str(text) if text is not None else ""
+                )
                 item.setEditable(False)
                 # Store ProcessInfo in UserRole on the first column item
                 if col == self.columns.NAME:
                     item.setData(process, QtCore.Qt.ItemDataRole.UserRole)
+                    item.setIcon(self._status_icon(process))
                 # Set background color for entire row via individual items
                 bg = self._data_background_role(process)
                 if bg is not None:
@@ -580,7 +613,9 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._controller = ProcessMonitorController(self)
 
         # Connect controller signals to UI slots
-        self._controller.processes_refreshed.connect(self._on_processes_refreshed)
+        self._controller.processes_refreshed.connect(
+            self._on_processes_refreshed
+        )
         self._controller.file_content.connect(self._on_file_content)
         self._controller.cleanup_finished.connect(self._on_cleanup_finished)
         self._controller.error.connect(self._on_error)
@@ -664,7 +699,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._tree_view.setModel(self._tree_model)
         self._tree_view.setSelectionBehavior(
             QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
-        self._tree_view.setAlternatingRowColors(True)
         self._tree_view.setSortingEnabled(True)
         self._tree_view.doubleClicked.connect(self._on_row_double_clicked)
 
