@@ -833,7 +833,7 @@ class ApplicationLaunchContext:
         self.addons_manager: AddonsManager = AddonsManager()
 
         # Logger
-        self.log: logging.Logger = Logger.get_logger(
+        self.log: Logger = Logger.get_logger(
             f"{self.__class__.__name__}-{application.full_name}"
         )
 
