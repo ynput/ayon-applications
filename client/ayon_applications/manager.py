@@ -14,7 +14,7 @@ import tempfile
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
-from typing import NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.addon import AddonsManager
@@ -35,6 +35,14 @@ from .exceptions import (
     ApplicationNotFound,
 )
 from .hooks import PostLaunchHook, PreLaunchHook
+from .defs import (
+    Application,
+    ApplicationGroup,
+    EnvironmentTool,
+    EnvironmentToolGroup,
+    LaunchTypes,
+    ApplicationExecutable,
+)
 
 
 @dataclass
@@ -83,13 +91,13 @@ class ApplicationManager:
     # - this is used to store process information about launched applications
     _process_storage: Optional[sqlite3.Connection] = None
 
-    def __init__(self, studio_settings=None):
+    def __init__(self, studio_settings: Optional[dict[str, Any]] = None):
         self.log = Logger.get_logger(self.__class__.__name__)
 
-        self.app_groups = {}
-        self.applications = {}
-        self.tool_groups = {}
-        self.tools = {}
+        self.app_groups: dict[str, ApplicationGroup] = {}
+        self.applications: dict[str, Application] = {}
+        self.tool_groups: dict[str, EnvironmentToolGroup] = {}
+        self.tools: dict[str, EnvironmentTool] = {}
 
         self._studio_settings = studio_settings
 
@@ -297,7 +305,7 @@ class ApplicationManager:
             site_id=row[9]
         )
 
-    def set_studio_settings(self, studio_settings):
+    def set_studio_settings(self, studio_settings: dict[str, Any]) -> None:
         """Ability to change init system settings.
 
         This will trigger refresh of manager.
@@ -306,7 +314,7 @@ class ApplicationManager:
 
         self.refresh()
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Refresh applications from settings."""
         self.app_groups.clear()
         self.applications.clear()
@@ -328,10 +336,10 @@ class ApplicationManager:
         for additional_app in additional_apps:
             app_name = additional_app.pop("name")
             if app_name in app_defs:
-                self.log.warning((
-                    "Additional application '{}' is already"
+                self.log.warning(
+                    f"Additional application '{app_name}' is already"
                     " in built-in applications."
-                ).format(app_name))
+                )
             app_defs[app_name] = additional_app
 
         for group_name, variant_defs in app_defs.items():
@@ -347,7 +355,9 @@ class ApplicationManager:
             for tool in group:
                 self.tools[tool.full_name] = tool
 
-    def find_latest_available_variant_for_group(self, group_name):
+    def find_latest_available_variant_for_group(
+        self, group_name: str
+    ) -> Optional[ApplicationGroup]:
         group = self.app_groups.get(group_name)
         if group is None or not group.enabled:
             return None
@@ -360,7 +370,9 @@ class ApplicationManager:
                 break
         return output
 
-    def create_launch_context(self, app_name, **data):
+    def create_launch_context(
+        self, app_name: str, **data
+    ) -> "ApplicationLaunchContext":
         """Prepare launch context for application.
 
         Args:
@@ -384,7 +396,9 @@ class ApplicationManager:
             app, executable, **data
         )
 
-    def launch_with_context(self, launch_context):
+    def launch_with_context(
+        self, launch_context: "ApplicationLaunchContext"
+    ) -> Optional[subprocess.Popen]:
         """Launch application using existing launch context.
 
         Args:
@@ -396,7 +410,7 @@ class ApplicationManager:
             raise ApplicationExecutableNotFound(launch_context.application)
         return launch_context.launch()
 
-    def launch(self, app_name, **data):
+    def launch(self, app_name, **data) -> Optional[subprocess.Popen]:
         """Launch procedure.
 
         For host application it's expected to contain "project_name",
@@ -410,13 +424,13 @@ class ApplicationManager:
         Raises:
             ApplicationNotFound: Application was not found by entered
                 argument `app_name`.
-            ApplicationExecutableNotFound: Executables in application definition
-                were not found on this machine.
+            ApplicationExecutableNotFound: Executables in application
+                definition were not found on this machine.
             ApplicationLaunchFailed: Something important for application launch
                 failed. Exception should contain an explanation message,
                 traceback should not be needed.
-        """
 
+        """
         context = self.create_launch_context(app_name, **data)
         return self.launch_with_context(context)
 
@@ -808,40 +822,40 @@ class ApplicationLaunchContext:
 
     def __init__(
         self,
-        application,
-        executable,
-        env_group=None,
-        launch_type=None,
+        application: Application,
+        executable: ApplicationExecutable,
+        env_group: Optional[str] = None,
+        launch_type: Optional[str] = None,
         **data
     ):
         # Application object
-        self.application = application
+        self.application: Application = application
 
-        self.addons_manager = AddonsManager()
+        self.addons_manager: AddonsManager = AddonsManager()
 
         # Logger
-        logger_name = "{}-{}".format(self.__class__.__name__,
-                                     self.application.full_name)
-        self.log = Logger.get_logger(logger_name)
+        self.log: logging.Logger = Logger.get_logger(
+            f"{self.__class__.__name__}-{application.full_name}"
+        )
 
-        self.executable = executable
+        self.executable: ApplicationExecutable = executable
 
         if launch_type is None:
             launch_type = LaunchTypes.local
-        self.launch_type = launch_type
+        self.launch_type: str = launch_type
 
         if env_group is None:
             env_group = DEFAULT_ENV_SUBGROUP
 
-        self.env_group = env_group
+        self.env_group: str = env_group
 
-        self.data = dict(data)
+        self.data: dict[str, Any] = dict(data)
 
         launch_args = []
         if executable is not None:
             launch_args = executable.as_args()
         # subprocess.Popen launch arguments (first argument in constructor)
-        self.launch_args = launch_args
+        self.launch_args: list[str] = launch_args
         self.launch_args.extend(application.arguments)
         if self.data.get("app_args"):
             self.launch_args.extend(self.data.pop("app_args"))
@@ -849,10 +863,10 @@ class ApplicationLaunchContext:
         # Handle launch environemtns
         src_env = self.data.pop("env", None)
         if src_env is not None and not isinstance(src_env, dict):
-            self.log.warning((
-                "Passed `env` kwarg has invalid type: {}. Expected: `dict`."
-                " Using `os.environ` instead."
-            ).format(str(type(src_env))))
+            self.log.warning(
+                f"Passed `env` kwarg has invalid type: {type(src_env)}."
+                " Expected: `dict`. Using `os.environ` instead."
+            )
             src_env = None
 
         if src_env is None:
@@ -886,7 +900,7 @@ class ApplicationLaunchContext:
         self._prelaunch_hooks_executed = False
 
     @property
-    def env(self):
+    def env(self) -> dict[str, str]:
         if (
             "env" not in self.kwargs
             or self.kwargs["env"] is None
@@ -895,17 +909,15 @@ class ApplicationLaunchContext:
         return self.kwargs["env"]
 
     @env.setter
-    def env(self, value):
+    def env(self, value: dict[str, str]) -> None:
         if not isinstance(value, dict):
-            raise ValueError(
-                "'env' attribute expect 'dict' object. Got: {}".format(
-                    str(type(value))
-                )
+            raise TypeError(
+                f"'env' attribute expect 'dict' object. Got: {type(value)}"
             )
         self.kwargs["env"] = value
 
     @property
-    def modules_manager(self):
+    def modules_manager(self) -> AddonsManager:
         """
         Deprecated:
             Use 'addons_manager' instead.
@@ -913,16 +925,16 @@ class ApplicationLaunchContext:
         """
         return self.addons_manager
 
-    def _collect_addons_launch_hook_paths(self):
+    def _collect_addons_launch_hook_paths(self) -> list[str]:
         """Helper to collect application launch hooks from addons.
 
         Module have to have implemented 'get_launch_hook_paths' method which
         can expect application as argument or nothing.
 
         Returns:
-            List[str]: Paths to launch hook directories.
-        """
+            list[str]: Paths to launch hook directories.
 
+        """
         expected_types = (list, tuple, set)
 
         output = []
@@ -961,16 +973,16 @@ class ApplicationLaunchContext:
 
             # Skip invalid types
             if not isinstance(hook_paths, expected_types):
-                self.log.warning((
-                    "Result of `get_launch_hook_paths`"
-                    " has invalid type {}. Expected {}"
-                ).format(type(hook_paths), expected_types))
+                self.log.warning(
+                    "Result of `get_launch_hook_paths` has invalid"
+                    f" type {type(hook_paths)}. Expected {expected_types}"
+                )
                 continue
 
             output.extend(hook_paths)
         return output
 
-    def paths_to_launch_hooks(self):
+    def paths_to_launch_hooks(self) -> list[str]:
         """Directory paths where to look for launch hooks."""
         # This method has potential to be part of application manager (maybe).
         paths = []
@@ -1004,7 +1016,7 @@ class ApplicationLaunchContext:
 
         return paths
 
-    def discover_launch_hooks(self, force=False):
+    def discover_launch_hooks(self, force: bool = False) -> None:
         """Load and prepare launch hooks."""
         if (
             self.prelaunch_hooks is not None
@@ -1021,7 +1033,7 @@ class ApplicationLaunchContext:
 
         paths = self.paths_to_launch_hooks()
         self.log.debug("Paths searched for launch hooks:\n{}".format(
-            "\n".join("- {}".format(path) for path in paths)
+            "\n".join(f"- {path}" for path in paths)
         ))
 
         all_classes = {
@@ -1031,7 +1043,7 @@ class ApplicationLaunchContext:
         for path in paths:
             if not os.path.exists(path):
                 self.log.info(
-                    "Path to launch hooks does not exist: \"{}\"".format(path)
+                    f"Path to launch hooks does not exist: \"{path}\""
                 )
                 continue
 
@@ -1052,15 +1064,15 @@ class ApplicationLaunchContext:
                     hook = klass(self)
                     if not hook.is_valid:
                         self.log.debug(
-                            "Skipped hook invalid for current launch context: "
-                            "{}".format(klass.__name__)
+                            "Skipped hook invalid for current launch context:"
+                            f" {klass.__name__}"
                         )
                         continue
 
                     if inspect.isabstract(hook):
-                        self.log.debug("Skipped abstract hook: {}".format(
-                            klass.__name__
-                        ))
+                        self.log.debug(
+                            f"Skipped abstract hook: {klass.__name__}"
+                        )
                         continue
 
                     # Separate hooks by pre/post class
@@ -1071,8 +1083,7 @@ class ApplicationLaunchContext:
 
                 except Exception:
                     self.log.warning(
-                        "Initialization of hook failed: "
-                        "{}".format(klass.__name__),
+                        f"Initialization of hook failed: {klass.__name__}",
                         exc_info=True
                     )
 
@@ -1088,27 +1099,28 @@ class ApplicationLaunchContext:
             else:
                 self.postlaunch_hooks = ordered_hooks
 
-        self.log.debug("Found {} prelaunch and {} postlaunch hooks.".format(
-            len(self.prelaunch_hooks), len(self.postlaunch_hooks)
-        ))
+        self.log.debug(
+            f"Found {len(self.prelaunch_hooks)} prelaunch"
+            f" and {len(self.postlaunch_hooks)} postlaunch hooks."
+        )
 
     @property
-    def app_name(self):
+    def app_name(self) -> str:
         return self.application.name
 
     @property
-    def host_name(self):
+    def host_name(self) -> str:
         return self.application.host_name
 
     @property
-    def app_group(self):
+    def app_group(self) -> ApplicationGroup:
         return self.application.group
 
     @property
-    def manager(self):
+    def manager(self) -> ApplicationManager:
         return self.application.manager
 
-    def _run_process(self):
+    def _run_process(self) -> subprocess.Popen:
         """Run the process with the given launch arguments and keyword args.
 
         This method will handle the process differently based on the platform

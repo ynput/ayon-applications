@@ -127,8 +127,8 @@ async def get_action_manifests(addon, project_name, variant):
             identifier=DEBUG_TERMINAL_ID,
             label="Terminal",
             category="Applications",
-            entity_type = "task",
-            allow_multiselection = False,
+            entity_type="task",
+            allow_multiselection=False,
             icon={
                 "type": "material-symbols",
                 "name": "terminal",

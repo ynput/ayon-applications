@@ -1,45 +1,57 @@
+from __future__ import annotations
+
 import platform
+import logging
 from abc import ABC, abstractmethod
+import warnings
+import typing
+from typing import Optional, Any
 
 from ayon_core.lib import Logger
+from ayon_core.addon import AddonsManager
 
-from .defs import LaunchTypes
+from .defs import LaunchTypes, ApplicationGroup, Application
+
+if typing.TYPE_CHECKING:
+    from .manager import ApplicationLaunchContext
 
 
 class LaunchHook(ABC):
     """Abstract base class of launch hook."""
     # Order of prelaunch hook, will be executed as last if set to None.
-    order = None
+    order: Optional[int] = None
     # List of host implementations, skipped if empty.
-    hosts = set()
+    hosts: set[str] = set()
     # Set of application groups
-    app_groups = set()
+    app_groups: set[str] = set()
     # Set of specific application names
-    app_names = set()
+    app_names: set[str] = set()
     # Set of platform availability
-    platforms = set()
+    platforms: set[str] = set()
     # Set of launch types for which is available
     # - if empty then is available for all launch types
     # - by default has 'local' which is most common reason for launc hooks
-    launch_types = {LaunchTypes.local}
+    launch_types: set[str] = {LaunchTypes.local}
 
-    def __init__(self, launch_context):
+    def __init__(self, launch_context: "ApplicationLaunchContext"):
         """Constructor of launch hook.
 
         Always should be called
         """
-        self.log = Logger.get_logger(self.__class__.__name__)
+        self.log: logging.Logger = Logger.get_logger(self.__class__.__name__)
 
-        self.launch_context = launch_context
+        self.launch_context: "ApplicationLaunchContext" = launch_context
 
         is_valid = self.class_validation(launch_context)
         if is_valid:
             is_valid = self.validate()
 
-        self.is_valid = is_valid
+        self.is_valid: bool = is_valid
 
     @classmethod
-    def class_validation(cls, launch_context):
+    def class_validation(
+        cls, launch_context: "ApplicationLaunchContext"
+    ) -> bool:
         """Validation of class attributes by launch context.
 
         Args:
@@ -76,53 +88,61 @@ class LaunchHook(ABC):
         return True
 
     @property
-    def data(self):
+    def data(self) -> dict[str, Any]:
         return self.launch_context.data
 
     @property
-    def application(self):
-        return getattr(self.launch_context, "application", None)
+    def application(self) -> Application:
+        return self.launch_context.application
 
     @property
     def manager(self):
-        return getattr(self.application, "manager", None)
+        return self.application.manager
 
     @property
-    def host_name(self):
-        return getattr(self.application, "host_name", None)
+    def host_name(self) -> Optional[str]:
+        return self.application.host_name
 
     @property
-    def app_group(self):
-        return getattr(self.application, "group", None)
+    def app_group(self) -> ApplicationGroup:
+        return self.application.group
 
     @property
-    def app_name(self):
-        return getattr(self.application, "full_name", None)
+    def app_name(self) -> str:
+        return self.application.full_name
 
     @property
-    def addons_manager(self):
-        return getattr(self.launch_context, "addons_manager", None)
+    def addons_manager(self) -> AddonsManager:
+        return self.launch_context.addons_manager
 
     @property
     def modules_manager(self):
         """
         Deprecated:
             Use 'addons_wrapper' instead.
+
         """
+        warnings.warn(
+            "Used deprecated 'modules_manager' attribute,"
+            " use 'addons_manager' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.addons_manager
 
-    def validate(self):
+    def validate(self) -> bool:
         """Optional validation of launch hook on initialization.
 
         Returns:
             bool: Hook is valid (True) or invalid (False).
+
         """
         # QUESTION Not sure if this method has any usable potential.
         # - maybe result can be based on settings
         return True
 
     @abstractmethod
-    def execute(self, *args, **kwargs):
+    def execute(self) -> None:
         """Abstract execute method where logic of hook is."""
         pass
 
