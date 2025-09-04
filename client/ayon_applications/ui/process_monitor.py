@@ -297,7 +297,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         elif process.pid:
             color = QtGui.QColor(200, 0, 0)  # red = stopped
         else:
-            color = QtGui.QColor(140, 140, 140) # gray = unknown
+            color = QtGui.QColor(140, 140, 140)  # gray = unknown
         painter.setBrush(QtGui.QBrush(color))
         painter.setPen(QtCore.Qt.PenStyle.NoPen)
         painter.drawEllipse(1, 1, size - 2, size - 2)

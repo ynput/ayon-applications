@@ -44,7 +44,6 @@ if typing.TYPE_CHECKING:
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
-
     name = "applications"
     version = __version__
 
