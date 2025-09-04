@@ -29,20 +29,19 @@ from ayon_core.lib import (
 from ayon_core.settings import get_studio_settings
 
 from .constants import DEFAULT_ENV_SUBGROUP
-from .defs import ApplicationGroup, EnvironmentToolGroup, LaunchTypes
+from .defs import (
+    Application,
+    ApplicationExecutable,
+    ApplicationGroup,
+    EnvironmentTool,
+    EnvironmentToolGroup,
+    LaunchTypes,
+)
 from .exceptions import (
     ApplicationExecutableNotFound,
     ApplicationNotFound,
 )
 from .hooks import PostLaunchHook, PreLaunchHook
-from .defs import (
-    Application,
-    ApplicationGroup,
-    EnvironmentTool,
-    EnvironmentToolGroup,
-    LaunchTypes,
-    ApplicationExecutable,
-)
 
 
 @dataclass
