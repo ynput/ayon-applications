@@ -263,7 +263,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._manager = manager
         # Columns
         self.headers = [
-            "Name", "PID", "Status", "Created", "Start Time",
+            "Name", "Executable", "PID", "Status", "Created", "Start Time",
             "Site ID", "Output File", "Hash"
         ]
         self.columns = enum.IntEnum(  # type: ignore[misc]
@@ -363,6 +363,8 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         """
         if column == self.columns.NAME:
             return process.name
+        if column == self.columns.EXECUTABLE:
+            return process.executable.as_posix() or "N/A"
         if column == self.columns.PID:
             return str(process.pid) if process.pid else "N/A"
         if column == self.columns.STATUS:
@@ -428,6 +430,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             """
             if column == self.columns.NAME:
                 return process.name or ""
+            if column == self.columns.EXECUTABLE:
+                return (
+                    process.executable.as_posix()
+                    if process.executable else "")
             if column == self.columns.PID:
                 return process.pid or 0
             if column == self.columns.STATUS:

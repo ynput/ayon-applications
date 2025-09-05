@@ -14,7 +14,8 @@ import tempfile
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, Union
+from typing import (
+    TYPE_CHECKING, Any, Generic, NamedTuple, Optional, Union, TypeVar, Type)
 
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.addon import AddonsManager
@@ -43,6 +44,9 @@ from .exceptions import (
 )
 from .hooks import PostLaunchHook, PreLaunchHook
 
+if TYPE_CHECKING:
+    import logging
+
 
 @dataclass
 class ProcessInfo:
@@ -50,6 +54,7 @@ class ProcessInfo:
 
     Attributes:
         name (str): Name of the process.
+        executable (Path): Path to the executable.
         args (list[str]): Arguments for the process.
         env (dict[str, str]): Environment variables for the process.
         cwd (str): Current working directory for the process.
@@ -60,6 +65,7 @@ class ProcessInfo:
     """
 
     name: str
+    executable: Path
     args: list[str]
     env: dict[str, str]
     cwd: str
@@ -74,7 +80,7 @@ class ProcessInfo:
 class ProcessIdTriplet(NamedTuple):
     """Triplet of process identification values."""
     pid: int
-    executable: Optional[str]  # we might not be able to get it sometimes
+    executable: str
     start_time: Optional[float]  # the same goes for start time
 
 
@@ -125,6 +131,7 @@ class ApplicationManager:
             "CREATE TABLE IF NOT EXISTS process_info ("
             "hash TEXT PRIMARY KEY, "
             "name TEXT, "
+            "executable TEXT, "
             "args TEXT DEFAULT NULL, "
             "env TEXT DEFAULT NULL, "
             "cwd TEXT DEFAULT NULL, "
@@ -147,50 +154,14 @@ class ApplicationManager:
         """
         # include executable name (if available) to reduce collisions when
         # PIDs are reused
-        exe = ApplicationManager._extract_executable_name_from_args(
-            process_info.args)
+        exe = process_info.executable
         # include start_time (if available) to make hash much harder to collide
         start = (
             f"{process_info.start_time}"
             if process_info.start_time is not None else ""
         )
-        key = f"{process_info.name}{process_info.pid}{exe or ''}{start}"
+        key = f"{process_info.name}{process_info.pid}{exe}{start}"
         return sha256(key.encode()).hexdigest()
-
-    @staticmethod
-    def _extract_executable_name_from_args(
-            args: Optional[Union[str, list, tuple]]) -> Optional[str]:
-        """Try to extract executable (image) name from stored args.
-
-        Returns basename of first argument if available, otherwise None.
-
-        Args:
-            args (Optional[Union[str, list, tuple]]): Arguments to extract
-                executable name from.
-
-        Returns:
-            Optional[str]: Executable name or None if not found.
-
-        """
-        if not args:
-            return None
-
-        first = None
-        # args might be a string, list, or nested list
-        if isinstance(args, str):
-            first = args
-        elif isinstance(args, (list, tuple)) and len(args) > 0:
-            first = args[0]
-            if isinstance(first, (list, tuple)) and len(first) > 0:
-                first = first[0]
-
-        if first is None:
-            return None
-
-        try:
-            return os.path.basename(str(first))
-        except Exception:
-            return None
 
     def store_process_info(self, process_info: ProcessInfo) -> None:
         """Store process information.
@@ -212,12 +183,13 @@ class ApplicationManager:
         process_hash = self.get_process_info_hash(process_info)
         cursor.execute(
             "INSERT OR REPLACE INTO process_info "
-            "(hash, name, args, env, cwd, "
+            "(hash, name, executable, args, env, cwd, "
             "pid, output_file, start_time, site_id) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 process_hash,
                 process_info.name,
+                process_info.executable.as_posix(),
                 json.dumps(process_info.args),
                 json.dumps(process_info.env),
                 process_info.cwd,
@@ -255,14 +227,15 @@ class ApplicationManager:
 
         return ProcessInfo(
             name=row[1],
-            args=json.loads(row[2]),
-            env=json.loads(row[3]),
-            cwd=row[4],
-            pid=row[5],
-            output=Path(row[6]) if row[6] else None,
-            start_time=row[7],
-            created_at=row[8],
-            site_id=row[9]
+            executable=Path(row[2]),
+            args=json.loads(row[3]),
+            env=json.loads(row[4]),
+            cwd=row[5],
+            pid=row[6],
+            output=Path(row[7]) if row[7] else None,
+            start_time=row[8],
+            created_at=row[9],
+            site_id=row[10]
         )
 
     def get_process_info_by_name(
@@ -294,14 +267,15 @@ class ApplicationManager:
 
         return ProcessInfo(
             name=row[1],
-            args=json.loads(row[2]),
-            env=json.loads(row[3]),
-            cwd=row[4],
-            pid=row[5],
-            output=Path(row[6]) if row[6] else None,
-            start_time=row[7],
-            created_at=row[8],
-            site_id=row[9]
+            executable=Path(row[2]),
+            args=json.loads(row[3]),
+            env=json.loads(row[4]),
+            cwd=row[5],
+            pid=row[6],
+            output=Path(row[7]) if row[7] else None,
+            start_time=row[8],
+            created_at=row[9],
+            site_id=row[10]
         )
 
     def set_studio_settings(self, studio_settings: dict[str, Any]) -> None:
@@ -449,14 +423,15 @@ class ApplicationManager:
         processes: list[ProcessInfo] = [
             ProcessInfo(
                 name=row[1],
-                args=json.loads(row[2]) if row[2] else [],
-                env=json.loads(row[3]) if row[3] else {},
-                cwd=row[4],
-                pid=row[5],
-                output=Path(row[6]) if row[6] else None,
-                start_time=row[7],
-                created_at=row[8],
-                site_id=row[9],
+                executable=Path(row[2]),
+                args=json.loads(row[3]) if row[3] else [],
+                env=json.loads(row[4]) if row[4] else {},
+                cwd=row[5],
+                pid=row[6],
+                output=Path(row[7]) if row[6] else None,
+                start_time=row[8],
+                created_at=row[9],
+                site_id=row[10],
             )
             for row in rows
         ]
@@ -474,7 +449,7 @@ class ApplicationManager:
         for proc in processes:
             if proc.pid is None:
                 continue
-            exe = self._extract_executable_name_from_args(proc.args)
+            exe = proc.executable.as_posix()
             pid_triplets.append(
                 ProcessIdTriplet(proc.pid, exe, proc.start_time))
             processes_with_pid.append(proc)
@@ -581,18 +556,22 @@ class ApplicationManager:
         with contextlib.suppress(Exception):
             exe_path = proc.exe() if hasattr(proc, "exe") else None
             if exe_path:
-                candidates.add(os.path.basename(exe_path).lower())
+                candidates.add(Path(exe_path).as_posix())
 
             name = proc.name()
             if name:
-                candidates.add(name.lower())
+                candidates.add(name)
 
             cmd = proc.cmdline()
             if cmd:
                 first = cmd[0]
-                candidates.add(os.path.basename(first).lower())
+                candidates.add(first)
+        if platform.system().lower() == "windows":
+            # On Windows be more relaxed and check image name only
+            candidates = {c.lower() for c in candidates if c}
+            return Path(executable).name.lower() in candidates
 
-        return executable.lower() in candidates
+        return Path(executable).as_posix() in candidates
 
     @staticmethod
     def _are_processes_running(
@@ -833,7 +812,7 @@ class ApplicationLaunchContext:
         self.addons_manager: AddonsManager = AddonsManager()
 
         # Logger
-        self.log: Logger = Logger.get_logger(
+        self.log: logging.Logger = Logger.get_logger(
             f"{self.__class__.__name__}-{application.full_name}"
         )
 
@@ -878,7 +857,7 @@ class ApplicationLaunchContext:
             if key not in ignored_env
         }
         # subprocess.Popen keyword arguments
-        self.kwargs = {"env": env}
+        self.kwargs: dict[str, Any] = {"env": env}
 
         if platform.system().lower() == "windows":
             # Detach new process from currently running process on Windows
@@ -892,8 +871,8 @@ class ApplicationLaunchContext:
             self.kwargs["stdout"] = subprocess.DEVNULL
             self.kwargs["stderr"] = subprocess.DEVNULL
 
-        self.prelaunch_hooks = None
-        self.postlaunch_hooks = None
+        self.prelaunch_hooks: list[Union[PreLaunchHook, PostLaunchHook]] = []
+        self.postlaunch_hooks: list[Union[PreLaunchHook, PostLaunchHook]] = []
 
         self.process = None
         self._prelaunch_hooks_executed = False
@@ -1035,7 +1014,7 @@ class ApplicationLaunchContext:
             "\n".join(f"- {path}" for path in paths)
         ))
 
-        all_classes = {
+        all_classes: dict[str, list[Type[Union[PreLaunchHook, PostLaunchHook]]]] = {  # noqa: E501
             "pre": [],
             "post": []
         }
@@ -1133,12 +1112,12 @@ class ApplicationLaunchContext:
             subprocess.Popen: The process object created by Popen.
 
         """
-        # Windows and MacOS have easier process start
+        # Windows and macOS have easier process start
         low_platform = platform.system().lower()
         if low_platform in ("windows", "darwin"):
             return self._execute_with_stdout()
-        # Linux uses mid process
-        # - it is possible that the mid process executable is not
+        # Linux uses mid-process
+        # - it is possible that the mid-process executable is not
         #   available for this version of AYON in that case use standard
         #   launch
         launch_args = get_linux_launcher_args()
@@ -1205,6 +1184,7 @@ class ApplicationLaunchContext:
 
                 process_info = ProcessInfo(
                     name=self.application.full_name,
+                    executable=Path(str(self.executable)),
                     args=self.launch_args,
                     env=self.kwargs.get("env", {}),
                     cwd=os.getcwd(),
@@ -1361,6 +1341,7 @@ class ApplicationLaunchContext:
 
             process_info = ProcessInfo(
                 name=self.application.full_name,
+                executable=Path(str(self.executable)),
                 args=self.launch_args,
                 env=self.kwargs.get("env", {}),
                 cwd=os.getcwd(),
