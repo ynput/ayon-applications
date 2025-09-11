@@ -1135,6 +1135,11 @@ class ApplicationLaunchContext:
             suffix=".txt",
             delete=False
         )
+        # write launch argument to temporary txt file
+        temp_file.write("\n".join(self.launch_args))
+        temp_file.write("--------------------------------\n")
+        temp_file.flush()
+
 
         json_data = {
             "name": self.application.full_name,
@@ -1142,7 +1147,9 @@ class ApplicationLaunchContext:
             "cwd": os.getcwd(),
             "args": self.launch_args,
             "env": app_env,
-            "output": temp_file.name
+            "output": temp_file.name,
+            "stdout": temp_file.name,
+            "stderr": temp_file.name,
         }
         if app_env:
             # Filter environments of subprocess
