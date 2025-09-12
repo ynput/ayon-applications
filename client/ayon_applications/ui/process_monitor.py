@@ -346,9 +346,8 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         """
         self._processes = list(processes)
-        self.clear()
-        self.setColumnCount(len(self.headers))
-        self.setHorizontalHeaderLabels(self.headers)
+        root_item = self.invisibleRootItem()
+        root_item.removeRows(0, root_item.rowCount())
 
         for process in self._processes:
             row_items = []
@@ -367,7 +366,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 if bg is not None:
                     item.setBackground(bg)
                 row_items.append(item)
-            self.appendRow(row_items)
+            root_item.appendRow(row_items)
 
     def get_process_at_row(self, row: int) -> Optional[ProcessInfo]:
         """Get the ProcessInfo stored at the given row.
@@ -429,7 +428,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         return None
 
     @staticmethod
-    def _data_background_role(process: ProcessInfo) -> Optional[QtGui.QColor]:
+    def _data_background_role(process: ProcessInfo) -> QtGui.QColor:
         if process.pid:
             is_running = process.active
             if is_running:
@@ -696,7 +695,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         # Status bar
         self._status_bar = QtWidgets.QStatusBar()
         self._status_bar.setSizeGripEnabled(False)
-        main_layout.addWidget(self._status_bar)
+        main_layout.addWidget(self._status_bar, 0)
         self._status_bar.showMessage("Ready")
 
     def _setup_output_ui(self):
@@ -718,9 +717,9 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._auto_reload_checkbox.toggled.connect(
             self._on_auto_reload_toggled)
 
-        output_layout.addWidget(output_label)
-        output_layout.addWidget(self._output_text)
-        output_layout.addWidget(self._auto_reload_checkbox)
+        output_layout.addWidget(output_label, 0)
+        output_layout.addWidget(self._output_text, 1)
+        output_layout.addWidget(self._auto_reload_checkbox, 0)
 
         # Ensure output widget expands and takes available space
         self._output_widget.setSizePolicy(
@@ -782,11 +781,11 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._loading_label = QtWidgets.QLabel("Loading...")
         self._loading_label.setVisible(False)
 
-        toolbar_layout.addWidget(self._refresh_btn)
-        toolbar_layout.addWidget(self._clean_inactive_btn)
-        toolbar_layout.addWidget(self._clean_selected_btn)
-        toolbar_layout.addStretch()
-        toolbar_layout.addWidget(self._loading_label)
+        toolbar_layout.addWidget(self._refresh_btn, 0)
+        toolbar_layout.addWidget(self._clean_inactive_btn, 0)
+        toolbar_layout.addWidget(self._clean_selected_btn, 0)
+        toolbar_layout.addStretch(1)
+        toolbar_layout.addWidget(self._loading_label, 0)
         return toolbar_layout
 
     def _set_loading_state(self, *, loading: bool) -> None:
@@ -1003,11 +1002,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         # Delegate shutdown to controller (stops timers and waits for workers)
         with contextlib.suppress(Exception):
             self._controller.shutdown()
-            # Ensure the window is hidden and scheduled for deletion so any
-            # recreation will start from a clean state.
-            self.hide()
-            self.deleteLater()
-
         super().closeEvent(event)
 
 
