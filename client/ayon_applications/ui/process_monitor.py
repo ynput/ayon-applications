@@ -351,6 +351,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         for process in self._processes:
             row_items = []
+            bg = self._data_background_role(process)
             for col in range(len(self.headers)):
                 text = self._data_display_role(col, process)
                 item = QtGui.QStandardItem(
@@ -362,7 +363,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                     item.setData(process, QtCore.Qt.ItemDataRole.UserRole)
                     item.setIcon(self._status_icon(process))
                 # Set background color for entire row via individual items
-                bg = self._data_background_role(process)
                 if bg is not None:
                     item.setBackground(bg)
                 row_items.append(item)
