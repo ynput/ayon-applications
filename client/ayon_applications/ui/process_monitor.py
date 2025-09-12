@@ -247,6 +247,11 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     Qt.UserRole on the first item of the row for easy retrieval.
     """
 
+    _running_icon: QtGui.QIcon
+    _stopped_icon: QtGui.QIcon
+    _unknown_icon: QtGui.QIcon
+    ICON_SIZE = 12
+
     def __init__(
             self,
             parent: Optional[QtCore.QObject] = None,
@@ -259,6 +264,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         """
         super().__init__(parent)
+        self._generate_icons(size=self.ICON_SIZE)
         self._processes: list[ProcessInfo] = []
         self._manager = manager
         # Columns
@@ -276,12 +282,46 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self.setColumnCount(len(self.headers))
         self.setHorizontalHeaderLabels(self.headers)
 
-    @staticmethod
-    def _status_icon(process: ProcessInfo, size: int = 12) -> QtGui.QIcon:
+
+    def _status_icon(self, process: ProcessInfo) -> QtGui.QIcon:
         """Return a small colored circle icon representing process status.
 
         Args:
             process (ProcessInfo): ProcessInfo object.
+
+        Returns:
+            QtGui.QIcon: Colored circle icon.
+
+        """
+        if process.pid:
+            return self._running_icon if process.active else self._stopped_icon
+        return self._unknown_icon
+
+
+    @classmethod
+    def _generate_icons(cls, size: int = 12) -> None:
+        """Generate static icons for process statuses.
+
+        Args:
+            size (int): Size of the icons in pixels.
+
+        """
+        if not hasattr(cls, "_running_icon"):
+            cls._running_icon = cls._create_icon(
+                QtGui.QColor(0, 180, 0), size)  # green = running
+        if not hasattr(cls, "_stopped_icon"):
+            cls._stopped_icon = cls._create_icon(
+                QtGui.QColor(200, 0, 0), size)  # red = stopped
+        if not hasattr(cls, "_unknown_icon"):
+            cls._unknown_icon = cls._create_icon(
+                QtGui.QColor(140, 140, 140), size)  # gray = unknown
+
+    @staticmethod
+    def _create_icon(color: QtGui.QColor, size: int = 12) -> QtGui.QIcon:
+        """Create a colored circle icon.
+
+        Args:
+            color (QtGui.QColor): Color of the circle.
             size (int): Size of the icon in pixels.
 
         Returns:
@@ -292,12 +332,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         pix.fill(QtCore.Qt.GlobalColor.transparent)
         painter = QtGui.QPainter(pix)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-        if process.pid and process.active:
-            color = QtGui.QColor(0, 180, 0)  # green = running
-        elif process.pid:
-            color = QtGui.QColor(200, 0, 0)  # red = stopped
-        else:
-            color = QtGui.QColor(140, 140, 140)  # gray = unknown
         painter.setBrush(QtGui.QBrush(color))
         painter.setPen(QtCore.Qt.PenStyle.NoPen)
         painter.drawEllipse(1, 1, size - 2, size - 2)
