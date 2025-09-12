@@ -1,8 +1,2 @@
-name="applications"
-description="AYON Applications addon"
-
-[tool.poetry.dependencies]
-python = ">=3.9.1,<3.10"
-
 [ayon.runtimeDependencies]
 psutil = "^7.0.0"
