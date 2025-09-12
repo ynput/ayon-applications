@@ -10,7 +10,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING, Optional, Union
 
-from ayon_applications.manager import ApplicationManager, ProcessInfo
+from ayon_applications.process import ProcessManager, ProcessInfo
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
 from qtpy import QtCore, QtGui, QtWidgets
@@ -71,7 +71,7 @@ class ProcessRefreshWorkerSignals(QtCore.QObject):
 class ProcessRefreshWorker(QRunnable):
     """Worker thread for refreshing process data from the database."""
 
-    def __init__(self, manager: ApplicationManager):
+    def __init__(self, manager: ProcessManager):
         """Initialize the worker."""
         super().__init__()
         self.signals = ProcessRefreshWorkerSignals()
@@ -147,7 +147,7 @@ class CleanupWorker(QRunnable):
     """Worker thread for cleanup operations."""
 
     def __init__(self,
-                 manager: ApplicationManager,
+                 manager: ProcessManager,
                  cleanup_type: str,
                  process_hash: Optional[str] = None) -> None:
         """Initialize the worker.
@@ -250,7 +250,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def __init__(
             self,
             parent: Optional[QtCore.QObject] = None,
-            manager: Optional[ApplicationManager] = None) -> None:
+            manager: Optional[ProcessManager] = None) -> None:
         """Initialize the model.
 
         Args:
@@ -473,7 +473,7 @@ class ProcessMonitorController(QtCore.QObject):
     def __init__(self, parent: Optional[QtCore.QObject] = None):
         """Initialize the controller."""
         super().__init__(parent)
-        self.manager = ApplicationManager()
+        self.manager = ProcessManager()
         self._thread_pool = QThreadPool()
 
         # Timers (created once)

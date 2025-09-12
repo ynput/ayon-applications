@@ -22,6 +22,7 @@ from ayon_core.addon import (
     click_wrap,
     ensure_addons_are_process_ready,
 )
+from .ui.process_monitor import ProcessMonitorWindow
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
@@ -40,6 +41,7 @@ if typing.TYPE_CHECKING:
     BoolArg = Literal["1", "0"]
     from ayon_applications.manager import Application
     from ayon_core.tools.tray.webserver import WebServerManager
+    from ayon_applications.ui.process_monitor import ProcessMonitorWindow
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
@@ -49,6 +51,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
+        self._process_monitor_window: Optional[ProcessMonitorWindow] = None
 
     @property
     def label(self) -> str:
@@ -59,6 +62,14 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         from ayon_applications.ui.process_monitor import (
             ProcessMonitorWindow,
         )
+        if (
+                self._process_monitor_window is not None
+                and not self._process_monitor_window.isVisible()
+        ):
+            self._process_monitor_window.show()
+            self._process_monitor_window.raise_()
+            self._process_monitor_window.activateWindow()
+            return
 
         self._process_monitor_window = ProcessMonitorWindow()
         self._process_monitor_window.show()
