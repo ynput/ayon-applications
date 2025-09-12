@@ -254,13 +254,14 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     def __init__(
             self,
+            manager: ProcessManager,
             parent: Optional[QtCore.QObject] = None,
-            manager: Optional[ProcessManager] = None) -> None:
+            ) -> None:
         """Initialize the model.
 
         Args:
+            manager (ProcessManager): Process manager
             parent (Optional[QtCore.QObject]): Parent QObject.
-            manager (Optional[ApplicationManager]): Application manager
 
         """
         super().__init__(parent)
@@ -282,7 +283,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self.setColumnCount(len(self.headers))
         self.setHorizontalHeaderLabels(self.headers)
 
-
     def _status_icon(self, process: ProcessInfo) -> QtGui.QIcon:
         """Return a small colored circle icon representing process status.
 
@@ -296,7 +296,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         if process.pid:
             return self._running_icon if process.active else self._stopped_icon
         return self._unknown_icon
-
 
     @classmethod
     def _generate_icons(cls, size: int = 12) -> None:
@@ -422,8 +421,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             return str(process.output) if process.output else "N/A"
         if column == self.columns.HASH:
             with contextlib.suppress(Exception):
-                if self._manager:
-                    return self._manager.get_process_info_hash(process)
+                return self._manager.get_process_info_hash(process)
             return "N/A"
         return None
 
@@ -481,10 +479,8 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 return process.output.as_posix() if process.output else ""
             if column == self.columns.HASH:
                 with contextlib.suppress(Exception):
-                    return (
-                        self._manager.get_process_info_hash(process)
-                        if self._manager else ""
-                    )
+                    return self._manager.get_process_info_hash(process)
+
             return ""
 
         sorted_processes = sorted(
@@ -698,7 +694,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         main_layout.addWidget(self._status_bar, 0)
         self._status_bar.showMessage("Ready")
 
-    def _setup_output_ui(self):
+    def _setup_output_ui(self) -> None:
         self._output_widget = QtWidgets.QWidget()
         output_layout = QtWidgets.QVBoxLayout(self._output_widget)
 

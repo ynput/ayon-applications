@@ -1,7 +1,6 @@
 """Application manager and application launch context."""
 from __future__ import annotations
 
-import contextlib
 import copy
 import inspect
 import json
@@ -12,8 +11,7 @@ import sys
 import tempfile
 from pathlib import Path
 from subprocess import Popen
-from typing import (
-    TYPE_CHECKING, Any, Optional, Union, Type)
+from typing import TYPE_CHECKING, Any, Optional, Type, Union
 
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.addon import AddonsManager
@@ -24,10 +22,9 @@ from ayon_core.lib import (
     get_local_site_id,
     modules_from_path,
 )
+from ayon_core.settings import get_studio_settings
 
 from ayon_applications.process import ProcessInfo, ProcessManager
-
-from ayon_core.settings import get_studio_settings
 
 from .constants import DEFAULT_ENV_SUBGROUP
 from .defs import (
@@ -57,7 +54,6 @@ class ApplicationManager:
             using different settings.
     """
 
-
     def __init__(self, studio_settings: Optional[dict[str, Any]] = None):
         self.log = Logger.get_logger(self.__class__.__name__)
 
@@ -69,7 +65,6 @@ class ApplicationManager:
         self._studio_settings = studio_settings
 
         self.refresh()
-
 
     def set_studio_settings(self, studio_settings: dict[str, Any]) -> None:
         """Ability to change init system settings.
@@ -308,7 +303,6 @@ class ApplicationLaunchContext:
         if not sys.stdout:
             self.kwargs["stdout"] = subprocess.DEVNULL
             self.kwargs["stderr"] = subprocess.DEVNULL
-
 
         # TODO: add type hints
         # note that these need to be None in order to trigger discovery
@@ -577,7 +571,6 @@ class ApplicationLaunchContext:
         ) as temp_file:
             output_file = temp_file.name
 
-
         json_data = {
             "name": self.application.full_name,
             "site_id": get_local_site_id(),
@@ -624,7 +617,9 @@ class ApplicationLaunchContext:
                 pid_from_mid = json_data.get("pid")
                 start_time = None
                 if pid_from_mid and psutil:
-                    start_time = self.process_manager.get_process_start_time(process)
+                    start_time = (
+                        self.process_manager.get_process_start_time(process)
+                    )
 
                 process_info = ProcessInfo(
                     name=self.application.full_name,
@@ -671,7 +666,6 @@ class ApplicationLaunchContext:
         self._prelaunch_hooks_executed = True
 
     def launch(self) -> Optional[subprocess.Popen]:
-        import time
         """Collect data for new process and then create it.
 
         This method must not be executed more than once.
@@ -776,7 +770,6 @@ class ApplicationLaunchContext:
             delete=False, encoding="utf-8"
         ) as temp_file:
             temp_file_path = temp_file.name
-
 
         with open(temp_file_path, "wb") as tmp_file:
             self.kwargs["stdout"] = tmp_file
