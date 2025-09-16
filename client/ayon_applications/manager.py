@@ -539,8 +539,11 @@ class ApplicationLaunchContext:
 
         This method will handle the process differently based on the platform
         it is running on. It will create a temporary file for output on
-        Windows and MacOS, while on Linux it will use a mid-process to launch
+        Windows and macos, while on Linux it will use a mid-process to launch
         the application with the provided arguments and environment variables.
+
+        It will pass file paths to temporary files to the mid-process where
+        the process output and pid will be stored.
 
         Returns:
             subprocess.Popen: The process object created by Popen.
@@ -558,11 +561,11 @@ class ApplicationLaunchContext:
         if launch_args is None:
             return subprocess.Popen(self.launch_args, **self.kwargs)
 
-        # Prepare data that will be passed to midprocess
+        # Prepare data that will be passed to mid-process
         # - store arguments to a json and pass path to json as last argument
         # - pass environments to set
         app_env = self.kwargs.pop("env", {})
-        # create temporary file path passed to midprocess
+        # create temporary file path passed to mid-process
         with tempfile.NamedTemporaryFile(
             mode="w",
             prefix=f"ayon_{self.application.host_name}_output_",
@@ -570,6 +573,11 @@ class ApplicationLaunchContext:
             delete=False
         ) as temp_file:
             output_file = temp_file.name
+        # create temporary file to read back pid
+        with tempfile.NamedTemporaryFile(
+            mode="w", prefix="ayon_pid_", suffix=".txt", delete=False
+        ) as pid_temp_file:
+            pid_file = pid_temp_file.name
 
         json_data = {
             "name": self.application.full_name,
@@ -580,6 +588,7 @@ class ApplicationLaunchContext:
             "output": output_file,
             "stdout": output_file,
             "stderr": output_file,
+            "pid_file": pid_file,
         }
         if app_env:
             # Filter environments of subprocess
@@ -618,7 +627,8 @@ class ApplicationLaunchContext:
                 start_time = None
                 if pid_from_mid and psutil:
                     start_time = (
-                        self.process_manager.get_process_start_time(process)
+                        self.process_manager.get_process_start_time_by_pid(
+                            pid_from_mid)
                     )
 
                 process_info = ProcessInfo(
@@ -628,7 +638,7 @@ class ApplicationLaunchContext:
                     env=self.kwargs.get("env", {}),
                     cwd=os.getcwd(),
                     pid=pid_from_mid,
-                    output=Path(temp_file.name),
+                    output=Path(output_file),
                     start_time=start_time,
                     site_id=get_local_site_id(),
                 )
@@ -649,6 +659,9 @@ class ApplicationLaunchContext:
 
         This method will be executed only once, any future calls will skip
         the processing.
+
+        Raises:
+            RuntimeError: When prelaunch hooks were already executed.
 
         """
         if self._prelaunch_hooks_executed:

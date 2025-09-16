@@ -617,3 +617,32 @@ class ProcessManager:
                     psutil.AccessDenied):
                 start_time = None
         return start_time
+
+    @staticmethod
+    def get_process_start_time_by_pid(pid: int) -> Optional[float]:
+        """Get the start time of a process by PID using psutil.
+
+        Args:
+            pid (int): Process ID.
+
+        Returns:
+            Optional[float]: The start time of the process in seconds since
+                the epoch, or None if it cannot be determined.
+
+        """
+        # Try to fetch process start time when psutil is available
+        try:
+            import psutil
+        except ImportError:
+            return None
+
+        start_time = None
+        if pid:
+            try:
+                start_time = psutil.Process(pid).create_time()
+            except (
+                    psutil.NoSuchProcess,
+                    psutil.ZombieProcess,
+                    psutil.AccessDenied):
+                start_time = None
+        return start_time
