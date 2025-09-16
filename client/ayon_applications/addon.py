@@ -199,7 +199,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         project_name: str,
         folder_path: str,
         task_name: str,
-        workfile_path : Optional[str] = None,
+        workfile_path: Optional[str] = None,
         use_last_workfile: Optional[bool] = None,
     ):
         """Launch application.
