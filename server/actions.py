@@ -137,10 +137,9 @@ def _get_task_types_by_app_name(
     generic_apps = None
     used_task_types = set()
     for profile in profiles:
-        if profile["allow_type"] == "all_applications":
-            allowed_apps = list(app_items_by_name.keys())
-        else:
-            allowed_apps = list(profile["applications"])
+        allowed_apps = set(app_items_by_name.keys())
+        if profile["allow_type"] != "all_applications":
+            allowed_apps &= set(profile["applications"])
 
         if not profile["task_types"]:
             if generic_apps is None:
