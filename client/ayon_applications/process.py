@@ -7,6 +7,7 @@ import subprocess
 import json
 import logging
 import sqlite3
+import threading
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -58,13 +59,12 @@ class ProcessManager:
     """Manager for handling processes in Ayon Applications."""
 
     log: Logger
-    # holds connection to the process info storage
-    # - this is used to store process information about launched applications
-    _process_storage: Optional[sqlite3.Connection] = None
 
     def __init__(self) -> None:
         self.log = logging.getLogger(f"{__name__}.ProcessManager")
-        self._process_storage: Optional[sqlite3.Connection] = None
+        # Use thread-local storage for SQLite connections to avoid
+        # sharing connections between threads (fixes Linux SQLite issues)
+        self._thread_local = threading.local()
 
     @staticmethod
     def get_process_info_storage_location() -> Path:
@@ -77,13 +77,25 @@ class ProcessManager:
         return Path(get_launcher_local_dir()) / "process_handlers.db"
 
     def _get_process_storage_connection(self) -> sqlite3.Connection:
-        """Store process handlers in the addon.
+        """Get a thread-local SQLite connection.
+
+        Each thread gets its own connection to avoid thread-safety issues
+        that can occur on Linux.
 
         Returns:
-            sqlite3.Connection: Connection to the process handlers storage.
+            sqlite3.Connection: Thread-local connection to the process storage.
 
         """
-        cnx = sqlite3.connect(self.get_process_info_storage_location())
+        # Check if this thread already has a connection
+        if hasattr(self._thread_local, "connection"):
+            return self._thread_local.connection
+
+        # Create a new connection for this thread
+        cnx = sqlite3.connect(
+            self.get_process_info_storage_location(),
+            # Enable thread safety for SQLite operations
+            check_same_thread=False
+        )
         cursor = cnx.cursor()
         cursor.execute(
             "CREATE TABLE IF NOT EXISTS process_info ("
@@ -100,8 +112,10 @@ class ProcessManager:
             "site_id TEXT DEFAULT NULL"
             ")"
         )
+        cnx.commit()
+        self._thread_local.connection = cnx
 
-        return cnx
+        return self._thread_local.connection
 
     @staticmethod
     def get_process_info_hash(process_info: ProcessInfo) -> str:
@@ -134,10 +148,9 @@ class ProcessManager:
                 "Process name: %s"
             ), process_info.name)
             return
-        if self._process_storage is None:
-            self._process_storage = self._get_process_storage_connection()
 
-        cursor = self._process_storage.cursor()
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
         process_hash = self.get_process_info_hash(process_info)
         cursor.execute(
             "INSERT OR REPLACE INTO process_info "
@@ -160,7 +173,7 @@ class ProcessManager:
                 process_info.site_id
             )
         )
-        self._process_storage.commit()
+        cnx.commit()
 
     def get_process_info(self, process_hash: str) -> Optional[ProcessInfo]:
         """Get process information by hash.
@@ -171,10 +184,8 @@ class ProcessManager:
         Returns:
             Optional[ProcessInfo]: Process information or None if not found.
         """
-        if self._process_storage is None:
-            self._process_storage = self._get_process_storage_connection()
-
-        cursor = self._process_storage.cursor()
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
         cursor.execute(
             "SELECT * FROM process_info WHERE hash = ?",
             (process_hash,)
@@ -208,10 +219,8 @@ class ProcessManager:
         Returns:
             Optional[ProcessInfo]: Process information or None if not found.
         """
-        if self._process_storage is None:
-            self._process_storage = self._get_process_storage_connection()
-
-        cursor = self._process_storage.cursor()
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
         query = "SELECT * FROM process_info WHERE name = ?"
         params = [name]
         if site_id:
@@ -242,10 +251,8 @@ class ProcessManager:
         Returns:
             list[ProcessInfo]: List of all process information.
         """
-        if self._process_storage is None:
-            self._process_storage = self._get_process_storage_connection()
-
-        cursor = self._process_storage.cursor()
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
         cursor.execute("SELECT * FROM process_info ORDER BY created_at DESC")
         rows = cursor.fetchall()
 
@@ -300,14 +307,12 @@ class ProcessManager:
         Returns:
             bool: True if deleted, False if not found.
         """
-        if self._process_storage is None:
-            self._process_storage = self._get_process_storage_connection()
-
-        cursor = self._process_storage.cursor()
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
         cursor.execute(
             "DELETE FROM process_info WHERE hash = ?",
             (process_hash,))
-        self._process_storage.commit()
+        cnx.commit()
         return cursor.rowcount > 0
 
     def delete_inactive_processes(self) -> int:
@@ -316,8 +321,7 @@ class ProcessManager:
         Returns:
             int: Number of deleted processes.
         """
-        if self._process_storage is None:
-            self._process_storage = self._get_process_storage_connection()
+        cnx = self._get_process_storage_connection()
 
         # Get all processes and check which ones are inactive
         all_processes = self.get_all_process_info()
@@ -331,14 +335,14 @@ class ProcessManager:
         if not inactive_hashes:
             return 0
 
-        cursor = self._process_storage.cursor()
+        cursor = cnx.cursor()
         placeholders = ",".join("?" * len(inactive_hashes))
         cursor.execute(
             ("DELETE FROM process_info WHERE "  # noqa: S608
             f"hash IN ({placeholders})"),
             inactive_hashes
         )
-        self._process_storage.commit()
+        cnx.commit()
         return cursor.rowcount
 
     @staticmethod
