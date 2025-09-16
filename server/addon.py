@@ -50,13 +50,16 @@ if TYPE_CHECKING:
         ActionExecutor,
         ExecuteResponseModel,
         SimpleActionManifest,
+        DynamicActionManifest,
     )
 
 from .constants import LABELS_BY_GROUP_NAME
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
     get_action_manifests,
+    get_dynamic_action_manifests,
     IDENTIFIER_PREFIX,
+    IDENTIFIER_WORKFILE_PREFIX,
     DEBUG_TERMINAL_ID,
 )
 
@@ -99,6 +102,17 @@ class ApplicationsAddon(BaseServerAddon):
             variant=variant,
         )
 
+    async def get_dynamic_actions(
+        self,
+        context: ActionContext,
+        variant: str = "production",
+    ) -> list["DynamicActionManifest"]:
+        return await get_dynamic_action_manifests(
+            self,
+            context=context,
+            variant=variant,
+        )
+
     async def execute_action(
         self,
         executor: "ActionExecutor",
@@ -106,33 +120,52 @@ class ApplicationsAddon(BaseServerAddon):
         """Execute an action provided by the addon"""
         context = executor.context
         project_name = context.project_name
-        task_id = context.entity_ids[0]
+        entity_id = context.entity_ids[0]
 
         if executor.identifier == DEBUG_TERMINAL_ID:
             args = [
                 "addon", "applications", "launch-debug-terminal",
                 "--project", project_name,
-                "--task-id", task_id,
+                "--task-id", entity_id,
             ]
             return await executor.get_launcher_action_response(
                 args=args
             )
 
-        app_name = executor.identifier.removeprefix(IDENTIFIER_PREFIX)
+        app_name = entity_id_arg = command = None
+        skip_last_workfile = None
+        if executor.identifier.startswith(IDENTIFIER_PREFIX):
+            app_name = executor.identifier.removeprefix(IDENTIFIER_PREFIX)
+            command = "launch-by-id"
+            entity_id_arg = "--task-id"
+            config = await self.get_action_config(
+                executor.identifier,
+                executor.context,
+                executor.user,
+                executor.variant,
+            )
+            skip_last_workfile = config.get("skip_last_workfile")
 
-        config = await self.get_action_config(
-            executor.identifier,
-            executor.context,
-            executor.user,
-            executor.variant,
-        )
+        elif executor.identifier.startswith(IDENTIFIER_WORKFILE_PREFIX):
+            app_name = executor.identifier.removeprefix(
+                IDENTIFIER_WORKFILE_PREFIX
+            )
+            command = "launch-by-workfile-id"
+            entity_id_arg = "--workfile-id"
+
+        if not app_name:
+            return await executor.get_simple_response(
+                message="Failed to launch application."
+                " Unknown action identifier.",
+                success=False,
+            )
+
         args = [
-            "addon", "applications", "launch-by-id",
+            "addon", "applications", command,
             "--app", app_name,
             "--project", project_name,
-            "--task-id", task_id,
+            entity_id_arg, entity_id,
         ]
-        skip_last_workfile = config.get("skip_last_workfile")
         if skip_last_workfile is not None:
             args.extend([
                 "--use-last-workfile", str(int(not skip_last_workfile))
