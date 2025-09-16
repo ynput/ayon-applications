@@ -4,7 +4,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from logging import getLogger
 from pathlib import Path
 from time import perf_counter
@@ -413,10 +413,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                         process.created_at, "%Y-%m-%d %H:%M:%S")
                     # Assume it's UTC and convert to local timezone
                     utc_dt = utc_dt.replace(
-                        tzinfo=datetime.timezone.utc)
+                        tzinfo=timezone.utc)
                     local_dt = utc_dt.astimezone()
                     return local_dt.strftime("%Y-%m-%d %H:%M:%S")
-                except (ValueError, AttributeError):
+                except (ValueError, AttributeError) as e:
                     # If parsing fails, return the original string
                     return process.created_at
             return "N/A"
