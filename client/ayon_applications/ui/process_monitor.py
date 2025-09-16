@@ -406,11 +406,14 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         if column == self.columns.CREATED:
             if process.created_at:
                 try:
-                    # Parse the UTC timestamp from SQLite and convert to local timezone
+                    # Parse the UTC timestamp from SQLite and convert
+                    # to local timezone
                     # SQLite CURRENT_TIMESTAMP format is "YYYY-MM-DD HH:MM:SS"
-                    utc_dt = datetime.strptime(process.created_at, "%Y-%m-%d %H:%M:%S")
+                    utc_dt = datetime.strptime(
+                        process.created_at, "%Y-%m-%d %H:%M:%S")
                     # Assume it's UTC and convert to local timezone
-                    utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+                    utc_dt = utc_dt.replace(
+                        tzinfo=datetime.timezone.utc)
                     local_dt = utc_dt.astimezone()
                     return local_dt.strftime("%Y-%m-%d %H:%M:%S")
                 except (ValueError, AttributeError):
