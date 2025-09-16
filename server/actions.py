@@ -304,6 +304,8 @@ async def get_dynamic_action_manifests(
                 category="Applications",
                 icon=app_item["icon"],
                 order=0,
+                addon_name=addon.name,
+                addon_version=addon.version,
             ))
 
     return output
