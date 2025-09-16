@@ -404,7 +404,19 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 return "Running" if process.active else "Stopped"
             return "Unknown"
         if column == self.columns.CREATED:
-            return process.created_at or "N/A"
+            if process.created_at:
+                try:
+                    # Parse the UTC timestamp from SQLite and convert to local timezone
+                    # SQLite CURRENT_TIMESTAMP format is "YYYY-MM-DD HH:MM:SS"
+                    utc_dt = datetime.strptime(process.created_at, "%Y-%m-%d %H:%M:%S")
+                    # Assume it's UTC and convert to local timezone
+                    utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+                    local_dt = utc_dt.astimezone()
+                    return local_dt.strftime("%Y-%m-%d %H:%M:%S")
+                except (ValueError, AttributeError):
+                    # If parsing fails, return the original string
+                    return process.created_at
+            return "N/A"
         if column == self.columns.START_TIME:
             if process.start_time:
                 try:
