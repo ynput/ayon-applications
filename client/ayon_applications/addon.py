@@ -5,6 +5,7 @@ import sys
 import json
 import traceback
 import tempfile
+import warnings
 import typing
 from typing import Optional, Any
 
@@ -228,6 +229,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         project_name: str,
         folder_path: str,
         task_name: str,
+        workfile_path: Optional[str] = None,
         use_last_workfile: Optional[bool] = None,
     ):
         """Launch application.
@@ -237,8 +239,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             project_name (str): Project name.
             folder_path (str): Folder path.
             task_name (str): Task name.
+            workfile_path (Optional[str]): Workfile path to use.
             use_last_workfile (Optional[bool]): Explicitly tell to use or
-                not use last workfile.
+                not use last workfile. Ignored if 'workfile_path' is passed.
 
         """
         ensure_addons_are_process_ready(
@@ -253,7 +256,27 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             "folder_path": folder_path,
             "task_name": task_name,
         }
-        if use_last_workfile is not None:
+        # Backwards compatibility 'workfile_path' was added
+        #   before 'use_last_workfile'
+        if isinstance(workfile_path, bool):
+            use_last_workfile = workfile_path
+            workfile_path = None
+            warnings.warn(
+                "Passed 'use_last_workfile' as positional argument."
+                " Use explicit 'use_last_workfile' keyword argument instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if workfile_path:
+            data["workfile_path"] = workfile_path
+            # Backwards compatibility to be able to use 'workfile_path'
+            #   argument with older ayon-core
+            # use_last_workfile = False
+            data["last_workfile_path"] = workfile_path
+            data["start_last_workfile"] = True
+
+        elif use_last_workfile is not None:
             data["start_last_workfile"] = use_last_workfile
 
         # TODO handle raise errors
@@ -357,6 +380,16 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         )
         (
             main_group.command(
+                self._cli_launch_with_workfile_id,
+                name="launch-by-workfile-id",
+                help="Launch application using workfile id"
+            )
+            .option("--app", required=True, help="Full application name")
+            .option("--project", required=True, help="Project name")
+            .option("--workfile-id", required=True, help="Workfile id")
+        )
+        (
+            main_group.command(
                 self._cli_launch_with_debug_terminal,
                 name="launch-debug-terminal",
                 help="Launch with debug terminal"
@@ -437,7 +470,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 use_last_workfile, default=None
             )
         self.launch_application(
-            app, project, folder, task, use_last_workfile,
+            app, project, folder, task, use_last_workfile=use_last_workfile,
         )
 
     def _cli_launch_with_task_id(
@@ -473,7 +506,35 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             project,
             folder_entity["path"],
             task_entity["name"],
-            use_last_workfile,
+            use_last_workfile=use_last_workfile,
+        )
+
+    def _cli_launch_with_workfile_id(
+        self,
+        project: str,
+        workfile_id: str,
+        app: str,
+    ) -> None:
+        from ayon_core.pipeline import Anatomy
+
+        workfile_entity = ayon_api.get_workfile_info_by_id(
+            project, workfile_id
+        )
+        task_id = workfile_entity["taskId"]
+        task_entity = ayon_api.get_task_by_id(
+            project, task_id, fields={"name", "folderId"}
+        )
+        folder_entity = ayon_api.get_folder_by_id(
+            project, task_entity["folderId"], fields={"path"}
+        )
+        anatomy = Anatomy(project)
+        workfile_path = anatomy.fill_root(workfile_entity["path"])
+        self.launch_application(
+            app,
+            project,
+            folder_entity["path"],
+            task_entity["name"],
+            workfile_path=workfile_path,
         )
 
     def _cli_launch_with_debug_terminal(
