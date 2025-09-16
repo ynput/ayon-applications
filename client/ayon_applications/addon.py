@@ -490,7 +490,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         workfile_entity = ayon_api.get_workfile_info_by_id(
             project, workfile_id
         )
-        task_id = workfile_entity["task_id"]
+        task_id = workfile_entity["taskId"]
         task_entity = ayon_api.get_task_by_id(
             project, task_id, fields={"name", "folderId"}
         )
