@@ -482,6 +482,36 @@ class ProcessManager:
         return result
 
     @staticmethod
+    def get_executable_path_by_pid(pid: int) -> Optional[Path]:
+        """Get the executable path of a process by its PID using psutil.
+
+        Args:
+            pid (int): Process ID.
+
+        Returns:
+            Optional[Path]: The executable path of the process, or None if it
+                cannot be determined.
+
+        """
+        try:
+            import psutil
+        except ImportError:
+            return None
+
+        exe_path = None
+        if pid:
+            try:
+                exe_path_str = psutil.Process(pid).exe()
+                if exe_path_str:
+                    exe_path = Path(exe_path_str)
+            except (
+                    psutil.NoSuchProcess,
+                    psutil.ZombieProcess,
+                    psutil.AccessDenied):
+                exe_path = None
+        return exe_path
+
+    @staticmethod
     def _check_processes_running_win(
         pid_triplets: list[ProcessIdTriplet],
     ) -> list[tuple[int, bool]]:

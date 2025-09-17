@@ -624,16 +624,21 @@ class ApplicationLaunchContext:
                     psutil = None
 
                 pid_from_mid = json_data.get("pid")
+                executable = Path(str(self.executable))
                 start_time = None
                 if pid_from_mid and psutil:
                     start_time = (
                         self.process_manager.get_process_start_time_by_pid(
                             pid_from_mid)
                     )
+                    executable = (
+                        self.process_manager.get_executable_path_by_pid(
+                            pid_from_mid)
+                    ) or executable
 
                 process_info = ProcessInfo(
                     name=self.application.full_name,
-                    executable=Path(str(self.executable)),
+                    executable=executable,
                     args=self.launch_args,
                     env=self.kwargs.get("env", {}),
                     cwd=os.getcwd(),
