@@ -3,15 +3,13 @@ from __future__ import annotations
 
 import contextlib
 import enum
-import os
 from datetime import datetime, timezone
 from logging import getLogger
 from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING, Optional, Union
 
-from ayon_applications.process import ProcessManager, ProcessInfo
-from .ansi_parser import AnsiToHtmlConverter
+from ayon_applications.process import ProcessInfo, ProcessManager
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
 from qtpy import QtCore, QtGui, QtWidgets
@@ -22,6 +20,8 @@ from qtpy.QtCore import (
     QThreadPool,
     Slot,
 )
+
+from .ansi_parser import AnsiToHtmlConverter
 
 DEFAULT_RELOAD_INTERVAL = 2000
 
@@ -337,7 +337,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         return None if item is None else item.data(
             QtCore.Qt.ItemDataRole.UserRole)
 
-    def _data_display_role(  # noqa: C901, PLR0911
+    def _data_display_role(  # noqa: C901, PLR0911, PLR0912
             self, column: int, process: ProcessInfo) -> Optional[str]:
         """Get display text for a given column and process.
 
@@ -365,14 +365,16 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                     # Parse the UTC timestamp from SQLite and convert
                     # to local timezone
                     # SQLite CURRENT_TIMESTAMP format is "YYYY-MM-DD HH:MM:SS"
-                    utc_dt = datetime.strptime(
-                        process.created_at, "%Y-%m-%d %H:%M:%S")
-                    # Assume it's UTC and convert to local timezone
+                    utc_dt = datetime.strptime(  # noqa: DTZ007
+                        process.created_at,
+                        "%Y-%m-%d %H:%M:%S")
+                    # Assume it is UTC and convert to local timezone
                     utc_dt = utc_dt.replace(
-                        tzinfo=timezone.utc)
+                        tzinfo=timezone.utc)  # noqa: UP017
                     local_dt = utc_dt.astimezone()
-                    return local_dt.strftime("%Y-%m-%d %H:%M:%S")
-                except (ValueError, AttributeError) as e:
+                    return local_dt.strftime(
+                        "%Y-%m-%d %H:%M:%S")
+                except (ValueError, AttributeError):
                     # If parsing fails, return the original string
                     return process.created_at
             return "N/A"

@@ -19,7 +19,6 @@ from ayon_core.lib import (
     Logger,
     classes_from_module,
     get_linux_launcher_args,
-    get_local_site_id,
     modules_from_path,
 )
 from ayon_core.settings import get_studio_settings

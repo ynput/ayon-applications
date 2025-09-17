@@ -63,7 +63,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         from ayon_applications.ui.process_monitor import (
             ProcessMonitorWindow,
         )
-        if  self._process_monitor_window is None:
+        if self._process_monitor_window is None:
             self._process_monitor_window = ProcessMonitorWindow()
 
         self._process_monitor_window.show()

@@ -1,22 +1,23 @@
 """Handling of processes in Ayon Applications."""
 from __future__ import annotations
+
 import contextlib
-import os
-import platform
-import subprocess
 import json
 import logging
+import os
+import platform
 import sqlite3
 import threading
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import psutil
-
 from ayon_core.lib import get_launcher_local_dir
 
+if TYPE_CHECKING:
+    import subprocess
 
 
 class ProcessIdTriplet(NamedTuple):
@@ -440,7 +441,6 @@ class ProcessManager:
 
         return ProcessManager._check_processes_running(
                 pid_triplets)
-
 
     @staticmethod
     def _check_processes_running(
