@@ -199,6 +199,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
         folder_path: str,
         task_name: str,
         use_last_workfile: Optional[bool] = None,
+        app_args: Optional[list[str]] = None,
     ):
         """Launch application.
 
@@ -209,6 +210,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             task_name (str): Task name.
             use_last_workfile (Optional[bool]): Explicitly tell to use or
                 not use last workfile.
+            app_args (Optional[list[str]]): Additional arguments to pass 
+                to the application.
 
         """
         ensure_addons_are_process_ready(
@@ -222,6 +225,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths):
             "project_name": project_name,
             "folder_path": folder_path,
             "task_name": task_name,
+            "app_args": app_args
         }
         if use_last_workfile is not None:
             data["start_last_workfile"] = use_last_workfile
