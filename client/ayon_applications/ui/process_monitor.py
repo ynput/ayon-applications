@@ -11,6 +11,7 @@ from time import perf_counter
 from typing import TYPE_CHECKING, Optional, Union
 
 from ayon_applications.process import ProcessManager, ProcessInfo
+from .ansi_parser import AnsiToHtmlConverter
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
 from qtpy import QtCore, QtGui, QtWidgets
@@ -663,6 +664,9 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._controller = ProcessMonitorController(self)
 
         # Connect controller signals to UI slots
+        # ANSI to HTML converter
+        self._ansi_converter = AnsiToHtmlConverter()
+
         self._controller.processes_refreshed.connect(
             self._on_processes_refreshed
         )
@@ -716,8 +720,13 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         output_label = QtWidgets.QLabel("Output Content:")
         output_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
 
-        self._output_text = QtWidgets.QPlainTextEdit()
-        # self._output_text.setReadOnly(True)
+        # Use QTextEdit instead of QPlainTextEdit for HTML support
+        self._output_text = QtWidgets.QTextEdit()
+        self._output_text.setReadOnly(True)
+        # Set monospace font for consistent output formatting
+        font = QtGui.QFont("Noto Sans Mono, Courier New, monospace")
+        font.setPointSize(9)
+        self._output_text.setFont(font)
         self._output_text.setPlaceholderText(
             "Double-click a process row to view its output file content...")
 
@@ -907,7 +916,9 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             # file was successfully loaded, but it is empty
             self._output_text.setPlainText("Output file is empty")
         else:
-            self._output_text.setPlainText(content)
+            # Convert ANSI sequences to HTML for display
+            html_content = self._ansi_converter.convert(content)
+            self._output_text.setHtml(html_content)
 
         # Scroll to bottom
         cursor = self._output_text.textCursor()
