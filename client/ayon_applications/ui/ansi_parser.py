@@ -2,6 +2,7 @@
 import html
 import re
 
+
 class AnsiToHtmlConverter:
     """Convert ANSI escape sequences to HTML formatting."""
 
@@ -134,9 +135,7 @@ class AnsiToHtmlConverter:
                 result_parts.append(html_text[last_pos : match.start()])
 
             # Parse the SGR sequence
-            params = match.group(1)
-            if not params:
-                params = "0"  # Default reset
+            params = match.group(1) or "0"  # Default reset
 
             codes = [int(x) if x else 0 for x in params.split(";")]
 
@@ -188,5 +187,6 @@ class AnsiToHtmlConverter:
         # Convert newlines to <br> tags
         result = "".join(result_parts).replace("\n", "<br>")
 
-        return f'<pre style="margin: 0; font-family: monospace;">{result}</pre>'
-
+        return (
+            f'<pre style="margin: 0; font-family: monospace;">{result}</pre>'
+        )
