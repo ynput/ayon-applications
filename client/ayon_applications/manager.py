@@ -24,7 +24,7 @@ from ayon_core.lib import (
 )
 from ayon_core.settings import get_studio_settings
 
-from ayon_applications.process import ProcessInfo, ProcessManager
+from .process import ProcessInfo, ProcessManager
 
 from .constants import DEFAULT_ENV_SUBGROUP
 from .defs import (
@@ -581,7 +581,6 @@ class ApplicationLaunchContext:
 
         json_data = {
             "name": self.application.full_name,
-            "site_id": get_local_site_id(),
             "cwd": os.getcwd(),
             "args": self.launch_args,
             "env": app_env,
@@ -645,7 +644,6 @@ class ApplicationLaunchContext:
                     pid=pid_from_mid,
                     output=Path(output_file),
                     start_time=start_time,
-                    site_id=get_local_site_id(),
                 )
                 # Store process info to the database
                 self.process_manager.store_process_info(process_info)
@@ -805,7 +803,6 @@ class ApplicationLaunchContext:
                 pid=process.pid,
                 output=Path(temp_file_path),
                 start_time=start_time,
-                site_id=get_local_site_id()
             )
             # Store process info to the database
             self.process_manager.store_process_info(process_info)

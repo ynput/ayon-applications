@@ -13,10 +13,10 @@ from hashlib import sha256
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-from ayon_core.lib import (
-    Logger,
-    get_launcher_local_dir,
-)
+import psutil
+
+from ayon_core.lib import get_launcher_local_dir
+
 
 
 class ProcessIdTriplet(NamedTuple):
@@ -52,13 +52,12 @@ class ProcessInfo:
     output: Optional[Path] = None
     start_time: Optional[float] = None
     created_at: Optional[str] = None
-    site_id: Optional[str] = None
 
 
 class ProcessManager:
-    """Manager for handling processes in Ayon Applications."""
+    """Manager for handling processes in AYON Applications."""
 
-    log: Logger
+    log: logging.Logger
 
     def __init__(self) -> None:
         self.log = logging.getLogger(f"{__name__}.ProcessManager")
@@ -108,8 +107,7 @@ class ProcessManager:
             "pid INTEGER DEFAULT NULL, "
             "output_file TEXT DEFAULT NULL, "
             "start_time REAL DEFAULT NULL, "
-            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-            "site_id TEXT DEFAULT NULL"
+            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
             ")"
         )
         cnx.commit()
@@ -155,8 +153,8 @@ class ProcessManager:
         cursor.execute(
             "INSERT OR REPLACE INTO process_info "
             "(hash, name, executable, args, env, cwd, "
-            "pid, output_file, start_time, site_id) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "pid, output_file, start_time) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 process_hash,
                 process_info.name,
@@ -170,7 +168,6 @@ class ProcessManager:
                     if process_info.output else None
                 ),
                 process_info.start_time,
-                process_info.site_id
             )
         )
         cnx.commit()
@@ -204,17 +201,14 @@ class ProcessManager:
             output=Path(row[7]) if row[7] else None,
             start_time=row[8],
             created_at=row[9],
-            site_id=row[10]
         )
 
     def get_process_info_by_name(
-        self, name: str, site_id: Optional[str] = None
-    ) -> Optional[ProcessInfo]:
+        self, name: str) -> Optional[ProcessInfo]:
         """Get process information by name.
 
         Args:
             name (str): Name of the process.
-            site_id (Optional[str]): Site ID to filter processes.
 
         Returns:
             Optional[ProcessInfo]: Process information or None if not found.
@@ -223,9 +217,6 @@ class ProcessManager:
         cursor = cnx.cursor()
         query = "SELECT * FROM process_info WHERE name = ?"
         params = [name]
-        if site_id:
-            query += " AND site_id = ?"
-            params.append(site_id)
 
         cursor.execute(query, params)
         row = cursor.fetchone()
@@ -242,7 +233,6 @@ class ProcessManager:
             output=Path(row[7]) if row[7] else None,
             start_time=row[8],
             created_at=row[9],
-            site_id=row[10]
         )
 
     def get_all_process_info(self) -> list[ProcessInfo]:
@@ -267,7 +257,6 @@ class ProcessManager:
                 output=Path(row[7]) if row[6] else None,
                 start_time=row[8],
                 created_at=row[9],
-                site_id=row[10],
             )
             for row in rows
         ]
@@ -301,12 +290,20 @@ class ProcessManager:
     def delete_process_info(self, process_hash: str) -> bool:
         """Delete process information by hash.
 
+        This also deletes the output file if it exists.
+
         Args:
             process_hash (str): Hash of the process to delete.
 
         Returns:
             bool: True if deleted, False if not found.
         """
+        process = self.get_process_info(process_hash)
+        if process.output and Path(process.output).exists():
+            # File might not exist anymore, so we use contextlib.suppress
+            with contextlib.suppress(OSError):
+                os.remove(process.output)
+
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
         cursor.execute(
@@ -318,6 +315,8 @@ class ProcessManager:
     def delete_inactive_processes(self) -> int:
         """Delete all inactive process information.
 
+        This also deletes the output files of the inactive processes.
+
         Returns:
             int: Number of deleted processes.
         """
@@ -325,6 +324,16 @@ class ProcessManager:
 
         # Get all processes and check which ones are inactive
         all_processes = self.get_all_process_info()
+
+        files_to_delete = [
+            process.output
+            for process in all_processes
+            if (
+                    not process.active
+                    and (process.output and Path(process.output).exists())
+            )
+        ]
+
         inactive_hashes = []
 
         for process in all_processes:
@@ -343,10 +352,16 @@ class ProcessManager:
             inactive_hashes
         )
         cnx.commit()
+
+        for file_path in files_to_delete:
+            # File might not exist anymore, so we use contextlib.suppress
+            with contextlib.suppress(OSError):
+                os.remove(file_path)
+
         return cursor.rowcount
 
     @staticmethod
-    def _is_process_running_psutils(
+    def _is_process_running(
             pid: int,
             executable: str,
             start_time: Optional[float] = None) -> bool:
@@ -361,8 +376,6 @@ class ProcessManager:
             bool: True if the process is running, False otherwise.
 
         """
-        import psutil
-        # Use psutil to check process existence and inspect its image/cmdline
         try:
             proc = psutil.Process(pid)
         except (psutil.NoSuchProcess, psutil.ZombieProcess):
@@ -412,20 +425,6 @@ class ProcessManager:
         """Check if the processes are still running.
 
         This checks for presence of `psutil` module and uses it if available.
-        If `psutil` is not available, it falls back to using `os.kill` on Unix
-        systems or `tasklist` command on Windows to check if the processes
-        are running. `psutil` is preferred because it is more reliable and
-        provides a consistent interface across platforms. But since it is a
-        not pure Python module, it may not be available on all systems.
-
-        The batch check is done to avoid multiple calls to the system
-        to check for each process individually, which can be inefficient -
-        especially on Windows where `tasklist` can be slow for many processes.
-        `tasklist` supports querying multiple processes at once using
-        the `/FI` filter option.
-
-        We should refactor this method once we find out that the fallback
-        method is not needed anymore.
 
         Args:
             pid_triplets (list[ProcessIdTriplet]): Processes ID to check.
@@ -437,23 +436,14 @@ class ProcessManager:
         """
         if not pid_triplets:
             result: list[tuple[int, bool]] = []
-
             return result
 
-        with contextlib.suppress(ImportError):
-            return ProcessManager._check_processes_running_psutil(
+        return ProcessManager._check_processes_running(
                 pid_triplets)
 
-        # Fallback for systems without psutil
-        if platform.system().lower() == "windows":
-            return ProcessManager._check_processes_running_win(
-                pid_triplets)
-
-        return ProcessManager._check_processes_running_unix(
-            pid_triplets)
 
     @staticmethod
-    def _check_processes_running_psutil(
+    def _check_processes_running(
             pid_triplets: list[ProcessIdTriplet]) -> list[tuple[int, bool]]:
         """Check if processes are running using psutil.
 
@@ -466,10 +456,10 @@ class ProcessManager:
 
         """
         result: list[tuple[int, bool]] = []
-        import psutil
+
         for pid, exe, start_time in pid_triplets:
             try:
-                is_running = ProcessManager._is_process_running_psutils(
+                is_running = ProcessManager._is_process_running(
                     pid, exe, start_time
                 )
             except Exception:  # noqa: BLE001
@@ -493,11 +483,6 @@ class ProcessManager:
                 cannot be determined.
 
         """
-        try:
-            import psutil
-        except ImportError:
-            return None
-
         exe_path = None
         if pid:
             try:
@@ -512,120 +497,6 @@ class ProcessManager:
         return exe_path
 
     @staticmethod
-    def _check_processes_running_win(
-        pid_triplets: list[ProcessIdTriplet],
-    ) -> list[tuple[int, bool]]:
-        """Check if processes are running on Windows using tasklist.
-
-        Args:
-            pid_triplets (list[ProcessIdTriplet]): List of triplets
-
-        Returns:
-            list[tuple[int, bool]]: List of tuples with process ID and
-                boolean indicating if the process is running.
-
-        """
-        result: list[tuple[int, bool]] = []
-        # Use tasklist CSV output for more robust parsing (handles spaces)
-        filters: list[str] = []
-        filters.extend(f"/FI PID eq {pid}" for pid, _, _ in pid_triplets)
-        try:
-            tasklist_result = subprocess.run(
-                ["tasklist", "/FO", "CSV", *filters],  # noqa: S607
-                capture_output=True,
-                text=True,
-                check=True
-            )
-        except (subprocess.SubprocessError, subprocess.CalledProcessError):
-            return []
-
-        # Parse CSV lines: "Image Name","PID",...
-        for raw_line in tasklist_result.stdout.splitlines():
-            line = raw_line.strip()
-            if not line or line.startswith('"Image Name"'):
-                continue
-            # simple CSV parse: split by comma and strip quotes
-            parts = [p.strip().strip('"') for p in line.split(",")]
-            if len(parts) < 2:  # noqa: PLR2004
-                continue
-            image = parts[0]
-            pid_str = parts[1]
-            if not pid_str.isdigit():
-                continue
-            pid = int(pid_str)
-            for expected_pid, expected_exe, _ in pid_triplets:
-                if pid != expected_pid:
-                    continue
-                # cannot verify start time here (tasklist doesn't provide it)
-                if expected_exe is None:
-                    result.append((pid, True))
-                else:
-                    result.append((pid, image.lower() == expected_exe.lower()))
-
-        return result
-
-    @staticmethod
-    def _check_processes_running_unix(
-        pid_triplets: list[ProcessIdTriplet],
-    ) -> list[tuple[int, bool]]:
-        """Check if processes are running on Unix using /proc, ps, or os.kill.
-
-        Args:
-            pid_triplets (list[ProcessIdTriplet]): List of triplets
-
-        Returns:
-            list[tuple[int, bool]]: List of tuples with process ID and
-                boolean indicating if the process is running.
-        """
-        result: list[tuple[int, bool]] = []
-        # POSIX fallback - try /proc, ps, or os.kill
-        for pid, expected_exe, _ in pid_triplets:
-            with contextlib.suppress(Exception):
-                # Prefer /proc if available
-                proc_exe_path = f"/proc/{pid}/exe"
-                if os.path.islink(proc_exe_path):
-                    target = os.readlink(proc_exe_path)
-                    image = os.path.basename(target)
-                    if (
-                        expected_exe is None
-                        or image.lower() == expected_exe.lower()
-                    ):
-                        result.append((pid, True))
-                    else:
-                        result.append((pid, False))
-                    continue
-
-            # Try ps -p <pid> -o comm=
-            with contextlib.suppress(Exception):
-                ps_res = subprocess.run(
-                    ["ps", "-p", str(pid), "-o", "comm="],  # noqa: S607
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                name = ps_res.stdout.strip()
-                if name:
-                    image = os.path.basename(name)
-                    result.append(
-                        (
-                            pid,
-                            expected_exe is None or image.lower() == expected_exe.lower())  # noqa: E501
-                        )
-                    continue
-
-            # Last resort: check process existence with signal 0
-            try:
-                os.kill(pid, 0)
-            except OSError:
-                result.append((pid, False))
-            else:
-                # We know process exists but cannot verify
-                # image name or start time
-                result.append((pid, expected_exe is None))
-
-        return result
-
-    @staticmethod
     def get_process_start_time(
             process: subprocess.Popen) -> Optional[float]:
         """Get the start time of a process using psutil.
@@ -635,12 +506,6 @@ class ProcessManager:
                 the epoch, or None if it cannot be determined.
 
         """
-        # Try to fetch process start time when psutil is available
-        try:
-            import psutil
-        except ImportError:
-            return None
-
         start_time = None
         if process.pid:
             try:
@@ -664,12 +529,6 @@ class ProcessManager:
                 the epoch, or None if it cannot be determined.
 
         """
-        # Try to fetch process start time when psutil is available
-        try:
-            import psutil
-        except ImportError:
-            return None
-
         start_time = None
         if pid:
             try:

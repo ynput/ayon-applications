@@ -140,7 +140,7 @@ class CleanupWorkerSignals(QtCore.QObject):
     Signals can be defined only in classes derived from QObject.
     """
     # Emits (deleted_processes, deleted_files)
-    finished = QtCore.Signal(int, int)
+    finished = QtCore.Signal(int)
     error = QtCore.Signal(str)
 
 
@@ -177,68 +177,23 @@ class CleanupWorker(QRunnable):
             if self._cleanup_type == "inactive":
                 self._cleanup_inactive()
             elif self._cleanup_type == "single":
-                self._cleanup_single()
+                self._remove_selected()
         except Exception as e:  # noqa: BLE001
             self.signals.error.emit(str(e))
 
     def _cleanup_inactive(self) -> None:
         """Clean up inactive processes."""
-        # Get all processes to check which files to delete
-        all_processes = self._manager.get_all_process_info()
-
-        files_to_delete = [
-            process.output
-            for process in all_processes
-            if (
-                not process.active
-                and (process.output and Path(process.output).exists())
-            )
-        ]
-        # Delete from database
         deleted_count = self._manager.delete_inactive_processes()
+        self.signals.finished.emit(deleted_count)
 
-        # Delete output files
-        files_deleted = 0
-        for file_path in files_to_delete:
-            # File might not exist anymore, so we use contextlib.suppress
-            with contextlib.suppress(OSError):
-                os.remove(file_path)
-                files_deleted += 1
-        self.signals.finished.emit(deleted_count, files_deleted)
-
-    def _cleanup_single(self) -> None:
-        """Clean up a single process."""
+    def _remove_selected(self) -> None:
+        """Remove a single selected process."""
         if not self._process_hash:
             self.signals.error.emit("No process hash provided")
             return
 
-        # Find the process first
-        all_processes = self._manager.get_all_process_info()
-        target_process = next(
-            (
-                process
-                for process in all_processes
-                if self._manager.get_process_info_hash(process)
-                == self._process_hash
-            ),
-            None,
-        )
-        if not target_process:
-            self.signals.error.emit("Process not found")
-            return
-
-        # Delete the output file if it exists
-        file_deleted = 0
-        if target_process.output and Path(target_process.output).exists():
-            # File might not exist anymore, so we use contextlib.suppress
-            with contextlib.suppress(OSError):
-                os.remove(target_process.output)
-                file_deleted = 1
-        # Delete from database
-        deleted = self._manager.delete_process_info(self._process_hash)
-        process_deleted = 1 if deleted else 0
-
-        self.signals.finished.emit(process_deleted, file_deleted)
+        self._manager.delete_process_info(self._process_hash)
+        self.signals.finished.emit(1)
 
 
 class ProcessTreeModel(QtGui.QStandardItemModel):
@@ -272,7 +227,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         # Columns
         self.headers = [
             "Name", "Executable", "PID", "Status", "Created", "Start Time",
-            "Site ID", "Output File", "Hash"
+            "Output File", "Hash"
         ]
         self.columns = enum.IntEnum(  # type: ignore[misc]
             "columns",
@@ -431,8 +386,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 except (OSError, OverflowError, ValueError):
                     return str(process.start_time)
             return "N/A"
-        if column == self.columns.SITE_ID:
-            return process.site_id or "N/A"
         if column == self.columns.OUTPUT_FILE:
             return str(process.output) if process.output else "N/A"
         if column == self.columns.HASH:
@@ -489,8 +442,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 return process.created_at or ""
             if column == self.columns.START_TIME:
                 return process.start_time or 0
-            if column == self.columns.SITE_ID:
-                return process.site_id or ""
             if column == self.columns.OUTPUT_FILE:
                 return process.output.as_posix() if process.output else ""
             if column == self.columns.HASH:
@@ -512,7 +463,7 @@ class ProcessMonitorController(QtCore.QObject):
     """
     processes_refreshed = QtCore.Signal(list)
     file_content = QtCore.Signal(str)
-    cleanup_finished = QtCore.Signal(int, int)
+    cleanup_finished = QtCore.Signal(int)
     error = QtCore.Signal(str)
 
     def __init__(self, parent: Optional[QtCore.QObject] = None):
@@ -632,9 +583,9 @@ class ProcessMonitorController(QtCore.QObject):
             self.error.emit(str(exc))
 
     def _on_cleanup_finished(
-            self, deleted_proc: int, deleted_files: int) -> None:
+            self, deleted_proc: int) -> None:
         """Handle completion of cleanup operation."""
-        self.cleanup_finished.emit(deleted_proc, deleted_files)
+        self.cleanup_finished.emit(deleted_proc)
 
     def _on_error(self, msg: str) -> None:
         """Handle errors from workers."""
@@ -1003,13 +954,11 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
     def _on_cleanup_finished(
             self,
-            deleted_processes: int,
-            deleted_files: int) -> None:
+            deleted_processes: int) -> None:
         """Handle cleanup completion."""
         self._refresh_data()  # Refresh the table
         self._status_bar.showMessage(
-            f"Cleaned {deleted_processes} inactive processes "
-            f"and {deleted_files} output files"
+            f"Cleaned {deleted_processes} inactive processes. "
         )
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa: N802
