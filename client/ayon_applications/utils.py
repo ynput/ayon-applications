@@ -619,12 +619,18 @@ def prepare_context_environments(
 
     data["env"]["AYON_HOST_NAME"] = app.host_name
 
+    # Check if folder and task are present in context
     if not folder_entity or not task_entity:
-        # QUESTION replace with log.info and skip workfile discovery?
-        # - technically it should be possible to launch host without context
-        raise ApplicationLaunchFailed(
-            "Host launch require folder and task context."
+        missing_context = []
+        if not folder_entity:
+            missing_context.append('folder')
+        if not task_entity:
+            missing_context.append('task')
+        log.warning(
+            f"Missing {', '.join(missing_context)} from context. "
+            "Skipping workfile preparation."
         )
+        return
 
     workdir_data = get_template_data(
         project_entity,
