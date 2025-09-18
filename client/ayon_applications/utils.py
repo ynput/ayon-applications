@@ -453,12 +453,12 @@ def prepare_app_environments(
     # Add tools environments
     groups_by_name = {}
     tool_by_group_name = collections.defaultdict(dict)
-    used_tool_names = set()
+    used_tool_names = []
     for key in tools:
         tool = app.manager.tools.get(key)
         if not tool or not tool.is_valid_for_app(app):
             continue
-        used_tool_names.add(tool.full_name)
+        used_tool_names.append(tool.full_name)
         groups_by_name[tool.group.name] = tool.group
         tool_by_group_name[tool.group.name][tool.name] = tool
 
