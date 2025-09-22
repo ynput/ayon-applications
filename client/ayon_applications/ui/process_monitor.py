@@ -392,7 +392,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             return str(process.output) if process.output else "N/A"
         if column == self.columns.HASH:
             with contextlib.suppress(Exception):
-                return self._manager.get_process_info_hash(process)
+                return (
+                    process.hash or
+                    self._manager.get_process_info_hash(process)
+                )
             return "N/A"
         return None
 
@@ -447,8 +450,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             if column == self.columns.OUTPUT_FILE:
                 return process.output.as_posix() if process.output else ""
             if column == self.columns.HASH:
-                with contextlib.suppress(Exception):
-                    return self._manager.get_process_info_hash(process)
+                return process.hash or ""
 
             return ""
 
@@ -792,10 +794,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             for index in selection_model.selectedRows():
                 process = self._tree_model.get_process_at_row(index.row())
                 if process:
-                    process_hash = (
-                        self._controller.manager.get_process_info_hash(process)
-                    )
-                    selected_hashes.add(process_hash)
+                    selected_hashes.add(process.hash)
 
         # Update the model with new processes
         self._tree_model.update_processes(processes)
@@ -804,9 +803,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         for row in range(self._tree_model.rowCount()):
             process = self._tree_model.get_process_at_row(row)
             if process:
-                process_hash = self._controller.manager.get_process_info_hash(
-                    process)
-                if process_hash in selected_hashes:
+                if process.hash in selected_hashes:
                     index = self._tree_model.index(row, 0)
                     selection_model.select(
                         index, (
@@ -949,10 +946,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._set_loading_state(loading=True)
         self._status_bar.showMessage("Deleting process...")
 
-        # Get process hash
-        process_hash = self._controller.manager.get_process_info_hash(process)
-
-        self._controller.delete_single(process_hash)
+        self._controller.delete_single(process.hash)
 
     def _on_cleanup_finished(
             self,

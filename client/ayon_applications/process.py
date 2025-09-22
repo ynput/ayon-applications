@@ -36,6 +36,7 @@ class ProcessInfo:
         executable (Path): Path to the executable.
         args (list[str]): Arguments for the process.
         env (dict[str, str]): Environment variables for the process.
+        hash (str): Hash of the process information.
         cwd (str): Current working directory for the process.
         pid (int): Process ID of the launched process.
         active (bool): Whether the process is currently active.
@@ -48,11 +49,17 @@ class ProcessInfo:
     args: list[str]
     env: dict[str, str]
     cwd: str
+    hash: Optional[str] = None
     pid: Optional[int] = None
     active: bool = False
     output: Optional[Path] = None
     start_time: Optional[float] = None
     created_at: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Post-initialization to compute the hash if not provided."""
+        if self.hash is None:
+            self.hash = ProcessManager.get_process_info_hash(self)
 
 
 class ProcessManager:
@@ -61,6 +68,7 @@ class ProcessManager:
     log: logging.Logger
 
     def __init__(self) -> None:
+        """Initialize the ProcessManager."""
         self.log = logging.getLogger(f"{__name__}.ProcessManager")
         # Use thread-local storage for SQLite connections to avoid
         # sharing connections between threads (fixes Linux SQLite issues)
@@ -123,15 +131,38 @@ class ProcessManager:
         Returns:
             str: Hash of the process information.
         """
-        # include executable name (if available) to reduce collisions when
-        # PIDs are reused
-        exe = process_info.executable
-        # include start_time (if available) to make hash much harder to collide
-        start = (
-            f"{process_info.start_time}"
-            if process_info.start_time is not None else ""
+        return ProcessManager.get_process_info_hash_by_values(
+            process_info.executable,
+            process_info.name,
+            process_info.pid,
+            process_info.start_time,
         )
-        key = f"{process_info.name}{process_info.pid}{exe}{start}"
+
+    @staticmethod
+    def get_process_info_hash_by_values(
+        executable: Path,
+        name: str,
+        pid: Optional[int] = None,
+        start_time: Optional[float] = None,
+    ) -> str:
+        """Get hash of the process information by values.
+
+        Args:
+            executable (Path): Path to the executable.
+            name (str): Name of the process.
+            pid (Optional[int]): Process ID of the launched process.
+            start_time (Optional[float]): Start time of the process.
+
+        Returns:
+            str: Hash of the process information.
+
+        """
+        start = (
+            f"{start_time}"
+            if start_time is not None
+            else ""
+        )
+        key = f"{name}{pid}{executable}{start}"
         return sha256(key.encode()).hexdigest()
 
     def store_process_info(self, process_info: ProcessInfo) -> None:
@@ -150,14 +181,13 @@ class ProcessManager:
 
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
-        process_hash = self.get_process_info_hash(process_info)
         cursor.execute(
             "INSERT OR REPLACE INTO process_info "
             "(hash, name, executable, args, env, cwd, "
             "pid, output_file, start_time) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                process_hash,
+                process_info.hash,
                 process_info.name,
                 process_info.executable.as_posix(),
                 json.dumps(process_info.args),
@@ -198,6 +228,7 @@ class ProcessManager:
             args=json.loads(row[3]),
             env=json.loads(row[4]),
             cwd=row[5],
+            hash=process_hash,
             pid=row[6],
             output=Path(row[7]) if row[7] else None,
             start_time=row[8],
@@ -282,7 +313,7 @@ class ProcessManager:
 
         if pid_triplets:
             running_status = self._are_processes_running(pid_triplets)
-            for proc, (_, is_running) in zip(
+            for proc, (_, is_running) in zip(  # noqa: B905
                     processes_with_pid, running_status):
                 proc.active = is_running
 
@@ -300,6 +331,8 @@ class ProcessManager:
             bool: True if deleted, False if not found.
         """
         process = self.get_process_info(process_hash)
+        if process is None:
+            return False
         if process.output and Path(process.output).exists():
             # File might not exist anymore, so we use contextlib.suppress
             with contextlib.suppress(OSError):
