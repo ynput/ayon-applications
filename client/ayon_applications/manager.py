@@ -800,7 +800,7 @@ class ApplicationLaunchContext:
                 executable=Path(str(self.executable)),
                 args=self.launch_args,
                 env=self.kwargs.get("env", {}),
-                cwd=self.kwargs.get("env") or os.getcwd(),
+                cwd=self.kwargs.get("cwd") or os.getcwd(),
                 pid=process.pid,
                 output=Path(temp_file_path),
                 start_time=start_time,
