@@ -569,21 +569,23 @@ class ApplicationLaunchContext:
             mode="w",
             prefix=f"ayon_{self.application.host_name}_output_",
             suffix=".txt",
-            delete=False
+            delete=False,
+            encoding="utf-8",
         ) as temp_file:
             output_file = temp_file.name
         # create temporary file to read back pid
         with tempfile.NamedTemporaryFile(
-            mode="w", prefix="ayon_pid_", suffix=".txt", delete=False
+            mode="w",
+            prefix="ayon_pid_",
+            suffix=".txt",
+            delete=False,
+            encoding="utf-8",
         ) as pid_temp_file:
             pid_file = pid_temp_file.name
 
         json_data = {
-            "name": self.application.full_name,
-            "cwd": os.getcwd(),
             "args": self.launch_args,
             "env": app_env,
-            "output": output_file,
             "stdout": output_file,
             "stderr": output_file,
             "pid_file": pid_file,
@@ -638,8 +640,8 @@ class ApplicationLaunchContext:
                     name=self.application.full_name,
                     executable=executable,
                     args=self.launch_args,
-                    env=self.kwargs.get("env", {}),
-                    cwd=os.getcwd(),
+                    env=app_env,
+                    cwd=self.kwargs.get("cwd") or os.getcwd(),
                     pid=pid_from_mid,
                     output=Path(output_file),
                     start_time=start_time,
@@ -798,7 +800,7 @@ class ApplicationLaunchContext:
                 executable=Path(str(self.executable)),
                 args=self.launch_args,
                 env=self.kwargs.get("env", {}),
-                cwd=os.getcwd(),
+                cwd=self.kwargs.get("env") or os.getcwd(),
                 pid=process.pid,
                 output=Path(temp_file_path),
                 start_time=start_time,
