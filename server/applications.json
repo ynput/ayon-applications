@@ -962,7 +962,7 @@
         "photoshop": {
             "enabled": true,
             "host_name": "photoshop",
-            "environment": "{\n    \"AVALON_PHOTOSHOP_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
+            "environment": "{\n  \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
                 {
                     "name": "2023",
@@ -1026,7 +1026,7 @@
         "aftereffects": {
             "enabled": true,
             "host_name": "aftereffects",
-            "environment": "{\n    \"AVALON_AFTEREFFECTS_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
+            "environment": "{\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
                 {
                     "name": "2023",
@@ -1090,7 +1090,7 @@
         "premiere": {
             "enabled": true,
             "host_name": "premiere",
-            "environment": "{\n    \"AYON_PREMIERE_WORKFILES_ON_LAUNCH\": \"1\",\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
+            "environment": "{\n    \"WORKFILES_SAVE_AS\": \"Yes\"\n}",
             "variants": [
                 {
                     "name": "2023",
