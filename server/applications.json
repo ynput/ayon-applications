@@ -876,7 +876,7 @@
         "harmony": {
             "enabled": true,
             "host_name": "harmony",
-            "environment": "{\n    \"AYON_HARMONY_WORKFILES_ON_LAUNCH\": \"1\"\n}",
+            "environment": "",
             "variants": [
                 {
                     "name": "22",
