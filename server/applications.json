@@ -876,7 +876,7 @@
         "harmony": {
             "enabled": true,
             "host_name": "harmony",
-            "environment": "",
+            "environment": "{}",
             "variants": [
                 {
                     "name": "22",
