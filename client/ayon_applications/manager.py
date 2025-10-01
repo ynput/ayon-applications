@@ -1,41 +1,47 @@
+"""Application manager and application launch context."""
 from __future__ import annotations
 
-import os
-import sys
 import copy
-import json
-import tempfile
-import platform
 import inspect
+import json
+import os
+import platform
 import subprocess
-import logging
-
-from typing import Optional, Any
+import sys
+import tempfile
+from pathlib import Path
+from subprocess import Popen
+from typing import TYPE_CHECKING, Any, Optional, Type, Union
 
 from ayon_core import AYON_CORE_ROOT
-from ayon_core.settings import get_studio_settings
+from ayon_core.addon import AddonsManager
 from ayon_core.lib import (
     Logger,
-    modules_from_path,
     classes_from_module,
     get_linux_launcher_args,
+    modules_from_path,
 )
-from ayon_core.addon import AddonsManager
+from ayon_core.settings import get_studio_settings
+
+from .process import ProcessInfo, ProcessManager
 
 from .constants import DEFAULT_ENV_SUBGROUP
-from .exceptions import (
-    ApplicationNotFound,
-    ApplicationExecutableNotFound,
-)
-from .hooks import PostLaunchHook, PreLaunchHook
 from .defs import (
     Application,
+    ApplicationExecutable,
     ApplicationGroup,
     EnvironmentTool,
     EnvironmentToolGroup,
     LaunchTypes,
-    ApplicationExecutable,
 )
+from .exceptions import (
+    ApplicationExecutableNotFound,
+    ApplicationNotFound,
+)
+from .hooks import PostLaunchHook, PreLaunchHook
+
+if TYPE_CHECKING:
+    import logging
 
 
 class ApplicationManager:
@@ -181,7 +187,7 @@ class ApplicationManager:
             ApplicationExecutableNotFound: Executables in application
                 definition were not found on this machine.
             ApplicationLaunchFailed: Something important for application launch
-                failed. Exception should contain explanation message,
+                failed. Exception should contain an explanation message,
                 traceback should not be needed.
 
         """
@@ -235,6 +241,7 @@ class ApplicationLaunchContext:
         self.application: Application = application
 
         self.addons_manager: AddonsManager = AddonsManager()
+        self.process_manager: ProcessManager = ProcessManager()
 
         # Logger
         self.log: logging.Logger = Logger.get_logger(
@@ -282,7 +289,7 @@ class ApplicationLaunchContext:
             if key not in ignored_env
         }
         # subprocess.Popen keyword arguments
-        self.kwargs = {"env": env}
+        self.kwargs: dict[str, Any] = {"env": env}
 
         if platform.system().lower() == "windows":
             # Detach new process from currently running process on Windows
@@ -296,10 +303,13 @@ class ApplicationLaunchContext:
             self.kwargs["stdout"] = subprocess.DEVNULL
             self.kwargs["stderr"] = subprocess.DEVNULL
 
+        # TODO: add type hints
+        # note that these need to be None in order to trigger discovery
+        # when 'discover_launch_hooks' is called
         self.prelaunch_hooks = None
         self.postlaunch_hooks = None
 
-        self.process = None
+        self.process: Optional[Popen] = None
         self._prelaunch_hooks_executed = False
 
     @property
@@ -439,7 +449,7 @@ class ApplicationLaunchContext:
             "\n".join(f"- {path}" for path in paths)
         ))
 
-        all_classes = {
+        all_classes: dict[str, list[Type[Union[PreLaunchHook, PostLaunchHook]]]] = {  # noqa: E501
             "pre": [],
             "post": []
         }
@@ -524,26 +534,61 @@ class ApplicationLaunchContext:
         return self.application.manager
 
     def _run_process(self) -> subprocess.Popen:
-        # Windows and MacOS have easier process start
+        """Run the process with the given launch arguments and keyword args.
+
+        This method will handle the process differently based on the platform
+        it is running on. It will create a temporary file for output on
+        Windows and macos, while on Linux it will use a mid-process to launch
+        the application with the provided arguments and environment variables.
+
+        It will pass file paths to temporary files to the mid-process where
+        the process output and pid will be stored.
+
+        Returns:
+            subprocess.Popen: The process object created by Popen.
+
+        """
+        # Windows and macOS have easier process start
         low_platform = platform.system().lower()
         if low_platform in ("windows", "darwin"):
-            return subprocess.Popen(self.launch_args, **self.kwargs)
-
-        # Linux uses mid process
-        # - it is possible that the mid process executable is not
+            return self._execute_with_stdout()
+        # Linux uses mid-process
+        # - it is possible that the mid-process executable is not
         #   available for this version of AYON in that case use standard
         #   launch
         launch_args = get_linux_launcher_args()
         if launch_args is None:
             return subprocess.Popen(self.launch_args, **self.kwargs)
 
-        # Prepare data that will be passed to midprocess
+        # Prepare data that will be passed to mid-process
         # - store arguments to a json and pass path to json as last argument
         # - pass environments to set
         app_env = self.kwargs.pop("env", {})
+        # create temporary file path passed to mid-process
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            prefix=f"ayon_{self.application.host_name}_output_",
+            suffix=".txt",
+            delete=False,
+            encoding="utf-8",
+        ) as temp_file:
+            output_file = temp_file.name
+        # create temporary file to read back pid
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            prefix="ayon_pid_",
+            suffix=".txt",
+            delete=False,
+            encoding="utf-8",
+        ) as pid_temp_file:
+            pid_file = pid_temp_file.name
+
         json_data = {
             "args": self.launch_args,
-            "env": app_env
+            "env": app_env,
+            "stdout": output_file,
+            "stderr": output_file,
+            "pid_file": pid_file,
         }
         if app_env:
             # Filter environments of subprocess
@@ -553,24 +598,63 @@ class ApplicationLaunchContext:
                 if key in app_env
             }
 
-        # Create temp file
-        json_temp = tempfile.NamedTemporaryFile(
-            mode="w", prefix="op_app_args", suffix=".json", delete=False
-        )
-        json_temp.close()
-        json_temp_filpath = json_temp.name
-        with open(json_temp_filpath, "w") as stream:
-            json.dump(json_data, stream)
+        # Create the temp file
+        with tempfile.NamedTemporaryFile(
+            mode="w", prefix="ay_app_args", suffix=".json", delete=False
+        ) as json_temp:
+            json_temp_filepath = json_temp.name
+            json.dump(json_data, json_temp)
 
-        launch_args.append(json_temp_filpath)
+        launch_args.append(json_temp_filepath)
 
         # Create mid-process which will launch application
         process = subprocess.Popen(launch_args, **self.kwargs)
         # Wait until the process finishes
         #   - This is important! The process would stay in "open" state.
         process.wait()
+
+        # read back pid from the json file
+        try:
+            with open(json_temp_filepath, encoding="utf-8") as stream:
+                json_data = json.load(stream)
+
+                try:
+                    import psutil
+                except ImportError:
+                    psutil = None
+
+                pid_from_mid = json_data.get("pid")
+                executable = Path(str(self.executable))
+                start_time = None
+                if pid_from_mid and psutil:
+                    start_time = (
+                        self.process_manager.get_process_start_time_by_pid(
+                            pid_from_mid)
+                    )
+                    executable = (
+                        self.process_manager.get_executable_path_by_pid(
+                            pid_from_mid)
+                    ) or executable
+
+                process_info = ProcessInfo(
+                    name=self.application.full_name,
+                    executable=executable,
+                    args=self.launch_args,
+                    env=app_env,
+                    cwd=self.kwargs.get("cwd") or os.getcwd(),
+                    pid=pid_from_mid,
+                    output=Path(output_file),
+                    start_time=start_time,
+                )
+                # Store process info to the database
+                self.process_manager.store_process_info(process_info)
+        except OSError:
+            self.log.exception(
+                "Failed to read process info from JSON file: %s"
+            )
+
         # Remove the temp file
-        os.remove(json_temp_filpath)
+        os.remove(json_temp_filepath)
         # Return process which is already terminated
         return process
 
@@ -578,9 +662,12 @@ class ApplicationLaunchContext:
         """Run prelaunch hooks.
 
         This method will be executed only once, any future calls will skip
-            the processing.
-        """
+        the processing.
 
+        Raises:
+            RuntimeError: When prelaunch hooks were already executed.
+
+        """
         if self._prelaunch_hooks_executed:
             self.log.warning("Prelaunch hooks were already executed.")
             return
@@ -621,7 +708,7 @@ class ApplicationLaunchContext:
             args = self.clear_launch_args(self.launch_args)
             args_len_str = f" ({len(args)})"
         self.log.info(
-            f"Launching \"{self.application.full_name}\""
+            f'Launching "{self.application.full_name}"'
             f" with args{args_len_str}: {args}"
         )
         self.launch_args = args
@@ -643,7 +730,7 @@ class ApplicationLaunchContext:
             except Exception:
                 self.log.warning(
                     "After launch procedures were not successful.",
-                    exc_info=True
+                    exc_info=True,
                 )
 
         self.log.debug(f"Launch of {self.application.full_name} finished.")
@@ -654,7 +741,7 @@ class ApplicationLaunchContext:
     def clear_launch_args(args: list) -> list[str]:
         """Collect launch arguments to final order.
 
-        Launch argument should be list that may contain another lists this
+        Launch argument should be a list that may contain another lists this
         function will upack inner lists and keep ordering.
 
         ```
@@ -666,7 +753,7 @@ class ApplicationLaunchContext:
         Args:
             args (list): Source arguments in list may contain inner lists.
 
-        Return:
+        Returns:
             list: Unpacked arguments.
 
         """
@@ -684,3 +771,41 @@ class ApplicationLaunchContext:
             args = new_args
 
         return args
+
+    def _execute_with_stdout(self) -> subprocess.Popen:
+        """Run the process with stdout and stderr redirected to a file.
+
+        Stores process information to the database.
+
+        Returns:
+            subprocess.Popen: The process object created by Popen.
+        """
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            prefix=f"ayon_{self.application.host_name}_output_",
+            suffix=".txt",
+            delete=False, encoding="utf-8"
+        ) as temp_file:
+            temp_file_path = temp_file.name
+
+        with open(temp_file_path, "wb") as tmp_file:
+            self.kwargs["stdout"] = tmp_file
+            self.kwargs["stderr"] = tmp_file
+            process = subprocess.Popen(self.launch_args, **self.kwargs)
+
+            start_time = self.process_manager.get_process_start_time(process)
+
+            process_info = ProcessInfo(
+                name=self.application.full_name,
+                executable=Path(str(self.executable)),
+                args=self.launch_args,
+                env=self.kwargs.get("env", {}),
+                cwd=self.kwargs.get("cwd") or os.getcwd(),
+                pid=process.pid,
+                output=Path(temp_file_path),
+                start_time=start_time,
+            )
+            # Store process info to the database
+            self.process_manager.store_process_info(process_info)
+
+        return process
