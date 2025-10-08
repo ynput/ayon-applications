@@ -23,7 +23,6 @@ from ayon_core.addon import (
     click_wrap,
     ensure_addons_are_process_ready,
 )
-from .ui.process_monitor import ProcessMonitorWindow
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
