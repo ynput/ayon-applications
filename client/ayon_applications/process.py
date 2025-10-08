@@ -20,26 +20,6 @@ if TYPE_CHECKING:
     import subprocess
     import psutil
 
-_PSUTIL_IMPORTED = False
-
-
-def _import_psutil():
-    if _PSUTIL_IMPORTED:
-        return
-    print("HERE")
-    import psutil
-    _globals = globals()
-    _globals["psutil"] = psutil
-    _globals["_PSUTIL_IMPORTED"] = True
-
-
-def requires_psutil(func):
-    @wraps(func)
-    def inner(*args, **kwargs):
-        _import_psutil()
-        return func(*args, **kwargs)
-    return inner
-
 
 class ProcessIdTriplet(NamedTuple):
     """Triplet of process identification values."""
@@ -416,7 +396,6 @@ class ProcessManager:
         return cursor.rowcount
 
     @staticmethod
-    @requires_psutil
     def _is_process_running(
             pid: int,
             executable: str,
@@ -432,6 +411,8 @@ class ProcessManager:
             bool: True if the process is running, False otherwise.
 
         """
+        import psutil
+
         try:
             proc = psutil.Process(pid)
         except (psutil.NoSuchProcess, psutil.ZombieProcess):
@@ -498,7 +479,6 @@ class ProcessManager:
                 pid_triplets)
 
     @staticmethod
-    @requires_psutil
     def _check_processes_running(
             pid_triplets: list[ProcessIdTriplet]) -> list[tuple[int, bool]]:
         """Check if processes are running using psutil.
@@ -511,6 +491,8 @@ class ProcessManager:
                 boolean indicating if the process is running.
 
         """
+        import psutil
+
         result: list[tuple[int, bool]] = []
 
         for pid, exe, start_time in pid_triplets:
@@ -528,7 +510,6 @@ class ProcessManager:
         return result
 
     @staticmethod
-    @requires_psutil
     def get_executable_path_by_pid(pid: int) -> Optional[Path]:
         """Get the executable path of a process by its PID using psutil.
 
@@ -540,6 +521,8 @@ class ProcessManager:
                 cannot be determined.
 
         """
+        import psutil
+
         exe_path = None
         if pid:
             try:
@@ -554,7 +537,6 @@ class ProcessManager:
         return exe_path
 
     @staticmethod
-    @requires_psutil
     def get_process_start_time(
             process: subprocess.Popen) -> Optional[float]:
         """Get the start time of a process using psutil.
@@ -564,6 +546,8 @@ class ProcessManager:
                 the epoch, or None if it cannot be determined.
 
         """
+        import psutil
+
         start_time = None
         if process.pid:
             try:
@@ -576,7 +560,6 @@ class ProcessManager:
         return start_time
 
     @staticmethod
-    @requires_psutil
     def get_process_start_time_by_pid(pid: int) -> Optional[float]:
         """Get the start time of a process by PID using psutil.
 
@@ -588,6 +571,8 @@ class ProcessManager:
                 the epoch, or None if it cannot be determined.
 
         """
+        import psutil
+
         start_time = None
         if pid:
             try:
