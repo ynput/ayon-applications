@@ -8,16 +8,37 @@ import os
 import platform
 import sqlite3
 import threading
+from functools import wraps
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
-import psutil
 from ayon_core.lib import get_launcher_local_dir
 
 if TYPE_CHECKING:
     import subprocess
+    import psutil
+
+_PSUTIL_IMPORTED = False
+
+
+def _import_psutil():
+    if _PSUTIL_IMPORTED:
+        return
+    print("HERE")
+    import psutil
+    _globals = globals()
+    _globals["psutil"] = psutil
+    _globals["_PSUTIL_IMPORTED"] = True
+
+
+def requires_psutil(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        _import_psutil()
+        return func(*args, **kwargs)
+    return inner
 
 
 class ProcessIdTriplet(NamedTuple):
@@ -395,6 +416,7 @@ class ProcessManager:
         return cursor.rowcount
 
     @staticmethod
+    @requires_psutil
     def _is_process_running(
             pid: int,
             executable: str,
@@ -476,6 +498,7 @@ class ProcessManager:
                 pid_triplets)
 
     @staticmethod
+    @requires_psutil
     def _check_processes_running(
             pid_triplets: list[ProcessIdTriplet]) -> list[tuple[int, bool]]:
         """Check if processes are running using psutil.
@@ -505,6 +528,7 @@ class ProcessManager:
         return result
 
     @staticmethod
+    @requires_psutil
     def get_executable_path_by_pid(pid: int) -> Optional[Path]:
         """Get the executable path of a process by its PID using psutil.
 
@@ -530,6 +554,7 @@ class ProcessManager:
         return exe_path
 
     @staticmethod
+    @requires_psutil
     def get_process_start_time(
             process: subprocess.Popen) -> Optional[float]:
         """Get the start time of a process using psutil.
@@ -551,6 +576,7 @@ class ProcessManager:
         return start_time
 
     @staticmethod
+    @requires_psutil
     def get_process_start_time_by_pid(pid: int) -> Optional[float]:
         """Get the start time of a process by PID using psutil.
 
