@@ -839,8 +839,11 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             return
         self._current_process = process
         self._load_output_content()
-        if (self._auto_reload_checkbox.isChecked() and
-                process.pid and process.active):
+        if (
+            self._auto_reload_checkbox.isChecked()
+            and process.pid
+            and process.active
+        ):
             self._controller.start_file_reload(process.output, 2000)
         else:
             self._controller.stop_file_reload()
@@ -862,20 +865,28 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             content (str): Loaded file content.
 
         """
+        sb = self._output_text.verticalScrollBar()
+        # Detect whether user was at bottom before reload
+        at_bottom = sb.value() == sb.maximum()
+        prev_max = sb.maximum()
+        prev_val = sb.value()
+        ratio = (prev_val / prev_max) if prev_max > 0 else 1.0
+
         if not content:
-            # file was successfully loaded, but it is empty
             self._output_text.setPlainText("Output file is empty")
         else:
-            # Convert ANSI sequences to HTML for display
             html_content = self._ansi_converter.convert(content)
             self._output_text.setHtml(html_content)
 
-        # Scroll to bottom
-        cursor = self._output_text.textCursor()
-        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
-        self._output_text.setTextCursor(cursor)
+        # Restore scroll after layout pass
+        def restore_scroll():
+            if at_bottom:
+                sb.setValue(sb.maximum())
+            else:
+                sb.setValue(int(ratio * sb.maximum()))
+        QtCore.QTimer.singleShot(0, restore_scroll)
 
-    def _on_auto_reload_toggled(self, *, checked: bool) -> None:
+    def _on_auto_reload_toggled(self, checked: bool) -> None:  # noqa: FBT001
         """Handle auto-reload checkbox toggle."""
         if not checked:
             self._controller.stop_file_reload()
