@@ -4,7 +4,7 @@ class ApplicationNotFound(Exception):
     def __init__(self, app_name):
         self.app_name = app_name
         super().__init__(
-            "Application \"{}\" was not found.".format(app_name)
+            f"Application \"{app_name}\" was not found."
         )
 
 
