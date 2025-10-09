@@ -17,7 +17,6 @@ from ayon_core.lib import get_launcher_local_dir
 
 if TYPE_CHECKING:
     import subprocess
-    import psutil
 
 
 class ProcessIdTriplet(NamedTuple):
