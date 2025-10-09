@@ -40,6 +40,8 @@ class FileChangeWatcher(QtCore.QObject):
         self._watcher = QtCore.QFileSystemWatcher(self)
         self._target: Optional[Path] = None
 
+        # debounce timer to coalesce bursts of events
+        # QFileSystemWatcher can emit multiple events for a single change
         self._debounce = QtCore.QTimer(self)
         self._debounce.setSingleShot(True)
         self._debounce.setInterval(debounce_ms)
@@ -54,11 +56,16 @@ class FileChangeWatcher(QtCore.QObject):
         self._target = file_path
         if not file_path:
             return
-        # Watch the file (if present) and its directory (for recreate/rotate).
+
+        # Clear watched paths
+        for path in self._watcher.files():
+            with contextlib.suppress(Exception):
+                self._watcher.removePath(path)
+
+        # Watch the file (if present)
         with contextlib.suppress(Exception):
+            self._watcher.files()
             self._watcher.addPath(str(file_path))
-        with contextlib.suppress(Exception):
-            self._watcher.addPath(str(file_path.parent))
 
     def stop(self) -> None:
         """Stop watching."""
@@ -72,13 +79,9 @@ class FileChangeWatcher(QtCore.QObject):
 
     @QtCore.Slot(str)
     def _on_any_change(self, _path: str) -> None:
-        """Handle file or directory changes."""
+        """Handle file changes."""
         if not self._target:
             return
-        # If file was recreated, ensure it is re-added to the watcher.
-        if str(self._target) not in self._watcher.files() and self._target.exists():
-            with contextlib.suppress(Exception):
-                self._watcher.addPath(str(self._target))
         # Debounce bursts of events.
         self._debounce.start()
 
@@ -685,7 +688,7 @@ class ProcessMonitorController(QtCore.QObject):
         """
         self.stop_timers()
         with contextlib.suppress(Exception):
-            self._file_watcher.stop()
+            self.stop_file_watch()
         with contextlib.suppress(Exception):
             self._thread_pool.waitForDone()
 
@@ -1013,7 +1016,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             return
 
         self._set_loading_state(loading=True)
-        self.statusBar().showMessage("Cleaning inactive processes...")
+        self._status_bar.showMessage("Cleaning inactive processes...")
 
         self._controller.clean_inactive()
 
