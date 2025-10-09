@@ -774,7 +774,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         # Auto-reload checkbox
         self._auto_reload_checkbox = QtWidgets.QCheckBox(
-            "Auto-reload output for running processes (every 2s)")
+            "Auto-reload output for running processes")
         self._auto_reload_checkbox.setChecked(True)
         self._auto_reload_checkbox.toggled.connect(
             self._on_auto_reload_toggled)
@@ -824,7 +824,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         """
         toolbar_layout = QtWidgets.QHBoxLayout()
 
-        self._refresh_btn = QtWidgets.QPushButton("Refresh")
+        self._refresh_btn = QtWidgets.QPushButton("Refresh Process List")
         self._refresh_btn.clicked.connect(self._refresh_data)
 
         self._clean_inactive_btn = QtWidgets.QPushButton("Clean Inactive")
