@@ -13,7 +13,6 @@ from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
-import psutil
 from ayon_core.lib import get_launcher_local_dir
 
 if TYPE_CHECKING:
@@ -410,6 +409,8 @@ class ProcessManager:
             bool: True if the process is running, False otherwise.
 
         """
+        import psutil
+
         try:
             proc = psutil.Process(pid)
         except (psutil.NoSuchProcess, psutil.ZombieProcess):
@@ -488,6 +489,8 @@ class ProcessManager:
                 boolean indicating if the process is running.
 
         """
+        import psutil
+
         result: list[tuple[int, bool]] = []
 
         for pid, exe, start_time in pid_triplets:
@@ -516,6 +519,8 @@ class ProcessManager:
                 cannot be determined.
 
         """
+        import psutil
+
         exe_path = None
         if pid:
             try:
@@ -539,6 +544,8 @@ class ProcessManager:
                 the epoch, or None if it cannot be determined.
 
         """
+        import psutil
+
         start_time = None
         if process.pid:
             try:
@@ -562,6 +569,8 @@ class ProcessManager:
                 the epoch, or None if it cannot be determined.
 
         """
+        import psutil
+
         start_time = None
         if pid:
             try:
