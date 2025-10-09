@@ -8,7 +8,6 @@ import os
 import platform
 import sqlite3
 import threading
-from functools import wraps
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
