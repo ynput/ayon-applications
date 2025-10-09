@@ -30,11 +30,6 @@ from .manager import (
 )
 from .addon import ApplicationsAddon
 
-from .process import (
-    ProcessInfo,
-    ProcessManager,
-)
-
 
 __all__ = (
     "__version__",
@@ -64,6 +59,4 @@ __all__ = (
     "ApplicationLaunchContext",
 
     "ApplicationsAddon",
-    "ProcessInfo",
-    "ProcessManager",
 )

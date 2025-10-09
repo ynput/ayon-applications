@@ -23,8 +23,6 @@ from ayon_core.lib import (
 )
 from ayon_core.settings import get_studio_settings
 
-from .process import ProcessInfo, ProcessManager
-
 from .constants import DEFAULT_ENV_SUBGROUP
 from .defs import (
     Application,
@@ -235,8 +233,10 @@ class ApplicationLaunchContext:
         executable: ApplicationExecutable,
         env_group: Optional[str] = None,
         launch_type: Optional[str] = None,
-        **data
+        **data,
     ):
+        from .process import ProcessManager
+
         # Application object
         self.application: Application = application
 
@@ -636,6 +636,8 @@ class ApplicationLaunchContext:
                             pid_from_mid)
                     ) or executable
 
+                from .process import ProcessInfo
+
                 process_info = ProcessInfo(
                     name=self.application.full_name,
                     executable=executable,
@@ -794,6 +796,8 @@ class ApplicationLaunchContext:
             process = subprocess.Popen(self.launch_args, **self.kwargs)
 
             start_time = self.process_manager.get_process_start_time(process)
+
+            from .process import ProcessInfo
 
             process_info = ProcessInfo(
                 name=self.application.full_name,
