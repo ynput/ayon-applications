@@ -31,6 +31,62 @@ if TYPE_CHECKING:
 ModelIndex = Union[QModelIndex, QPersistentModelIndex]
 
 
+class FileChangeWatcher(QtCore.QObject):
+    """Qt-based file watcher with rotation handling and debounce."""
+    changed = QtCore.Signal(object)  # emits Path (as object)
+
+    def __init__(self, parent=None, debounce_ms: int = 150) -> None:
+        super().__init__(parent)
+        self._watcher = QtCore.QFileSystemWatcher(self)
+        self._target: Optional[Path] = None
+
+        self._debounce = QtCore.QTimer(self)
+        self._debounce.setSingleShot(True)
+        self._debounce.setInterval(debounce_ms)
+        self._debounce.timeout.connect(self._emit_changed)
+
+        self._watcher.fileChanged.connect(self._on_any_change)
+        self._watcher.directoryChanged.connect(self._on_any_change)
+
+    def set_target(self, file_path: Optional[Path]) -> None:
+        """Start watching given file and its parent directory."""
+        self.stop()
+        self._target = file_path
+        if not file_path:
+            return
+        # Watch the file (if present) and its directory (for recreate/rotate).
+        with contextlib.suppress(Exception):
+            self._watcher.addPath(str(file_path))
+        with contextlib.suppress(Exception):
+            self._watcher.addPath(str(file_path.parent))
+
+    def stop(self) -> None:
+        """Stop watching."""
+        self._debounce.stop()
+        files = self._watcher.files()
+        if files:
+            self._watcher.removePaths(files)
+        dirs = self._watcher.directories()
+        if dirs:
+            self._watcher.removePaths(dirs)
+
+    @QtCore.Slot(str)
+    def _on_any_change(self, _path: str) -> None:
+        """Handle file or directory changes."""
+        if not self._target:
+            return
+        # If file was recreated, ensure it is re-added to the watcher.
+        if str(self._target) not in self._watcher.files() and self._target.exists():
+            with contextlib.suppress(Exception):
+                self._watcher.addPath(str(self._target))
+        # Debounce bursts of events.
+        self._debounce.start()
+
+    def _emit_changed(self) -> None:
+        if self._target:
+            self.changed.emit(self._target)
+
+
 class CatchTime:
     """Context manager to measure execution time."""
     def __enter__(self):
@@ -475,6 +531,8 @@ class ProcessMonitorController(QtCore.QObject):
         super().__init__(parent)
         self.manager = ProcessManager()
         self._thread_pool = QThreadPool()
+        self._file_watcher = FileChangeWatcher(self)
+        self._file_watcher.changed.connect(self._on_file_changed)
 
         # Timers (created once)
         self._refresh_timer = QtCore.QTimer(self)
@@ -544,6 +602,21 @@ class ProcessMonitorController(QtCore.QObject):
         self.file_content.emit(content)
 
     # Auto-reload control
+    def start_file_watch(self, file_path: Path) -> None:
+        """Start watching file for instant updates.
+
+        Args:
+            file_path (Path): Path to the file to watch.
+
+        """
+        self._file_watcher.set_target(file_path)
+        # Also load immediately so UI updates without waiting for first event.
+        self.load_file_content(file_path)
+
+    def stop_file_watch(self) -> None:
+        """Stop watching file."""
+        self._file_watcher.stop()
+
     def start_file_reload(self, file_path: Path, interval: int = 2000) -> None:
         """Start auto-reloading file content at given interval."""
         self._file_reload_target = file_path
@@ -559,6 +632,15 @@ class ProcessMonitorController(QtCore.QObject):
         """Handle file reload timer timeout."""
         if self._file_reload_target:
             self.load_file_content(self._file_reload_target)
+
+    @QtCore.Slot(object)
+    def _on_file_changed(self, file_obj: object) -> None:
+        """Instant update on file change."""
+        try:
+            file_path = Path(str(file_obj))
+        except Exception:
+            return
+        self.load_file_content(file_path)
 
     # Cleanup operations
     def clean_inactive(self) -> None:
@@ -602,6 +684,8 @@ class ProcessMonitorController(QtCore.QObject):
 
         """
         self.stop_timers()
+        with contextlib.suppress(Exception):
+            self._file_watcher.stop()
         with contextlib.suppress(Exception):
             self._thread_pool.waitForDone()
 
@@ -844,8 +928,13 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             and process.pid
             and process.active
         ):
-            self._controller.start_file_reload(process.output, 2000)
+            # self._controller.start_file_reload(process.output, 2000)
+            # Prefer instant updates via watcher
+            self._controller.stop_file_reload()
+            self._controller.start_file_watch(process.output)
         else:
+            # self._controller.stop_file_reload()
+            self._controller.stop_file_watch()
             self._controller.stop_file_reload()
 
     def _load_output_content(self) -> None:
@@ -889,12 +978,17 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
     def _on_auto_reload_toggled(self, checked: bool) -> None:  # noqa: FBT001
         """Handle auto-reload checkbox toggle."""
         if not checked:
+            # self._controller.stop_file_reload()
+            self._controller.stop_file_watch()
             self._controller.stop_file_reload()
         elif (self._current_process and
               self._current_process.pid and
               self._current_process.active):
-            self._controller.start_file_reload(
-                self._current_process.output, DEFAULT_RELOAD_INTERVAL)
+
+            self._controller.stop_file_reload()
+            self._controller.start_file_watch(self._current_process.output)
+            # self._controller.start_file_reload(
+            #     self._current_process.output, DEFAULT_RELOAD_INTERVAL)
 
     def _clean_inactive_processes(self) -> None:
         """Clean all inactive processes from a database."""
@@ -919,7 +1013,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             return
 
         self._set_loading_state(loading=True)
-        # self.statusBar().showMessage("Cleaning inactive processes...")
+        self.statusBar().showMessage("Cleaning inactive processes...")
 
         self._controller.clean_inactive()
 
