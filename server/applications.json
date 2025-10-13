@@ -1501,6 +1501,33 @@
                 }
             ]
         },
+        "comfyui": {
+          "enabled": false,
+          "host_name": "comfyui",
+          "environment": "{}",
+          "variants": [
+            {
+              "name": "local",
+              "label": "local",
+              "environment": "{ \"OPENCV_IO_ENABLE_OPENEXR\": 1}",
+              "arguments": {
+                "windows": [
+                  "--windows-standalone-build",
+                  "--port=8189",
+                  "--fp32-vae"
+                ],
+                "darwin": [
+                  "--port=8189",
+                  "--fp32-vae"
+                ],
+                "linux": [
+                  "--port=8189",
+                  "--fp32-vae"
+                ]
+              }
+            }
+          ]
+        },
         "terminal": {
             "enabled": true,
             "host_name": "",
