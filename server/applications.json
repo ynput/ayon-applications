@@ -1503,28 +1503,43 @@
         },
         "comfyui": {
           "enabled": false,
+          "label": "ComfyUI",
           "host_name": "comfyui",
           "environment": "{}",
           "variants": [
             {
-              "name": "local",
-              "label": "local",
-              "environment": "{ \"OPENCV_IO_ENABLE_OPENEXR\": 1}",
-              "arguments": {
+              "name": "master",
+              "label": "master",
+              "environment": "{}",
+              "executables": {
                 "windows": [
-                  "--windows-standalone-build",
-                  "--port=8189",
-                  "--fp32-vae"
+                  "powershell.exe"
                 ],
-                "darwin": [
-                  "--port=8189",
-                  "--fp32-vae"
-                ],
-                "linux": [
-                  "--port=8189",
-                  "--fp32-vae"
-                ]
+                "linux": [],
+                "darwin": []
+              },
+              "arguments": {
+                "windows": [],
+                "darwin": [],
+                "linux": []
               }
+            },
+            {
+              "name": "v0.3.64",
+              "label": "v0.3.64",
+              "executables": {
+                "windows": [
+                  "powershell.exe"
+                ],
+                "linux": [],
+                "darwin": []
+              },
+              "arguments": {
+                "windows": [],
+                "linux": [],
+                "darwin": []
+              },
+              "environment": "{}"
             }
           ]
         },
