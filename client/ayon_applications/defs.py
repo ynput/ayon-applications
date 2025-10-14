@@ -272,7 +272,6 @@ class Application:
         self._environment = env
         self.redirect_output = data.get("redirect_output", True)
 
-
     def __repr__(self):
         return f"<{self.__class__.__name__}> - {self.full_name}"
 
