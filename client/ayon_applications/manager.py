@@ -806,7 +806,8 @@ class ApplicationLaunchContext:
                 mode="w",
                 prefix=f"ayon_{self.application.host_name}_output_",
                 suffix=".txt",
-                delete=False, encoding="utf-8"
+                delete=False,
+                encoding="utf-8",
             ) as temp_file:
                 temp_file_path = temp_file.name
 
@@ -814,14 +815,11 @@ class ApplicationLaunchContext:
                 self.kwargs["stdout"] = tmp_file
                 self.kwargs["stderr"] = tmp_file
                 process = subprocess.Popen(self.launch_args, **self.kwargs)
-
-                start_time = self.process_manager.get_process_start_time(
-                    process)
                 process_info.output = Path(temp_file_path)
         else:
             process = subprocess.Popen(self.launch_args, **self.kwargs)
-            start_time = self.process_manager.get_process_start_time(process)
 
+        start_time = self.process_manager.get_process_start_time(process)
         process_info.pid = process.pid
         process_info.start_time = start_time
         # Store process info to the database
