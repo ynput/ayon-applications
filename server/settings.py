@@ -198,21 +198,6 @@ class AppVariant(BaseSettingsModel):
         return validate_json_dict(value)
 
 
-class AppVariantNoExe(BaseSettingsModel):
-    name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
-    arguments: MultiplatformStrList = SettingsField(
-        default_factory=MultiplatformStrList, title="Arguments"
-    )
-    environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
-    )
-
-    @validator("environment")
-    def validate_json(cls, value):
-        return validate_json_dict(value)
-
-
 class AppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     host_name: str = SettingsField("", title="Host name")
@@ -236,25 +221,6 @@ class AppGroup(BaseSettingsModel):
     def validate_json(cls, value):
         return validate_json_dict(value)
 
-
-class AppGroupNoExe(BaseSettingsModel):
-    enabled: bool = SettingsField(True)
-    host_name: str = SettingsField("", title="Host name")
-    environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
-    )
-
-    variants: list[AppVariantNoExe] = SettingsField(
-        default_factory=list,
-        title="Variants",
-        description="Different variants of the applications",
-        section="Variants",
-    )
-
-    @validator("variants")
-    def validate_unique_name(cls, value):
-        ensure_unique_names(value)
-        return value
 
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
