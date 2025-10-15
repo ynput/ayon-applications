@@ -592,7 +592,7 @@ class ApplicationLaunchContext:
             "env": app_env,
             "pid_file": pid_file,
         }
-        if self.redirect_output:
+        if output_file:
             json_data["stdout"] = output_file
             json_data["stderr"] = output_file
 
