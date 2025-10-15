@@ -285,7 +285,7 @@ class ProcessManager:
                 env=json.loads(row[4]) if row[4] else {},
                 cwd=row[5],
                 pid=row[6],
-                output=Path(row[7]) if row[6] else None,
+                output=Path(row[7]) if row[7] else None,
                 start_time=row[8],
                 created_at=row[9],
             )
