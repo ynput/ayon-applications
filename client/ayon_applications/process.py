@@ -171,6 +171,8 @@ class ProcessManager:
             process_info (ProcessInfo): Process handler to store.
 
         """
+        # refresh hash in case some values changed
+        process_info.hash = ProcessManager.get_process_info_hash(process_info)
         if process_info.pid is None:
             self.log.warning((
                 "Cannot store process info for process without PID. "
