@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "*"
+    branches:
+      - "bugfix/109-fix-mkdocs-ci"
   workflow_dispatch:
 
 jobs:
