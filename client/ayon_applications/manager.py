@@ -242,6 +242,7 @@ class ApplicationLaunchContext:
 
         self.addons_manager: AddonsManager = AddonsManager()
         self.process_manager: ProcessManager = ProcessManager()
+        self.redirect_output: bool = application.redirect_output
 
         # Logger
         self.log: logging.Logger = Logger.get_logger(
@@ -565,14 +566,17 @@ class ApplicationLaunchContext:
         # - pass environments to set
         app_env = self.kwargs.pop("env", {})
         # create temporary file path passed to mid-process
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            prefix=f"ayon_{self.application.host_name}_output_",
-            suffix=".txt",
-            delete=False,
-            encoding="utf-8",
-        ) as temp_file:
-            output_file = temp_file.name
+
+        output_file = None
+        if self.redirect_output:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                prefix=f"ayon_{self.application.host_name}_output_",
+                suffix=".txt",
+                delete=False,
+                encoding="utf-8",
+            ) as temp_file:
+                output_file = temp_file.name
         # create temporary file to read back pid
         with tempfile.NamedTemporaryFile(
             mode="w",
@@ -586,10 +590,12 @@ class ApplicationLaunchContext:
         json_data = {
             "args": self.launch_args,
             "env": app_env,
-            "stdout": output_file,
-            "stderr": output_file,
             "pid_file": pid_file,
         }
+        if output_file:
+            json_data["stdout"] = output_file
+            json_data["stderr"] = output_file
+
         if app_env:
             # Filter environments of subprocess
             self.kwargs["env"] = {
@@ -645,7 +651,7 @@ class ApplicationLaunchContext:
                     env=app_env,
                     cwd=self.kwargs.get("cwd") or os.getcwd(),
                     pid=pid_from_mid,
-                    output=Path(output_file),
+                    output=Path(output_file) if self.redirect_output else None,
                     start_time=start_time,
                 )
                 # Store process info to the database
@@ -782,34 +788,41 @@ class ApplicationLaunchContext:
         Returns:
             subprocess.Popen: The process object created by Popen.
         """
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            prefix=f"ayon_{self.application.host_name}_output_",
-            suffix=".txt",
-            delete=False, encoding="utf-8"
-        ) as temp_file:
-            temp_file_path = temp_file.name
+        from .process import ProcessInfo
 
-        with open(temp_file_path, "wb") as tmp_file:
-            self.kwargs["stdout"] = tmp_file
-            self.kwargs["stderr"] = tmp_file
+        process_info = ProcessInfo(
+            name=self.application.full_name,
+            executable=Path(str(self.executable)),
+            args=self.launch_args,
+            env=self.kwargs.get("env", {}),
+            cwd=self.kwargs.get("cwd") or os.getcwd(),
+            output=None,
+            pid=None,
+            start_time=None,
+        )
+
+        if self.redirect_output:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                prefix=f"ayon_{self.application.host_name}_output_",
+                suffix=".txt",
+                delete=False,
+                encoding="utf-8",
+            ) as temp_file:
+                temp_file_path = temp_file.name
+
+            with open(temp_file_path, "wb") as tmp_file:
+                self.kwargs["stdout"] = tmp_file
+                self.kwargs["stderr"] = tmp_file
+                process = subprocess.Popen(self.launch_args, **self.kwargs)
+                process_info.output = Path(temp_file_path)
+        else:
             process = subprocess.Popen(self.launch_args, **self.kwargs)
 
-            start_time = self.process_manager.get_process_start_time(process)
-
-            from .process import ProcessInfo
-
-            process_info = ProcessInfo(
-                name=self.application.full_name,
-                executable=Path(str(self.executable)),
-                args=self.launch_args,
-                env=self.kwargs.get("env", {}),
-                cwd=self.kwargs.get("cwd") or os.getcwd(),
-                pid=process.pid,
-                output=Path(temp_file_path),
-                start_time=start_time,
-            )
-            # Store process info to the database
-            self.process_manager.store_process_info(process_info)
+        start_time = self.process_manager.get_process_start_time(process)
+        process_info.pid = process.pid
+        process_info.start_time = start_time
+        # Store process info to the database
+        self.process_manager.store_process_info(process_info)
 
         return process
