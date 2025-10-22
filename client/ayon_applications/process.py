@@ -268,17 +268,15 @@ class ProcessManager:
             created_at=row[9],
         )
 
-    def get_process_info_by_pid(self, pid: int = 0) -> Optional[ProcessInfo]:
+    def get_process_info_by_pid(self, pid: int) -> Optional[ProcessInfo]:
         """Get process information by process id.
 
         Args:
-            pid (int): ID of the process. (defaults to os.getpid())
+            pid (int): ID of the process.
 
         Returns:
             Optional[ProcessInfo]: Process information or None if not found.
         """
-        pid = pid or os.getpid()
-
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
         query = "SELECT * FROM process_info WHERE pid = ?"
@@ -300,6 +298,14 @@ class ProcessManager:
             start_time=row[8],
             created_at=row[9],
         )
+
+    def get_current_process_info(self) -> Optional[ProcessInfo]:
+        """Get information for the current process.
+
+        Returns:
+            Optional[ProcessInfo]: Process information or None if not found.
+        """
+        return self.get_process_info_by_pid(os.getpid())
 
     def get_all_process_info(self) -> list[ProcessInfo]:
         """Get all process information from the database.
