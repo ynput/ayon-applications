@@ -1538,6 +1538,7 @@
                 {
                     "name": "main",
                     "label": "Main",
+                    "redirect_output": false,
                     "executables": {
                         "windows": [
                             "cmd.exe"

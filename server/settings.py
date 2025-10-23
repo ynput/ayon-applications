@@ -192,6 +192,14 @@ class AppVariant(BaseSettingsModel):
     environment: str = SettingsField(
         "{}", title="Environment", widget="textarea"
     )
+    redirect_output: bool = SettingsField(
+        default=True, title="Redirect output to Process Monitor",
+        description=(
+            "Redirects stdout and stderr to AYON Process Monitor."
+            " If disabled, output will be lost unless application"
+            " supports its own logging."
+        )
+    )
 
     @validator("environment")
     def validate_json(cls, value):

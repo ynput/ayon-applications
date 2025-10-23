@@ -171,6 +171,8 @@ class ProcessManager:
             process_info (ProcessInfo): Process handler to store.
 
         """
+        # refresh hash in case some values changed
+        process_info.hash = ProcessManager.get_process_info_hash(process_info)
         if process_info.pid is None:
             self.log.warning((
                 "Cannot store process info for process without PID. "
@@ -285,7 +287,7 @@ class ProcessManager:
                 env=json.loads(row[4]) if row[4] else {},
                 cwd=row[5],
                 pid=row[6],
-                output=Path(row[7]) if row[6] else None,
+                output=Path(row[7]) if row[7] else None,
                 start_time=row[8],
                 created_at=row[9],
             )
