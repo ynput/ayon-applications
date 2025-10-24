@@ -641,11 +641,12 @@ class ProcessManager:
             parent_proc = psutil.Process(pid)
             child_procs = parent_proc.children(recursive=True)
             for child in child_procs:
+                #  environment isn't used on child processes for now
                 proc_info = ProcessInfo(
                     name=child.name(),
                     executable=Path(child.exe()),
                     args=child.cmdline(),
-                    env={},  # psutil does not provide environment info
+                    env={},  # skipped for performance reasons
                     cwd=child.cwd(),
                     pid=child.pid,
                     start_time=child.create_time(),
