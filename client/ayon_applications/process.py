@@ -622,3 +622,50 @@ class ProcessManager:
                     psutil.AccessDenied):
                 start_time = None
         return start_time
+
+    @staticmethod
+    def get_descendant_processes_by_pid(pid: int) -> list[ProcessInfo]:
+        """Get descendant processes of a given process id.
+
+        Args:
+            pid (int): Process ID of the parent process.
+
+        Returns:
+            list[ProcessInfo]: List of descendant process information.
+
+        """
+        import psutil
+
+        descendants: list[ProcessInfo] = []
+        with contextlib.suppress(psutil.NoSuchProcess, psutil.ZombieProcess):
+            parent_proc = psutil.Process(pid)
+            child_procs = parent_proc.children(recursive=True)
+            for child in child_procs:
+                proc_info = ProcessInfo(
+                    name=child.name(),
+                    executable=Path(child.exe()),
+                    args=child.cmdline(),
+                    env={},  # psutil does not provide environment info
+                    cwd=child.cwd(),
+                    pid=child.pid,
+                    start_time=child.create_time(),
+                )
+                # If psutil returned the process, it's currently running
+                proc_info.active = True
+                descendants.append(proc_info)
+        return descendants
+
+    def get_descendant_processes(
+            self, process_info: ProcessInfo) -> list[ProcessInfo]:
+        """Get descendant processes of a given process information.
+
+        Args:
+            process_info (ProcessInfo): Parent process information.
+
+        Returns:
+            list[ProcessInfo]: List of descendant process information.
+
+        """
+        if process_info.pid is None:
+            return []
+        return self.get_descendant_processes_by_pid(process_info.pid)
