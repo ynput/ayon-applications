@@ -637,7 +637,10 @@ class ProcessManager:
         import psutil
 
         descendants: list[ProcessInfo] = []
-        with contextlib.suppress(psutil.NoSuchProcess, psutil.ZombieProcess):
+        with contextlib.suppress(
+                psutil.NoSuchProcess,
+                psutil.ZombieProcess,
+                psutil.AccessDenied):
             parent_proc = psutil.Process(pid)
             child_procs = parent_proc.children(recursive=True)
             for child in child_procs:

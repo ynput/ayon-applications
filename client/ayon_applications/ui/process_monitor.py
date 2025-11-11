@@ -1227,7 +1227,15 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         # Restore scroll after layout pass
         def restore_scroll() -> None:
-            """Restore scroll."""
+            """Restore the scroll position to the bottom.
+
+            If the user was at the bottom before reload, keep them at
+            the bottom. Otherwise, maintain their relative position.
+
+            This is done in a single-shot timer to ensure it runs
+            after the layout has been updated.
+
+            """
             if at_bottom:
                 sb.setValue(sb.maximum())
             else:
