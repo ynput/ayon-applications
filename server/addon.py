@@ -513,9 +513,8 @@ class ApplicationsAddon(BaseServerAddon):
     # --------------------------------------------
     async def _workfile_entities_auto_filled(self) -> bool:
         async for _ in Postgres.iterate(
-            """
-            SELECT * FROM public.addon_data WHERE addon_name = $1 AND key = $2 
-            """,
+            "SELECT * FROM public.addon_data"
+            " WHERE addon_name = $1 AND key = $2",
             self.name,
             "workfile_entities_host_name_filled",
         ):
@@ -545,7 +544,7 @@ class ApplicationsAddon(BaseServerAddon):
         ]
         for project_name in project_names:
             query = f"""
-                SELECT id, attrib, path from project_{project_name}.workfiles
+                SELECT id, attrib, path FROM project_{project_name}.workfiles
                 WHERE data->'host_name' IS NULL;
             """
             workfile_entities = [
@@ -559,28 +558,25 @@ class ApplicationsAddon(BaseServerAddon):
                     ext = os.path.splitext(workfile_entity["path"])[-1]
                 if not ext:
                     continue
-                host_name = EXT_TO_HOST_MAPPING.get(ext.lower())
-                if host_name:
-                    changes.append((workfile_entity["id"], host_name))
+                mapped_host_name = EXT_TO_HOST_MAPPING.get(ext.lower())
+                if mapped_host_name:
+                    changes.append((workfile_entity["id"], mapped_host_name))
 
             for chunk in create_chunks(changes):
                 async with Postgres.transaction():
                     for (workfile_id, host_name) in chunk:
                         await Postgres.execute(
-                            f"""
-                            UPDATE project_{project_name}.workfiles
-                            SET data = jsonb_set(data, '{{host_name}}', $1)
-                            WHERE id = $2;
-                            """,
+                            f"UPDATE project_{project_name}.workfiles"
+                            " SET data = jsonb_set(data, '{host_name}', $1)"
+                            " WHERE id = $2;",
                             host_name,
                             workfile_id
                         )
 
         await Postgres.execute(
-            """
-            INSERT INTO public.addon_data (addon_name, addon_version, key, data)
-            VALUES ($1, $2, $3, $4)
-            """,
+            "INSERT INTO public.addon_data"
+            " (addon_name, addon_version, key, data)"
+            " VALUES ($1, $2, $3, $4)",
             self.name,
             self.version,
             "workfile_entities_host_name_filled",
