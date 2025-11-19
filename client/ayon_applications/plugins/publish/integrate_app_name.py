@@ -1,7 +1,7 @@
 import pyblish.api
 
 
-class IntegrateAsset(pyblish.api.InstancePlugin):
+class IntegrateVersionAppNameData(pyblish.api.InstancePlugin):
     """Add application name to version data."""
     order = pyblish.api.IntegratorOrder - 0.49
 
