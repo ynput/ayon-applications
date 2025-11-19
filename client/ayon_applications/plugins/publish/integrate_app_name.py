@@ -8,4 +8,6 @@ class IntegrateVersionAppNameData(pyblish.api.InstancePlugin):
 
     def process(self, instance):
         version_data = instance.data.setdefault("versionData", {})
-        version_data["ayon_app_name"] = instance.context.data["appName"]
+        app_name: str = instance.context.data["appName"]
+        version_data["ayon_app_name"] = app_name
+        self.log.debug(f"Version data 'ayon_app_name' set to: {app_name}")
