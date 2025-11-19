@@ -3,6 +3,7 @@ import pyblish.api
 
 class IntegrateVersionAppNameData(pyblish.api.InstancePlugin):
     """Add application name to version data."""
+    label = "Add app name to version data"
     order = pyblish.api.IntegratorOrder - 0.49
 
     def process(self, instance):
