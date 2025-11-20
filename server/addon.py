@@ -172,12 +172,17 @@ class ApplicationsAddon(BaseServerAddon):
         project_name = context.project_name
         entity_id = context.entity_ids[0]
 
+        bundle_args = []
+        if executor.variant not in ("production", "staging"):
+            bundle_args = ["--bundle", executor.variant]
+
         if executor.identifier == DEBUG_TERMINAL_ID:
             args = [
                 "addon", "applications", "launch-debug-terminal",
                 "--project", project_name,
                 "--task-id", entity_id,
             ]
+            args.extend(bundle_args)
             return await executor.get_launcher_action_response(
                 args=args
             )
@@ -216,6 +221,7 @@ class ApplicationsAddon(BaseServerAddon):
             "--project", project_name,
             entity_id_arg, entity_id,
         ]
+        args.extend(bundle_args)
         if skip_last_workfile is not None:
             args.extend([
                 "--use-last-workfile", str(int(not skip_last_workfile))
