@@ -660,7 +660,7 @@ def prepare_context_environments(
     if not os.path.exists(workdir):
         log.debug(f"Creating workdir folder: \"{workdir}\"")
         try:
-            os.makedirs(workdir)
+            os.makedirs(workdir, exist_ok=True)
         except Exception as exc:
             raise ApplicationLaunchFailed(
                 f"Couldn't create workdir because: {exc}"
