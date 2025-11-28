@@ -19,6 +19,7 @@ from ayon_core.lib import (
 from ayon_core.addon import (
     AYONAddon,
     IPluginPaths,
+    ITrayAction,
     click_wrap,
     ensure_addons_are_process_ready,
 )
@@ -40,11 +41,33 @@ if typing.TYPE_CHECKING:
     BoolArg = Literal["1", "0"]
     from ayon_applications.manager import Application
     from ayon_core.tools.tray.webserver import WebServerManager
+    from ayon_applications.ui.process_monitor import ProcessMonitorWindow
 
 
-class ApplicationsAddon(AYONAddon, IPluginPaths):
+class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
+
     name = "applications"
     version = __version__
+
+    def tray_init(self) -> None:
+        """Initialize the tray action."""
+        self._process_monitor_window: Optional[ProcessMonitorWindow] = None
+
+    @property
+    def label(self) -> str:
+        return "Process Monitor"
+
+    def on_action_trigger(self) -> None:
+        """Action triggered when the tray icon is clicked."""
+        from ayon_applications.ui.process_monitor import (
+            ProcessMonitorWindow,
+        )
+        if self._process_monitor_window is None:
+            self._process_monitor_window = ProcessMonitorWindow()
+
+        self._process_monitor_window.show()
+        self._process_monitor_window.raise_()
+        self._process_monitor_window.activateWindow()
 
     def get_app_environments_for_context(
         self,

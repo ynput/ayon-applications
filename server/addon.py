@@ -22,18 +22,22 @@ have to find some clever way how to avoid the issues.
 Version stored under 'ATTRIBUTES_VERSION_MILESTONE' should be last released
 version that used only old attribute system.
 """
+import os
 from typing import Any
 from typing import TYPE_CHECKING
 
 import semver
 
-from ayon_server.actions.config import set_action_config
-from ayon_server.addons import BaseServerAddon, AddonLibrary
-from ayon_server.entities.core import attribute_library
-from ayon_server.entities.user import UserEntity
-from ayon_server.actions.context import ActionContext
 from ayon_server.lib.postgres import Postgres
 from ayon_server.logging import logger
+from ayon_server.events import EventStream, EventModel
+from ayon_server.addons import BaseServerAddon, AddonLibrary
+from ayon_server.actions.config import set_action_config
+from ayon_server.actions.context import ActionContext
+from ayon_server.entities.core import attribute_library
+from ayon_server.entities.user import UserEntity
+from ayon_server.helpers.project_list import get_project_list
+
 try:
     # Added in ayon-backend 1.8.0
     from ayon_server.utils import hash_data
@@ -65,6 +69,45 @@ from .actions import (
 
 ATTRIBUTES_VERSION_MILESTONE = (1, 0, 0)
 
+HOST_TO_EXT_MAPPING = {
+    "aftereffects": {".aep"},
+    "blender": {".blend"},
+    "celaction": {".scn"},
+    "cinema4d": {".c4d"},
+    "equalizer": {".3de"},
+    "flame": {".otoc"},
+    "fusion": {".comp"},
+    "hiero": {".hrox"},
+    "houdini": {".hip", ".hiplc", ".hipnc"},
+    "maya": {".ma", ".mb"},
+    "max": {".max"},
+    "mochapro": {".mocha"},
+    "motionbuilder": {".fbx"},
+    "nuke": {".nk"},
+    "photoshop": {".psd", ".psb"},
+    "premiere": {".prproj"},
+    "resolve": {".drp"},
+    "silhouette": {".sfx"},
+    "substancedesigner": {".sbs", ".sbsar", ".sbsasm"},
+    "substancepainter": {".spp", ".toc"},
+    "tvpaint": {".tvpp"},
+    "zbrush": {".zpr"},
+}
+EXT_TO_HOST_MAPPING = {}
+for host_name, extensions in HOST_TO_EXT_MAPPING.items():
+    for extension in extensions:
+        EXT_TO_HOST_MAPPING[extension] = host_name
+
+
+def create_chunks(values: list, chunk_size=100):
+    chunks = []
+    if not values:
+        return chunks
+    iterable_size = len(values)
+    for idx in range(0, iterable_size, chunk_size):
+        chunks.append(values[idx:idx + chunk_size])
+    return chunks
+
 
 def parse_version(version):
     try:
@@ -90,6 +133,13 @@ class ApplicationsAddon(BaseServerAddon):
     settings_model = ApplicationsAddonSettings
     # TODO remove this attribute when attributes support is removed
     has_attributes = True
+
+    def initialize(self):
+        EventStream.subscribe(
+            "bundle.updated",
+            self._on_bundle_updated,
+            all_nodes=True,
+        )
 
     async def get_simple_actions(
         self,
@@ -122,12 +172,17 @@ class ApplicationsAddon(BaseServerAddon):
         project_name = context.project_name
         entity_id = context.entity_ids[0]
 
+        bundle_args = []
+        if executor.variant not in ("production", "staging"):
+            bundle_args = ["--bundle", executor.variant]
+
         if executor.identifier == DEBUG_TERMINAL_ID:
             args = [
                 "addon", "applications", "launch-debug-terminal",
                 "--project", project_name,
                 "--task-id", entity_id,
             ]
+            args.extend(bundle_args)
             return await executor.get_launcher_action_response(
                 args=args
             )
@@ -166,6 +221,7 @@ class ApplicationsAddon(BaseServerAddon):
             "--project", project_name,
             entity_id_arg, entity_id,
         ]
+        args.extend(bundle_args)
         if skip_last_workfile is not None:
             args.extend([
                 "--use-last-workfile", str(int(not skip_last_workfile))
@@ -457,3 +513,80 @@ class ApplicationsAddon(BaseServerAddon):
 
         # Reset attributes cache on server
         await attribute_library.load()
+
+    # --------------------------------------------
+    # Auto-fill of host_name in workfiles entities
+    # --------------------------------------------
+    async def _workfile_entities_auto_filled(self) -> bool:
+        async for _ in Postgres.iterate(
+            "SELECT * FROM public.addon_data"
+            " WHERE addon_name = $1 AND key = $2",
+            self.name,
+            "workfile_entities_host_name_filled",
+        ):
+            return True
+        return False
+
+    async def _on_bundle_updated(
+        self, event: EventModel, *args, **kwargs
+    ) -> None:
+        if await self._workfile_entities_auto_filled():
+            return
+
+        if not event.summary.get("isProduction"):
+            return
+
+        addons = event.payload.get("addons", {})
+        addon_version = addons.get(self.name)
+        if addon_version != self.version:
+            return
+
+        await self._autofill_workfile_entities()
+
+    async def _autofill_workfile_entities(self):
+        project_names = [
+            project.name
+            for project in await get_project_list()
+        ]
+        for project_name in project_names:
+            query = f"""
+                SELECT id, attrib, path FROM project_{project_name}.workfiles
+                WHERE data->'host_name' IS NULL;
+            """
+            workfile_entities = [
+                row
+                async for row in Postgres.iterate(query)
+            ]
+            changes = []
+            for workfile_entity in workfile_entities:
+                ext = workfile_entity["attrib"].get("extension")
+                if not ext:
+                    ext = os.path.splitext(workfile_entity["path"])[-1]
+                if not ext:
+                    continue
+                mapped_host_name = EXT_TO_HOST_MAPPING.get(ext.lower())
+                if mapped_host_name:
+                    changes.append((workfile_entity["id"], mapped_host_name))
+
+            for chunk in create_chunks(changes):
+                async with Postgres.transaction():
+                    for (workfile_id, host_name) in chunk:
+                        await Postgres.execute(
+                            f"UPDATE project_{project_name}.workfiles"
+                            " SET data = jsonb_set(data, '{host_name}', $1)"
+                            " WHERE id = $2;",
+                            host_name,
+                            workfile_id
+                        )
+
+        await Postgres.execute(
+            "INSERT INTO public.addon_data"
+            " (addon_name, addon_version, key, data)"
+            " VALUES ($1, $2, $3, $4)",
+            self.name,
+            self.version,
+            "workfile_entities_host_name_filled",
+            {
+                "project_names": project_names,
+            }
+        )

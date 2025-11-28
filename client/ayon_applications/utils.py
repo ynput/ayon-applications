@@ -453,10 +453,12 @@ def prepare_app_environments(
     # Add tools environments
     groups_by_name = {}
     tool_by_group_name = collections.defaultdict(dict)
+    used_tool_names = []
     for key in tools:
         tool = app.manager.tools.get(key)
         if not tool or not tool.is_valid_for_app(app):
             continue
+        used_tool_names.append(tool.full_name)
         groups_by_name[tool.group.name] = tool.group
         tool_by_group_name[tool.group.name][tool.name] = tool
 
@@ -517,6 +519,7 @@ def prepare_app_environments(
     data["env"].update(final_env)
     for key in keys_to_remove:
         data["env"].pop(key, None)
+    data["env"]["AYON_APP_TOOLS"] = ";".join(used_tool_names)
 
 
 def apply_project_environments_value(
@@ -663,7 +666,7 @@ def prepare_context_environments(
     if not os.path.exists(workdir):
         log.debug(f"Creating workdir folder: \"{workdir}\"")
         try:
-            os.makedirs(workdir)
+            os.makedirs(workdir, exist_ok=True)
         except Exception as exc:
             raise ApplicationLaunchFailed(
                 f"Couldn't create workdir because: {exc}"
