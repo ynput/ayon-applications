@@ -79,6 +79,7 @@ HOST_TO_EXT_MAPPING = {
     "fusion": {".comp"},
     "hiero": {".hrox"},
     "houdini": {".hip", ".hiplc", ".hipnc"},
+    "katana": {".katana"},
     "maya": {".ma", ".mb"},
     "max": {".max"},
     "mochapro": {".mocha"},
