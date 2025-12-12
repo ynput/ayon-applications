@@ -1482,6 +1482,25 @@
                 }
             ]
         },
+        "katana": {
+            "enabled": true,
+            "host_name": "katana",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "8-0v5",
+                    "label": "8.0v5",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Katana8.0v5\\bin\\katanaBin.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "loki": {
             "enabled": true,
             "host_name": "loki",
