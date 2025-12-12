@@ -870,31 +870,6 @@
                         ]
                     },
                     "environment": "{\n    \"AYON_BLENDER_USE_SYSTEM_PATH\": \"1\"\n}"
-                },
-                {
-                    "name": "4-5",
-                    "label": "4.5",
-                    "executables": {
-                        "linux": [],
-                        "darwin": [
-                            "/Applications/Blender.app"
-                        ],
-                        "windows": [
-                            "C:\\Program Files\\Blender Foundation\\Blender 4.5\\blender.exe"
-                        ]
-                    },
-                    "arguments": {
-                        "windows": [
-                            "--python-use-system-env"
-                        ],
-                        "darwin": [
-                            "--python-use-system-env"
-                        ],
-                        "linux": [
-                            "--python-use-system-env"
-                        ]
-                    },
-                    "environment": "{\n    \"AYON_BLENDER_USE_SYSTEM_PATH\": \"1\"\n}"
                 }
             ]
         },
@@ -1632,7 +1607,7 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "2025.2.127.57280",
+                    "name": "2025.2",
                     "label": "2025",
                     "executables": {
                         "windows": [
