@@ -27,6 +27,7 @@ DEFAULT_APP_GROUPS = {
     "nukex",
     "nukestudio",
     "hiero",
+    "mari",
     "fusion",
     "resolve",
     "houdini",
@@ -314,6 +315,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Nuke Studio")
     hiero: AppGroup = SettingsField(
         default_factory=AppGroup, title="Hiero")
+    mari: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Mari")
     fusion: AppGroup = SettingsField(
         default_factory=AppGroup, title="Fusion")
     resolve: AppGroup = SettingsField(
