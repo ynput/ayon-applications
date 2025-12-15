@@ -474,7 +474,7 @@ class ApplicationsAddonSettings(BaseSettingsModel):
     tool_groups: list[ToolGroupModel] = SettingsField(
         default_factory=list,
         title="Tools Definitions",
-        description="Configure your tools / plugins, e.g.renderer, hair addon etc.",
+        description="Configure tools and plugins that are added into the environment of launched applications",
         scope=["studio"]
     )
     project_applications: ProjectApplicationsModel = SettingsField(
