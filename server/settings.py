@@ -467,7 +467,7 @@ class ApplicationsAddonSettings(BaseSettingsModel):
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Applications Definitions",
-        description="(Legacy) - Show / hide apps based on project's anatomy attributes.",
+        description="Configure application executable paths, environments and launch arguments.",
         scope=["studio"],
         section="Definitions"
     )
