@@ -20,6 +20,7 @@ from ayon_server.lib.postgres import Postgres
 
 ATTRIBUTES_VERSION_MILESTONE = (1, 0, 0)
 
+
 def parse_version(version):
     try:
         return semver.VersionInfo.parse(version)
@@ -111,9 +112,9 @@ class ApplicationsLE_0_2:
 
     async def _update_enums(self):
         """Updates applications and tools enums based on the addon settings.
-        This method is called when the addon is started (after we are sure that the
-        'applications' and 'tools' attributes exist) and when the addon settings are
-        updated (using on_settings_updated method).
+        This method is called when the addon is started (after we are sure
+        that the 'applications' and 'tools' attributes exist) and when
+        the addon settings are updated (using on_settings_updated method).
         """
 
         instance = AddonLibrary.getinstance()

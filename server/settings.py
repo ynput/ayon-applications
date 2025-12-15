@@ -21,6 +21,7 @@ DEFAULT_APP_GROUPS = {
     "maya",
     "adsk_3dsmax",
     "flame",
+    "gaffer",
     "nuke",
     "nukeassist",
     "nukex",
@@ -37,6 +38,8 @@ DEFAULT_APP_GROUPS = {
     "premiere",
     "celaction",
     "substancepainter",
+    "substancedesigner",
+    "speedtree",
     "unreal",
     "wrap",
     "openrv",
@@ -44,8 +47,11 @@ DEFAULT_APP_GROUPS = {
     "equalizer",
     "motionbuilder",
     "cinema4d",
+    "silhouette",
     "terminal",
-    "premiere"
+    "premiere",
+    "mochapro",
+    "loki",
 }
 
 
@@ -185,6 +191,14 @@ class AppVariant(BaseSettingsModel):
     environment: str = SettingsField(
         "{}", title="Environment", widget="textarea"
     )
+    redirect_output: bool = SettingsField(
+        default=True, title="Redirect output to Process Monitor",
+        description=(
+            "Redirects stdout and stderr to AYON Process Monitor."
+            " If disabled, output will be lost unless application"
+            " supports its own logging."
+        )
+    )
 
     @validator("environment")
     def validate_json(cls, value):
@@ -210,6 +224,10 @@ class AppGroup(BaseSettingsModel):
         ensure_unique_names(value)
         return value
 
+    @validator("environment")
+    def validate_json(cls, value):
+        return validate_json_dict(value)
+
 
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
@@ -232,6 +250,10 @@ class AdditionalAppGroup(BaseSettingsModel):
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
         return value
+
+    @validator("environment")
+    def validate_json(cls, value):
+        return validate_json_dict(value)
 
 
 class ToolVariantModel(BaseSettingsModel):
@@ -280,6 +302,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="3ds Max")
     flame: AppGroup = SettingsField(
         default_factory=AppGroup, title="Flame")
+    gaffer: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Gaffer")
     nuke: AppGroup = SettingsField(
         default_factory=AppGroup, title="Nuke")
     nukeassist: AppGroup = SettingsField(
@@ -312,6 +336,10 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Celaction 2D")
     substancepainter: AppGroup = SettingsField(
         default_factory=AppGroup, title="Substance Painter")
+    substancedesigner: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Substance Designer")
+    speedtree: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Speedtree")
     unreal: AppGroup = SettingsField(
         default_factory=AppGroup, title="Unreal Editor")
     wrap: AppGroup = SettingsField(
@@ -326,6 +354,12 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Motion Builder")
     cinema4d: AppGroup = SettingsField(
         default_factory=AppGroup, title="Cinema4D")
+    mochapro: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Mocha Pro")
+    silhouette: AppGroup = SettingsField(
+        default_factory=AppGroup, title="BorisFX Silhouette")
+    loki: AppGroup = SettingsField(
+        default_factory=AppGroup, title="ShapeFX Loki")
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",
@@ -361,7 +395,7 @@ class ProjectApplicationsProfile(BaseSettingsModel):
         "applications",
         title="Allow",
         enum_resolver=_get_allow_type,
-        conditionalEnum=True,
+        conditional_enum=True,
     )
     applications: list[str] = SettingsField(
         default_factory=list,
@@ -430,17 +464,6 @@ class ProjectToolsModel(BaseSettingsModel):
 
 
 class ApplicationsAddonSettings(BaseSettingsModel):
-    only_available: bool = SettingsField(
-        True,
-        title="Show only available applications",
-        description=(
-            "Enable to show only applications in AYON Launcher for which"
-            " the executable paths are found on the running machine."
-            " This applies as an additional filter to the applications"
-            " defined in a  project's anatomy settings to ignore"
-            " unavailable applications."
-        )
-    )
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Applications Definitions",
