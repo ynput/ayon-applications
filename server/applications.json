@@ -1501,6 +1501,48 @@
                 }
             ]
         },
+        "comfyui": {
+          "enabled": false,
+          "label": "ComfyUI",
+          "host_name": "comfyui",
+          "environment": "{}",
+          "variants": [
+            {
+              "name": "master",
+              "label": "master",
+              "environment": "{}",
+              "executables": {
+                "windows": [
+                  "powershell.exe"
+                ],
+                "linux": [],
+                "darwin": []
+              },
+              "arguments": {
+                "windows": [],
+                "darwin": [],
+                "linux": []
+              }
+            },
+            {
+              "name": "v0.3.64",
+              "label": "v0.3.64",
+              "executables": {
+                "windows": [
+                  "powershell.exe"
+                ],
+                "linux": [],
+                "darwin": []
+              },
+              "arguments": {
+                "windows": [],
+                "linux": [],
+                "darwin": []
+              },
+              "environment": "{}"
+            }
+          ]
+        },
         "terminal": {
             "enabled": true,
             "host_name": "",

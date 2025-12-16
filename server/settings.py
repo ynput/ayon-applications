@@ -52,6 +52,7 @@ DEFAULT_APP_GROUPS = {
     "premiere",
     "mochapro",
     "loki",
+    "comfyui",
 }
 
 
@@ -360,6 +361,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="BorisFX Silhouette")
     loki: AppGroup = SettingsField(
         default_factory=AppGroup, title="ShapeFX Loki")
+    comfyui: AppGroup = SettingsField(
+        default_factory=AppGroup, title="ComfyUI")
     terminal: AppGroup = SettingsField(
         default_factory=AppGroup,
         title="Terminal",
