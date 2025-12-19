@@ -50,6 +50,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     version = __version__
     admin_action = True
 
+    _icons_cache = {}
+
     def tray_init(self) -> None:
         """Initialize the tray action."""
         self._process_monitor_window: Optional[ProcessMonitorWindow] = None
@@ -207,8 +209,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         if server:
             base_url = ayon_api.get_base_url()
             return (
-                f"{base_url}/addons/{self.name}/{self.version}"
-                f"/public/icons/{icon_name}"
+                f"{base_url}/api/addons/{self.name}/{self.version}"
+                f"/icons/{icon_name}"
             )
         server_url = os.getenv("AYON_WEBSERVER_URL")
         if not server_url:
@@ -308,13 +310,35 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     def webserver_initialization(self, manager: "WebServerManager") -> None:
         """Initialize webserver.
 
+        Add localhost handler for icons requests.
+
+        This was added for ftrack which is showing icons
+
         Args:
             manager (WebServerManager): Webserver manager.
 
         """
-        static_prefix = f"/addons/{self.name}/icons"
-        manager.add_static(
-            static_prefix, os.path.join(APPLICATIONS_ADDON_ROOT, "icons")
+
+        async def _get_web_icon(request):
+            from aiohttp import web, ClientSession
+
+            filename = request.match_info["filename"]
+            # TODO find better way how to cache
+            if filename not in self.__class__._icons_cache:
+                url = self.get_app_icon_url(filename, server=True)
+                async with ClientSession() as session:
+                    async with session.get(url) as resp:
+                        assert resp.status == 200
+                        data = await resp.read()
+
+                self.__class__._icons_cache[filename] = data
+            return web.Response(body=self.__class__._icons_cache[filename])
+
+        manager.add_addon_route(
+            self.name,
+            "/icons/{filename}",
+            "GET",
+            _get_web_icon,
         )
 
     # --- CLI ---
