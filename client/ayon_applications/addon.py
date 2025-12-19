@@ -176,7 +176,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         ]
 
     def get_app_icon_path(self, icon_filename: str) -> str:
-        """Get icon path.
+        """DEPRECATED Get icon path.
 
         Args:
             icon_filename (str): Icon filename.
