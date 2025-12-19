@@ -146,6 +146,11 @@ class ApplicationsAddon(BaseServerAddon):
         )
 
         self.add_endpoint(
+            "icons/{filename}",
+            self._get_icon,
+            method="GET",
+        )
+        self.add_endpoint(
             "customIcons/{filename}",
             self._upload_custom_icon,
             method="POST",
@@ -371,6 +376,23 @@ class ApplicationsAddon(BaseServerAddon):
         return current_dir.parent.parent / "custom_icons"
 
     # --- Endpoints handlers ---
+    async def _get_icon(self, filename: str):
+        custom_icons_dir = self._get_custom_icons_dir()
+        if custom_icons_dir.exists():
+            path = custom_icons_dir / filename
+            if path.exists():
+                return FileResponse(path)
+
+        current_dir = Path(os.path.abspath(__file__)).parent
+        path = current_dir.parent / "public" / "icons" / filename
+        if not path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Icon '{filename}' not found"
+            )
+
+        return FileResponse(path)
+
     async def _upload_custom_icon(
         self,
         request: Request,
