@@ -48,6 +48,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
     name = "applications"
     version = __version__
+    admin_action = True
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
