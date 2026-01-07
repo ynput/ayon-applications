@@ -873,6 +873,7 @@
                 }
             ]
         },
+
         "harmony": {
             "enabled": true,
             "host_name": "harmony",
@@ -1587,6 +1588,30 @@
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2021\\bin\\mochapro.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
+        "marvelousdesigner": {
+            "enabled": true,
+            "host_name": "marvelousdesigner",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2025.2",
+                    "label": "2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Marvelous Designer Personal\\MarvelousDesigner_Personal.exe"
                         ],
                         "darwin": [],
                         "linux": []
