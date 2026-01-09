@@ -52,6 +52,7 @@ DEFAULT_APP_GROUPS = {
     "premiere",
     "mochapro",
     "loki",
+    "marvelousdesigner",
 }
 
 
@@ -346,6 +347,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Wrap")
     openrv: AppGroup = SettingsField(
         default_factory=AppGroup, title="OpenRV")
+    marvelousdesigner: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Marvelous Designer")
     zbrush: AppGroup = SettingsField(
         default_factory=AppGroup, title="Zbrush")
     equalizer: AppGroup = SettingsField(
@@ -467,12 +470,20 @@ class ApplicationsAddonSettings(BaseSettingsModel):
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Applications Definitions",
+        description=(
+            "Configure application executable paths, environments "
+            "and launch arguments."
+        ),
         scope=["studio"],
         section="Definitions"
     )
     tool_groups: list[ToolGroupModel] = SettingsField(
         default_factory=list,
         title="Tools Definitions",
+        description=(
+            "Configure tools and plugins that are added into the environment "
+            "of launched applications"
+        ),
         scope=["studio"]
     )
     project_applications: ProjectApplicationsModel = SettingsField(
