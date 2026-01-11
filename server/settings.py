@@ -51,6 +51,7 @@ DEFAULT_APP_GROUPS = {
     "terminal",
     "premiere",
     "mochapro",
+    "katana",
     "loki",
     "marvelousdesigner",
 }
@@ -361,6 +362,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Mocha Pro")
     silhouette: AppGroup = SettingsField(
         default_factory=AppGroup, title="BorisFX Silhouette")
+    katana: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Katana")
     loki: AppGroup = SettingsField(
         default_factory=AppGroup, title="ShapeFX Loki")
     terminal: AppGroup = SettingsField(
