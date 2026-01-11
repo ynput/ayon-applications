@@ -53,6 +53,7 @@ DEFAULT_APP_GROUPS = {
     "mochapro",
     "marmoset",
     "loki",
+    "marvelousdesigner",
 }
 
 
@@ -347,6 +348,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Wrap")
     openrv: AppGroup = SettingsField(
         default_factory=AppGroup, title="OpenRV")
+    marvelousdesigner: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Marvelous Designer")
     zbrush: AppGroup = SettingsField(
         default_factory=AppGroup, title="Zbrush")
     equalizer: AppGroup = SettingsField(
