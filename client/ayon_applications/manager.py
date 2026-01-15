@@ -19,7 +19,7 @@ from ayon_core.lib import (
     Logger,
     classes_from_module,
     get_linux_launcher_args,
-    modules_from_path,
+    modules_from_path, find_executable,
 )
 from ayon_core.settings import get_studio_settings
 
@@ -148,7 +148,12 @@ class ApplicationManager:
         if not app:
             raise ApplicationNotFound(app_name)
 
-        executable = app.find_executable()
+        if "AYON_REZ_PACKAGES" in app.environment:
+            # not sure if this is too thin ? but I am not sure why one would define more
+            # than one executable in an application definition when using rez
+            executable = app.executables[0]
+        else:
+            executable = app.find_executable()
 
         return ApplicationLaunchContext(
             app, executable, **data
@@ -264,7 +269,9 @@ class ApplicationLaunchContext:
 
         launch_args = []
         if executable is not None:
-            launch_args = executable.as_args()
+            if not "AYON_REZ_PACKAGES" in application.environment:
+                # this is still egg rv.exe when using rez so we skip this here
+                launch_args = executable.as_args()
         # subprocess.Popen launch arguments (first argument in constructor)
         self.launch_args: list[str] = launch_args
         self.launch_args.extend(application.arguments)
@@ -707,6 +714,19 @@ class ApplicationLaunchContext:
             self.run_prelaunch_hooks()
 
         self.log.debug("All prelaunch hook executed. Starting new process.")
+
+        if "AYON_REZ_PACKAGES" in self.kwargs.get('env'):
+            self.log.debug("looking for full path to rez executable")
+            executable_path = find_executable(self.executable.executable_path,
+                                              optional_paths=self.kwargs.get(
+                                                  'env').get("PATH").split(
+                                                  os.pathsep))
+
+            # not sure what self.executable is used for in the end
+            self.executable = ApplicationExecutable(executable_path)
+            self.log.debug(f"full path to rez executable is {executable_path}")
+            # this is actually used to launch an application
+            self.launch_args.insert(0, executable_path)
 
         # Prepare subprocess args
         args_len_str = ""
