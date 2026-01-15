@@ -718,9 +718,7 @@ class ApplicationLaunchContext:
         if "AYON_REZ_PACKAGES" in self.kwargs.get('env'):
             self.log.debug("looking for full path to rez executable")
             executable_path = find_executable(self.executable.executable_path,
-                                              optional_paths=self.kwargs.get(
-                                                  'env').get("PATH").split(
-                                                  os.pathsep))
+                                              env=self.kwargs.get('env'))
 
             # not sure what self.executable is used for in the end
             self.executable = ApplicationExecutable(executable_path)
