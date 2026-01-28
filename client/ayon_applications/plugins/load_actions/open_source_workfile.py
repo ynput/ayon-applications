@@ -72,13 +72,17 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
 
         workfile_name = os.path.basename(source_path)
         file_ext = os.path.splitext(workfile_name)[1].lower()
+        if not file_ext:
+            return LoaderActionResult(
+                f"Version source '{workfile_name}' has no extension.",
+                success=False,
+            )
 
         # Get compatible applications
         addons_manager = self._context.get_addons_manager()
         compatible_apps = self._get_compatible_apps(
             addons_manager, file_ext
         )
-        anatomy = selection.get_project_anatomy()
 
         if not compatible_apps:
             return LoaderActionResult(
@@ -86,7 +90,16 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 success=False,
             )
 
+        # Check the source app that was used to create the publish
         source_app_full_name = version.get("data", {}).get("ayon_app_name")
+
+        anatomy = selection.get_project_anatomy()
+        workfile_path: str = anatomy.fill_root(source_path)
+        if not os.path.exists(workfile_path):
+            return LoaderActionResult(
+                f"Source workfile does not exist at '{workfile_path}'",
+                success=False,
+            )
 
         # Show selection dialog
         selected_app = self._show_app_dialog(
@@ -238,10 +251,9 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         self,
         app: "Application",
         version: dict,
-        source_path: str,
+        workfile_path: str,
         project_name: str,
         addons_manager: AddonsManager,
-        anatomy: Anatomy,
     ):
         """Launch application with workfile."""
 
@@ -256,8 +268,6 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         folder = ayon_api.get_folder_by_id(project_name, product["folderId"])
         task = ayon_api.get_task_by_id(project_name,
                                        task_id) if task_id else None
-
-        workfile_path = anatomy.fill_root(source_path)
 
         # TODO: Launch should perhaps not go through addon directly
         #  but go through AYON subprocess to ensure correct bundle
