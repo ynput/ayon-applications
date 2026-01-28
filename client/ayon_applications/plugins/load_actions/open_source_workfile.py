@@ -1,4 +1,4 @@
-"""Custom loader action for render products in Tray Browser."""
+"""Loader action to open source workfiles in Tray Browser."""
 from __future__ import annotations
 import os
 from typing import Optional, Any, TYPE_CHECKING
