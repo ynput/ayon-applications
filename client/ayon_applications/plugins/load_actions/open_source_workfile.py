@@ -279,5 +279,5 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             folder_path=folder["path"],
             task_name=task["name"] if task else None,
             workfile_path=workfile_path,
-            use_last_workfile=False
+            use_last_workfile=False,
         )
