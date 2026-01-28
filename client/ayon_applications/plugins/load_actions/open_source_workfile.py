@@ -5,7 +5,6 @@ from typing import Optional, Any, TYPE_CHECKING
 
 import ayon_api
 from ayon_core.addon import IHostAddon, AddonsManager
-from ayon_core.pipeline import Anatomy
 from ayon_core.pipeline.actions import (
     LoaderSimpleActionPlugin,
     LoaderActionSelection,
