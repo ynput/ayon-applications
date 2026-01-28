@@ -217,6 +217,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 preferred_index = i
                 label += " (used to create publish)"
 
+            # TODO: Show application icon if available
             item = QtWidgets.QListWidgetItem(label)
             item.setData(QtCore.Qt.UserRole, app)
             app_list.addItem(item)
