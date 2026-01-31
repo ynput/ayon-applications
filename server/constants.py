@@ -42,7 +42,7 @@ ICONS_BY_GROUP_NAME = {
     "blender": "blender.png",
     "celaction": "celaction.png",
     "cinema4d": "cinema4d.png",
-    "clo":"clo.png",
+    "clo": "clo.png",
     "equalizer": "3de4.png",
     "flame": "flame.png",
     "fusion": "fusion.png",
