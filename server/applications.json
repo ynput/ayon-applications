@@ -1679,6 +1679,30 @@
                 }
             ]
         },
+        "clo": {
+            "enabled": true,
+            "host_name": "marvelousdesigner",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2025.2",
+                    "label": "2025",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\CLO Standalone OnlineAuth\\CLO_Standalone_OnlineAuth_x64.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "additional_apps": []
     }
 }
