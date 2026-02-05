@@ -149,7 +149,8 @@ class ApplicationManager:
             raise ApplicationNotFound(app_name)
 
         if "AYON_REZ_PACKAGES" in app.environment:
-            # not sure if this is too thin ? but I am not sure why one would define more
+            # not sure if this is too thin ? but I am not sure
+            # why one would define more
             # than one executable in an application definition when using rez
             executable = app.executables[0]
         else:
@@ -269,7 +270,7 @@ class ApplicationLaunchContext:
 
         launch_args = []
         if executable is not None:
-            if not "AYON_REZ_PACKAGES" in application.environment:
+            if "AYON_REZ_PACKAGES" not in application.environment:
                 # this is still egg rv.exe when using rez so we skip this here
                 launch_args = executable.as_args()
         # subprocess.Popen launch arguments (first argument in constructor)
