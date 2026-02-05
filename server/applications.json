@@ -609,6 +609,25 @@
                 }
             ]
         },
+        "mari": {
+            "enabled": true,
+            "host_name": "mari",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "7-5v1",
+                    "label": "7.5v1",
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Mari7.5v1\\Bundle\\bin\\Mari7.5v1.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "fusion": {
             "enabled": true,
             "host_name": "fusion",
