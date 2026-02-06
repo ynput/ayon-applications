@@ -139,7 +139,7 @@ class ApplicationsAddon(BaseServerAddon):
         EventStream.subscribe(
             "bundle.updated",
             self._on_bundle_updated,
-            all_nodes=True,
+            all_nodes=False,
         )
 
     async def get_simple_actions(
