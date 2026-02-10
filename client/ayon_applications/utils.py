@@ -21,7 +21,9 @@ from ayon_core.pipeline.workfile import (
     get_workdir_with_workdir_data,
     get_last_workfile,
     should_use_last_workfile_on_launch,
+    should_copy_last_published_workfile_on_launch,
     should_open_workfiles_tool_on_launch,
+    copy_last_published_workfile,
 )
 
 from .constants import (
@@ -770,6 +772,34 @@ def _prepare_last_workfile(
             last_workfile_path = get_last_workfile(
                 workdir, file_template, workdir_data, extensions, True
             )
+
+            # Optionally copy last published workfile into workdir before launch
+            use_published = should_copy_last_published_workfile_on_launch(
+                project_name,
+                app.host_name,
+                task_name,
+                task_type,
+                project_settings=project_settings,
+            )
+            if use_published and start_last_workfile:
+                folder_entity = data.get("folder_entity")
+                task_entity = data.get("task_entity")
+                if folder_entity and task_entity:
+                    published_path = copy_last_published_workfile(
+                        project_name=project_name,
+                        folder_id=folder_entity["id"],
+                        task_id=task_entity["id"],
+                        workdir=workdir,
+                        extensions=extensions,
+                        anatomy=anatomy,
+                        file_template=file_template,
+                        workdir_data=workdir_data,
+                        host_name=app.host_name,
+                        project_settings=project_settings,
+                        log=log,
+                    )
+                    if published_path:
+                        last_workfile_path = published_path
 
     if not os.path.exists(last_workfile_path):
         log.debug((
