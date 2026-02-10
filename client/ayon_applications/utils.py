@@ -773,7 +773,7 @@ def _prepare_last_workfile(
                 workdir, file_template, workdir_data, extensions, True
             )
 
-            # Optionally copy last published workfile into workdir before launch
+            # Copy last published workfile into workdir before launch
             use_published = should_copy_last_published_workfile_on_launch(
                 project_name,
                 app.host_name,
