@@ -1,5 +1,4 @@
 import os
-import json
 from pydantic import validator
 
 from ayon_server.addons import BaseServerAddon
@@ -10,6 +9,14 @@ from ayon_server.settings import (
     task_types_enum,
 )
 from ayon_server.exceptions import BadRequestException
+
+try:
+    import json5 as json
+    JSON_SYNTAX = "json5"
+except ImportError:
+    import json
+    JSON_SYNTAX = "json"
+
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 ICONS_DIR = os.path.join(
@@ -164,15 +171,16 @@ def validate_json_dict(value):
         return "{}"
     try:
         converted_value = json.loads(value)
-        success = isinstance(converted_value, dict)
-    except json.JSONDecodeError as exc:
-        print(exc)
-        success = False
-
-    if not success:
+        if not isinstance(converted_value, dict):
+            raise BadRequestException(
+                f"Environment must be a JSON object, "
+                f"got {type(converted_value).__name__}"
+            )
+    except ValueError as exc:
         raise BadRequestException(
-            "Environment's can't be parsed as json object"
+            f"Environment can't be parsed as JSON object: {exc}"
         )
+
     return value
 
 
@@ -195,7 +203,7 @@ class AppVariant(BaseSettingsModel):
         default="{}",
         title="Environment",
         widget="textarea",
-        syntax="json",
+        syntax=JSON_SYNTAX,
     )
     redirect_output: bool = SettingsField(
         default=True, title="Redirect output to Process Monitor",
@@ -218,7 +226,7 @@ class AppGroup(BaseSettingsModel):
         default="{}",
         title="Environment",
         widget="textarea",
-        syntax="json",
+        syntax=JSON_SYNTAX,
     )
 
     variants: list[AppVariant] = SettingsField(
@@ -248,7 +256,7 @@ class AdditionalAppGroup(BaseSettingsModel):
         default="{}",
         title="Environment",
         widget="textarea",
-        syntax="json",
+        syntax=JSON_SYNTAX,
     )
 
     variants: list[AppVariant] = SettingsField(
@@ -282,7 +290,7 @@ class ToolVariantModel(BaseSettingsModel):
         default="{}",
         title="Environments",
         widget="textarea",
-        syntax="json",
+        syntax=JSON_SYNTAX,
     )
 
     @validator("environment")
@@ -297,7 +305,7 @@ class ToolGroupModel(BaseSettingsModel):
         default="{}",
         title="Environments",
         widget="textarea",
-        syntax="json",
+        syntax=JSON_SYNTAX,
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
 
