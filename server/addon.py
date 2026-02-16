@@ -157,14 +157,19 @@ class ApplicationsAddon(BaseServerAddon):
             method="GET",
         )
         self.add_endpoint(
+            "customIcons",
+            self._get_custom_icons,
+            method="GET",
+        )
+        self.add_endpoint(
             "customIcons/{filename}",
             self._upload_custom_icon,
             method="POST",
         )
         self.add_endpoint(
-            "customIcons",
-            self._get_custom_icons,
-            method="GET",
+            "customIcons/{filename}",
+            self._upload_custom_icon,
+            method="PATCH",
         )
         self.add_endpoint(
             "customIcons/{filename}",
