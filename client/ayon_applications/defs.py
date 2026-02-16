@@ -10,7 +10,6 @@ import typing
 from typing import Optional, Any, Generator
 
 from ayon_core.lib import find_executable
-from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
