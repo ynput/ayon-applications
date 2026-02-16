@@ -61,7 +61,7 @@ if TYPE_CHECKING:
         DynamicActionManifest,
     )
 
-from .constants import LABELS_BY_GROUP_NAME
+from .constants import LABELS_BY_GROUP_NAME, INFO_BY_GROUP_NAME
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
     get_action_manifests,
@@ -148,6 +148,12 @@ class ApplicationsAddon(BaseServerAddon):
         self.add_endpoint(
             "icons/{filename}",
             self._get_icon,
+            method="GET",
+        )
+
+        self.add_endpoint(
+            "appsInfo",
+            self._get_apps_info,
             method="GET",
         )
         self.add_endpoint(
@@ -392,6 +398,9 @@ class ApplicationsAddon(BaseServerAddon):
             )
 
         return FileResponse(path)
+
+    async def _get_apps_info(self):
+        return INFO_BY_GROUP_NAME
 
     async def _upload_custom_icon(
         self,
