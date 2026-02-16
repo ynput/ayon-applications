@@ -51,14 +51,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     admin_action = True
 
     _icons_cache = {}
+    label = "Process Monitor"
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
         self._process_monitor_window: Optional[ProcessMonitorWindow] = None
-
-    @property
-    def label(self) -> str:
-        return "Process Monitor"
 
     def on_action_trigger(self) -> None:
         """Action triggered when the tray icon is clicked."""
