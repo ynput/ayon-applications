@@ -152,8 +152,8 @@ class ApplicationsAddon(BaseServerAddon):
         )
 
         self.add_endpoint(
-            "appsInfo",
-            self._get_apps_info,
+            "appGroupsInfo",
+            self._get_app_groups_info,
             method="GET",
         )
         self.add_endpoint(
@@ -399,7 +399,7 @@ class ApplicationsAddon(BaseServerAddon):
 
         return FileResponse(path)
 
-    async def _get_apps_info(self):
+    async def _get_app_groups_info(self):
         return INFO_BY_GROUP_NAME
 
     async def _upload_custom_icon(

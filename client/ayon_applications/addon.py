@@ -53,10 +53,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     label = "Process Monitor"
 
     _icons_cache: dict[str, GroupAppInfo] = {}
-    _apps_info_cache = None
+    _app_groups_info_cache = None
 
     @classmethod
-    def get_app_info(cls, group_name: str) -> Optional[GroupAppInfo]:
+    def get_app_group_info(cls, group_name: str) -> Optional[GroupAppInfo]:
         """Get info about application group.
 
         Output contains only constant group information from server. Does not
@@ -69,8 +69,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             Optional[GroupAppInfo]: Application group info.
 
         """
-        apps_info = cls._get_apps_info()
-        return apps_info.get(group_name)
+        app_groups_info = cls._get_app_groups_info()
+        return app_groups_info.get(group_name)
 
     @classmethod
     def get_app_label(cls, group_name: str) -> str:
@@ -83,10 +83,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             str: Application label.
 
         """
-        app_info = cls.get_app_info(group_name)
-        if app_info is None:
+        app_group_info = cls.get_app_group_info(group_name)
+        if app_group_info is None:
             return group_name
-        return app_info.label
+        return app_group_info.label
 
     @classmethod
     def get_app_icon(cls, group_name: str) -> Optional[str]:
@@ -99,10 +99,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             Optional[str]: Application icon filename.
 
         """
-        app_info = cls.get_app_info(group_name)
-        if app_info is None:
+        app_group_info = cls.get_app_group_info(group_name)
+        if app_group_info is None:
             return None
-        return app_info.icon
+        return app_group_info.icon
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
@@ -637,13 +637,13 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             os.remove(tmp_path)
 
     @classmethod
-    def _get_apps_info(cls) -> dict[str, GroupAppInfo]:
-        if cls._apps_info_cache is None:
+    def _get_app_groups_info(cls) -> dict[str, GroupAppInfo]:
+        if cls._app_groups_info_cache is None:
             response = ayon_api.get(
-                f"addons/{cls.name}/{cls.version}/appsInfo"
+                f"addons/{cls.name}/{cls.version}/appGroupsInfo"
             )
             response.raise_for_status()
-            cls._apps_info_cache = {
+            cls._app_groups_info_cache = {
                 key: GroupAppInfo(
                     name=key,
                     label=value["label"],
@@ -651,4 +651,4 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 )
                 for key, value in response.data.items()
             }
-        return cls._apps_info_cache
+        return cls._app_groups_info_cache
