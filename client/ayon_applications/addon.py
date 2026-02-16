@@ -26,7 +26,7 @@ from ayon_core.addon import (
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
-from .defs import LaunchTypes
+from .defs import LaunchTypes, GroupAppInfo
 from .manager import ApplicationManager
 from .exceptions import (
     ApplicationLaunchFailed,
@@ -50,8 +50,59 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     version = __version__
     admin_action = True
 
-    _icons_cache = {}
     label = "Process Monitor"
+
+    _icons_cache: dict[str, GroupAppInfo] = {}
+    _apps_info_cache = None
+
+    @classmethod
+    def get_app_info(cls, group_name: str) -> Optional[GroupAppInfo]:
+        """Get info about application group.
+
+        Output contains only constant group information from server. Does not
+            respect settings.
+
+        Args:
+            group_name (str): Application name.
+
+        Returns:
+            Optional[GroupAppInfo]: Application group info.
+
+        """
+        apps_info = cls._get_apps_info()
+        return apps_info.get(group_name)
+
+    @classmethod
+    def get_app_label(cls, group_name: str) -> str:
+        """Get label for application group by name.
+
+        Args:
+            group_name (str): Application name.
+
+        Returns:
+            str: Application label.
+
+        """
+        app_info = cls.get_app_info(group_name)
+        if app_info is None:
+            return group_name
+        return app_info.label
+
+    @classmethod
+    def get_app_icon(cls, group_name: str) -> Optional[str]:
+        """Get icon for application group by name.
+
+        Args:
+            group_name (str): Application name.
+
+        Returns:
+            Optional[str]: Application icon filename.
+
+        """
+        app_info = cls.get_app_info(group_name)
+        if app_info is None:
+            return None
+        return app_info.icon
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
@@ -584,3 +635,20 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
         finally:
             os.remove(tmp_path)
+
+    @classmethod
+    def _get_apps_info(cls) -> dict[str, GroupAppInfo]:
+        if cls._apps_info_cache is None:
+            response = ayon_api.get(
+                f"addons/{cls.name}/{cls.version}/appsInfo"
+            )
+            response.raise_for_status()
+            cls._apps_info_cache = {
+                key: GroupAppInfo(
+                    name=key,
+                    label=value["label"],
+                    icon=value["icon"],
+                )
+                for key, value in response.data.items()
+            }
+        return cls._apps_info_cache
