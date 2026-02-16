@@ -431,7 +431,7 @@ class ApplicationsAddon(BaseServerAddon):
         if custom_icons_dir.exists():
             for item in custom_icons_dir.iterdir():
                 if item.is_file():
-                    filenames.append(item.name)
+                    filenames.append({"filename": item.name})
         return {"icons": filenames}
 
     def _get_custom_icon(self, filename: str):
