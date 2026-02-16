@@ -235,6 +235,53 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """
         return get_app_icon_path(icon_filename)
 
+    def get_custom_icons_info(self) -> list[dict[str, str]]:
+        """List custom icons available on the server.
+
+        Returns:
+            list[dict[str, str]]: List of custom icons.
+
+        """
+        endpoint = f"addons/{self.name}/{self.version}/customIcons"
+        response = ayon_api.get(endpoint)
+        response.raise_for_status()
+        return response.data["icons"]
+
+    def upload_custom_icon(
+        self, path: str, filename: Optional[str] = None
+    ) -> None:
+        """Upload custom icon to AYON server.
+
+        Args:
+            path (str): Path to icon file.
+            filename (Optional[str]): Icon filename which will be used
+                to store the icon on the server. This value is then used in
+                settings.
+
+        """
+        if filename is None:
+            filename = os.path.basename(path)
+        endpoint = f"addons/{self.name}/{self.version}/customIcons/{filename}"
+        response = ayon_api.upload_file(
+            endpoint, path
+        )
+        response.raise_for_status()
+
+    def delete_custom_icon(
+        self, filename: Optional[str] = None
+    ) -> None:
+        """Delete custom icon to AYON server.
+
+        Args:
+            filename (Optional[str]): Icon filename which will be used
+                to store the icon on the server. This value is then used in
+                settings.
+
+        """
+        endpoint = f"addons/{self.name}/{self.version}/customIcons/{filename}"
+        response = ayon_api.delete(endpoint)
+        response.raise_for_status()
+
     def get_app_icon_url(
         self, icon_filename: str, server: bool = False
     ) -> Optional[str]:
