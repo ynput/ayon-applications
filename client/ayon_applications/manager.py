@@ -63,6 +63,36 @@ class ApplicationManager:
 
         self.refresh()
 
+    @classmethod
+    def get_app_label(cls, group_name: str) -> str:
+        """Get label for application group by name.
+
+        Args:
+            group_name (str): Application group name.
+
+        Returns:
+            str: Application label.
+
+        """
+        from .addon import ApplicationsAddon
+
+        return ApplicationsAddon.get_app_label(group_name)
+
+    @classmethod
+    def get_app_icon(cls, group_name: str) -> Optional[str]:
+        """Get icon for application group by name.
+
+        Args:
+            group_name (str): Application name.
+
+        Returns:
+            Optional[str]: Application icon filename.
+
+        """
+        from .addon import ApplicationsAddon
+
+        return ApplicationsAddon.get_app_icon(group_name)
+
     def set_studio_settings(self, studio_settings: dict[str, Any]) -> None:
         """Ability to change init system settings.
 

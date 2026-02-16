@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 import platform
 import json
 import copy
@@ -13,6 +14,13 @@ from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
+
+
+@dataclass
+class GroupAppInfo:
+    name: str
+    label: str
+    icon: Optional[str] = None
 
 
 class LaunchTypes:
@@ -168,13 +176,13 @@ class ApplicationGroup:
         data: dict[str, Any],
         manager: "ApplicationManager",
     ):
-        icon = ICONS_BY_GROUP_NAME.get(name)
+        icon = data.get("icon")
         if not icon:
-            icon = data.get("icon")
+            icon = manager.get_app_icon(name)
 
-        label = LABELS_BY_GROUP_NAME.get(name)
+        label = data.get("label")
         if not label:
-            label = data.get("label")
+            label = manager.get_app_label(name)
 
         self.name = name
         self.manager = manager
