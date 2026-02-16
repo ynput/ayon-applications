@@ -85,6 +85,7 @@ HOST_TO_EXT_MAPPING = {
     "houdini": {".hip", ".hiplc", ".hipnc"},
     "maya": {".ma", ".mb"},
     "max": {".max"},
+    "marvelousdesigner": {".zprj"},
     "mochapro": {".mocha"},
     "motionbuilder": {".fbx"},
     "nuke": {".nk"},
