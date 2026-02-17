@@ -237,12 +237,30 @@ class AppGroup(BaseSettingsModel):
         return validate_json_dict(value)
 
 
+def custom_icons_enum():
+    icons = []
+    if CUSTOM_ICONS_DIR.exists():
+        icons = [
+            child.name
+            for child in CUSTOM_ICONS_DIR.iterdir()
+            if child.is_file()
+        ]
+    # Make sure there is no icon item
+    icons.insert(0, {
+        "value": "",
+        "label": "< No icon >"
+    })
+    return icons
+
+
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     name: str = SettingsField("", title="Name")
     label: str = SettingsField("", title="Label")
     host_name: str = SettingsField("", title="Host name")
-    icon: str = SettingsField("", title="Icon")
+    icon: str = SettingsField(
+        "", title="Icon", enum_resolver=custom_icons_enum
+    )
     environment: str = SettingsField(
         default="{}",
         title="Environment",
