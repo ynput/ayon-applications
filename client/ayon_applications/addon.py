@@ -45,12 +45,12 @@ if typing.TYPE_CHECKING:
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
-
     name = "applications"
     version = __version__
-    admin_action = True
 
+    # Tray action attributes
     label = "Process Monitor"
+    admin_action = True
 
     _icons_cache: dict[str, GroupAppInfo] = {}
     _app_groups_info_cache = None
