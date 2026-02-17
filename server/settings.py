@@ -1,5 +1,7 @@
 import os
 import json
+from pathlib import Path
+
 from pydantic import validator
 
 from ayon_server.addons import BaseServerAddon
@@ -11,12 +13,9 @@ from ayon_server.settings import (
 )
 from ayon_server.exceptions import BadRequestException
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-ICONS_DIR = os.path.join(
-    os.path.dirname(CURRENT_DIR),
-    "public",
-    "icons"
-)
+CURRENT_DIR = Path(os.path.abspath(__file__)).parent
+CUSTOM_ICONS_DIR = CURRENT_DIR.parent.parent / "custom_icons"
+
 DEFAULT_APP_GROUPS = {
     "maya",
     "adsk_3dsmax",
@@ -534,14 +533,14 @@ class ApplicationsAddonSettings(BaseSettingsModel):
 
 
 def _get_applications_defaults():
-    with open(os.path.join(CURRENT_DIR, "applications.json"), "r") as stream:
-        applications_defaults = json.load(stream)
+    apps_file = CURRENT_DIR / "applications.json"
+    applications_defaults = json.loads(apps_file.read_text(encoding="utf-8"))
     return applications_defaults
 
 
 def _get_tools_defaults():
-    with open(os.path.join(CURRENT_DIR, "tools.json"), "r") as stream:
-        tools_defaults = json.load(stream)
+    tools_file = CURRENT_DIR / "tools.json"
+    tools_defaults = json.loads(tools_file.read_text(encoding="utf-8"))
     return tools_defaults
 
 
