@@ -170,7 +170,7 @@ class ApplicationsAddon(BaseServerAddon):
         self.add_endpoint(
             "customIcons/{filename}",
             self._upload_custom_icon,
-            method="PATCH",
+            method="PUT",
         )
         self.add_endpoint(
             "customIcons/{filename}",
