@@ -55,7 +55,7 @@ def get_items_for_app_groups(groups):
         if icon_name:
             icon = {
                 "type": "url",
-                "url": "{addon_url}/public/icons/" + icon_name,
+                "url": f"/api{{addon_url}}/icons/{icon_name}",
             }
 
         for variant in group["variants"]:

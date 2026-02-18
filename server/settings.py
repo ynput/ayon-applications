@@ -1,5 +1,7 @@
 import os
 import json
+from pathlib import Path
+
 from pydantic import validator
 
 from ayon_server.addons import BaseServerAddon
@@ -11,12 +13,9 @@ from ayon_server.settings import (
 )
 from ayon_server.exceptions import BadRequestException
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-ICONS_DIR = os.path.join(
-    os.path.dirname(CURRENT_DIR),
-    "public",
-    "icons"
-)
+CURRENT_DIR = Path(os.path.abspath(__file__)).parent
+CUSTOM_ICONS_DIR = CURRENT_DIR.parent.parent / "custom_icons"
+
 DEFAULT_APP_GROUPS = {
     "maya",
     "adsk_3dsmax",
@@ -238,12 +237,30 @@ class AppGroup(BaseSettingsModel):
         return validate_json_dict(value)
 
 
+def custom_icons_enum():
+    icons = []
+    if CUSTOM_ICONS_DIR.exists():
+        icons = [
+            child.name
+            for child in CUSTOM_ICONS_DIR.iterdir()
+            if child.is_file()
+        ]
+    # Make sure there is no icon item
+    icons.insert(0, {
+        "value": "",
+        "label": "< No icon >"
+    })
+    return icons
+
+
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     name: str = SettingsField("", title="Name")
     label: str = SettingsField("", title="Label")
     host_name: str = SettingsField("", title="Host name")
-    icon: str = SettingsField("", title="Icon")
+    icon: str = SettingsField(
+        "", title="Icon", enum_resolver=custom_icons_enum
+    )
     environment: str = SettingsField(
         default="{}",
         title="Environment",
@@ -534,14 +551,14 @@ class ApplicationsAddonSettings(BaseSettingsModel):
 
 
 def _get_applications_defaults():
-    with open(os.path.join(CURRENT_DIR, "applications.json"), "r") as stream:
-        applications_defaults = json.load(stream)
+    apps_file = CURRENT_DIR / "applications.json"
+    applications_defaults = json.loads(apps_file.read_text(encoding="utf-8"))
     return applications_defaults
 
 
 def _get_tools_defaults():
-    with open(os.path.join(CURRENT_DIR, "tools.json"), "r") as stream:
-        tools_defaults = json.load(stream)
+    tools_file = CURRENT_DIR / "tools.json"
+    tools_defaults = json.loads(tools_file.read_text(encoding="utf-8"))
     return tools_defaults
 
 

@@ -26,7 +26,7 @@ from ayon_core.addon import (
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
-from .defs import LaunchTypes
+from .defs import LaunchTypes, GroupAppInfo
 from .manager import ApplicationManager
 from .exceptions import (
     ApplicationLaunchFailed,
@@ -45,18 +45,68 @@ if typing.TYPE_CHECKING:
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
-
     name = "applications"
     version = __version__
+
+    # Tray action attributes
+    label = "Process Monitor"
     admin_action = True
+
+    _icons_cache: dict[str, GroupAppInfo] = {}
+    _app_groups_info_cache = None
+
+    @classmethod
+    def get_app_group_info(cls, group_name: str) -> Optional[GroupAppInfo]:
+        """Get info about application group.
+
+        Output contains only constant group information from server. Does not
+            respect settings.
+
+        Args:
+            group_name (str): Application name.
+
+        Returns:
+            Optional[GroupAppInfo]: Application group info.
+
+        """
+        app_groups_info = cls._get_app_groups_info()
+        return app_groups_info.get(group_name)
+
+    @classmethod
+    def get_app_label(cls, group_name: str) -> str:
+        """Get label for application group by name.
+
+        Args:
+            group_name (str): Application name.
+
+        Returns:
+            str: Application label.
+
+        """
+        app_group_info = cls.get_app_group_info(group_name)
+        if app_group_info is None:
+            return group_name
+        return app_group_info.label
+
+    @classmethod
+    def get_app_icon(cls, group_name: str) -> Optional[str]:
+        """Get icon for application group by name.
+
+        Args:
+            group_name (str): Application name.
+
+        Returns:
+            Optional[str]: Application icon filename.
+
+        """
+        app_group_info = cls.get_app_group_info(group_name)
+        if app_group_info is None:
+            return None
+        return app_group_info.icon
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
         self._process_monitor_window: Optional[ProcessMonitorWindow] = None
-
-    @property
-    def label(self) -> str:
-        return "Process Monitor"
 
     def on_action_trigger(self) -> None:
         """Action triggered when the tray icon is clicked."""
@@ -174,7 +224,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         ]
 
     def get_app_icon_path(self, icon_filename: str) -> str:
-        """Get icon path.
+        """DEPRECATED Get icon path.
 
         Args:
             icon_filename (str): Icon filename.
@@ -184,6 +234,53 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
         """
         return get_app_icon_path(icon_filename)
+
+    def get_custom_icons_info(self) -> list[dict[str, str]]:
+        """List custom icons available on the server.
+
+        Returns:
+            list[dict[str, str]]: List of custom icons.
+
+        """
+        endpoint = f"addons/{self.name}/{self.version}/customIcons"
+        response = ayon_api.get(endpoint)
+        response.raise_for_status()
+        return response.data["icons"]
+
+    def upload_custom_icon(
+        self, path: str, filename: Optional[str] = None
+    ) -> None:
+        """Upload custom icon to AYON server.
+
+        Args:
+            path (str): Path to icon file.
+            filename (Optional[str]): Icon filename which will be used
+                to store the icon on the server. This value is then used in
+                settings.
+
+        """
+        if filename is None:
+            filename = os.path.basename(path)
+        endpoint = f"addons/{self.name}/{self.version}/customIcons/{filename}"
+        response = ayon_api.upload_file(
+            endpoint, path
+        )
+        response.raise_for_status()
+
+    def delete_custom_icon(
+        self, filename: Optional[str] = None
+    ) -> None:
+        """Delete custom icon to AYON server.
+
+        Args:
+            filename (Optional[str]): Icon filename which will be used
+                to store the icon on the server. This value is then used in
+                settings.
+
+        """
+        endpoint = f"addons/{self.name}/{self.version}/customIcons/{filename}"
+        response = ayon_api.delete(endpoint)
+        response.raise_for_status()
 
     def get_app_icon_url(
         self, icon_filename: str, server: bool = False
@@ -207,8 +304,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         if server:
             base_url = ayon_api.get_base_url()
             return (
-                f"{base_url}/addons/{self.name}/{self.version}"
-                f"/public/icons/{icon_name}"
+                f"{base_url}/api/addons/{self.name}/{self.version}"
+                f"/icons/{icon_name}"
             )
         server_url = os.getenv("AYON_WEBSERVER_URL")
         if not server_url:
@@ -308,13 +405,35 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     def webserver_initialization(self, manager: "WebServerManager") -> None:
         """Initialize webserver.
 
+        Add localhost handler for icons requests.
+
+        This was added for ftrack which is showing icons
+
         Args:
             manager (WebServerManager): Webserver manager.
 
         """
-        static_prefix = f"/addons/{self.name}/icons"
-        manager.add_static(
-            static_prefix, os.path.join(APPLICATIONS_ADDON_ROOT, "icons")
+
+        async def _get_web_icon(request):
+            from aiohttp import web, ClientSession
+
+            filename = request.match_info["filename"]
+            # TODO find better way how to cache
+            if filename not in self.__class__._icons_cache:
+                url = self.get_app_icon_url(filename, server=True)
+                async with ClientSession() as session:
+                    async with session.get(url) as resp:
+                        assert resp.status == 200
+                        data = await resp.read()
+
+                self.__class__._icons_cache[filename] = data
+            return web.Response(body=self.__class__._icons_cache[filename])
+
+        manager.add_addon_route(
+            self.name,
+            "/icons/{filename}",
+            "GET",
+            _get_web_icon,
         )
 
     # --- CLI ---
@@ -563,3 +682,20 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
         finally:
             os.remove(tmp_path)
+
+    @classmethod
+    def _get_app_groups_info(cls) -> dict[str, GroupAppInfo]:
+        if cls._app_groups_info_cache is None:
+            response = ayon_api.get(
+                f"addons/{cls.name}/{cls.version}/appGroupsInfo"
+            )
+            response.raise_for_status()
+            cls._app_groups_info_cache = {
+                key: GroupAppInfo(
+                    name=key,
+                    label=value["label"],
+                    icon=value["icon"],
+                )
+                for key, value in response.data.items()
+            }
+        return cls._app_groups_info_cache

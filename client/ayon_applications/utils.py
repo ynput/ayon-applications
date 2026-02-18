@@ -6,6 +6,7 @@ import json
 import platform
 import collections
 import logging
+import warnings
 import typing
 from typing import Optional, Any
 
@@ -785,7 +786,7 @@ def _prepare_last_workfile(
 
 
 def get_app_icon_path(icon_filename: str) -> Optional[str]:
-    """Get icon path.
+    """DEPRECATED Get icon path.
 
     Args:
         icon_filename (str): Icon filename.
@@ -794,6 +795,11 @@ def get_app_icon_path(icon_filename: str) -> Optional[str]:
         Union[str, None]: Icon path or None if not found.
 
     """
+    warnings.warn(
+        "Used deprecated function 'get_app_icon_path'.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     if not icon_filename:
         return None
     icon_name = os.path.basename(icon_filename)
