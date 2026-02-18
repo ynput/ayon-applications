@@ -173,6 +173,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             os.path.join(APPLICATIONS_ADDON_ROOT, "hooks")
         ]
 
+    def get_loader_action_plugin_paths(self, host_name):
+        return [
+            os.path.join(APPLICATIONS_ADDON_ROOT, "plugins", "load_actions"),
+        ]
+
     def get_app_icon_path(self, icon_filename: str) -> str:
         """Get icon path.
 
