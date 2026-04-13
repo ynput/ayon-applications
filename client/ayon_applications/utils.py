@@ -425,8 +425,8 @@ def get_applications_for_context(
     project_name: str,
     folder_entity: dict[str, Any],
     task_entity: dict[str, Any],
-    project_settings: Optional[dict[str, Any]] = None,
-    project_entity: Optional[dict[str, Any]] = None,
+    project_settings: dict[str, Any] | None = None,
+    project_entity: dict[str, Any] | None = None,
 ) -> list[str]:
     """Get applications for context based on project settings.
 
@@ -441,6 +441,35 @@ def get_applications_for_context(
         list[str]: List of applications that can be used in given context.
 
     """
+    if not task_entity:
+        return []
+
+    if project_entity is not None and "data" not in project_entity:
+        project_entity = None
+
+    if project_entity is None:
+        project_entity = ayon_api.get_project(project_name)
+
+    current_project_bundle = os.getenv("AYON_BUNDLE_NAME")
+    project_data = project_entity["data"]
+    variant = get_settings_variant()
+    project_bundle = project_data.get("bundle", {}).get(variant, None)
+    use_webactions = (
+        project_bundle
+        and project_bundle != current_project_bundle
+    )
+
+    task_type = task_entity["taskType"]
+    if use_webactions:
+        return [
+            app_info.app_name
+            for app_info in get_applications_action_info_for_task(
+                project_name,
+                task_entity["id"],
+                task_type,
+            )
+        ]
+
     if project_settings is None:
         project_settings = get_project_settings(project_name)
     apps_settings = project_settings["applications"]
@@ -453,10 +482,6 @@ def get_applications_for_context(
             project_entity = ayon_api.get_project(project_name)
         apps = project_entity["attrib"].get("applications")
         return apps or []
-
-    task_type = None
-    if task_entity:
-        task_type = task_entity["taskType"]
 
     profile = filter_profiles(
         project_applications["profiles"],
