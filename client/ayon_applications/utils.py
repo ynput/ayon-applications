@@ -391,7 +391,7 @@ def get_applications_action_info_for_workfile(
 
     This function uses server side endpoint to resolve which actions are
         available for a given project respecting project bundle.
-    
+
     Args:
         project_name (str): Project entity.
         workfile_id (str): Workfile id.
