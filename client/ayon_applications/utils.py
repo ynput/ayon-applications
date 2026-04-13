@@ -430,6 +430,8 @@ def get_applications_for_context(
 ) -> list[str]:
     """Get applications for context based on project settings.
 
+    The action does respect project bundle.
+
     Args:
         project_name (str): Name of project.
         folder_entity (dict): Folder entity.
