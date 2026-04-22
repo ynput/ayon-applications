@@ -202,6 +202,9 @@ class AppVariant(BaseSettingsModel):
 
     @validator("name")
     def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application variant is empty")
+
         if "/" in value:
             raise BadRequestException(
                 f"Application variant ({value}) can't contain '/'"
@@ -261,6 +264,9 @@ class AdditionalAppGroup(BaseSettingsModel):
 
     @validator("name")
     def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application group name is empty")
+
         if "/" in value:
             raise BadRequestException(
                 f"Application group ({value}) can't contain '/'"
@@ -294,6 +300,9 @@ class ToolVariantModel(BaseSettingsModel):
 
     @validator("name")
     def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool variant is empty")
+
         if "/" in value:
             raise BadRequestException(
                 f"Tool variant ({value}) can't contain '/'"
@@ -318,6 +327,9 @@ class ToolGroupModel(BaseSettingsModel):
 
     @validator("name")
     def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool group name is empty")
+
         if "/" in value:
             raise BadRequestException(
                 f"Tool group ({value}) can't contain '/'"
