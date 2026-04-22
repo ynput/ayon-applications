@@ -91,7 +91,9 @@ async def applications_enum(
         group_label = app_field.field_info.title
 
         for variant in app_group.variants:
-            variant_grout_label = variant.group_label or group_label
+            # TODO uncomment when PR adding group_label is merged
+            # variant_grout_label = variant.group_label or group_label
+            variant_grout_label = group_label
 
             all_variants.append((
                 variant_grout_label,
@@ -114,7 +116,9 @@ async def applications_enum(
             group_label = group_name
 
         for variant in additional_app.variants:
-            variant_grout_label = variant.group_label or group_label
+            # TODO uncomment when PR adding group_label is merged
+            # variant_grout_label = variant.group_label or group_label
+            variant_grout_label = group_label
 
             all_variants.append((
                 variant_grout_label,
