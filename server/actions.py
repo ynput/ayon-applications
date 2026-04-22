@@ -62,12 +62,15 @@ def get_items_for_app_groups(groups):
             variant_name = variant["name"]
             if not variant_name:
                 continue
+            variant_group_label = variant["group_label"]
+            if not variant_group_label:
+                variant_group_label = group_label
             variant_label = variant["label"] or variant_name
             full_name = f"{group_name}/{variant_name}"
             items.append({
                 "host_name": group["host_name"],
                 "value": full_name,
-                "group_label": group_label,
+                "group_label": variant_group_label,
                 "variant_label": variant_label,
                 "icon": icon,
             })
