@@ -91,8 +91,7 @@ async def applications_enum(
         group_label = app_field.field_info.title
 
         for variant in app_group.variants:
-            # variant_grout_label = variant.group_label or group_label
-            variant_grout_label = group_label
+            variant_grout_label = variant.group_label or group_label
 
             all_variants.append((
                 variant_grout_label,
