@@ -327,7 +327,6 @@ class ToolGroupModel(BaseSettingsModel):
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
 
-
     @validator("name")
     def validate_name(cls, value):
         if not value:
