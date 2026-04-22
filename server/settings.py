@@ -1,5 +1,6 @@
 import os
 import json
+
 from pydantic import validator
 
 from ayon_server.addons import BaseServerAddon
@@ -74,7 +75,7 @@ async def applications_enum(
     apps_fields = apps_settings.__fields__
     apps_groups = set(apps_fields.keys())
     apps_groups.discard("additional_apps")
-    all_variants_by_group_label = {}
+    all_variants = []
     for group_name in apps_groups:
         app_group = getattr(apps_settings, group_name)
         # Skip disabled group
@@ -89,48 +90,43 @@ async def applications_enum(
         app_field = apps_fields[group_name]
         group_label = app_field.field_info.title
 
-        app_variants = list(app_group.variants)
-        app_variants.sort(key=lambda x: x.label or x.name, reverse=True)
-        enum_variants = all_variants_by_group_label.setdefault(
-            group_label, []
-        )
-        enum_variants.extend([
-            {
-                "label": f"{group_label} {variant.label or variant.name}",
-                "value": f"{group_name}/{variant.name}",
-            }
-            for variant in app_variants
-        ])
+        for variant in app_group.variants:
+            # variant_grout_label = variant.group_label or group_label
+            variant_grout_label = group_label
+
+            all_variants.append((
+                variant_grout_label,
+                {
+                    "label": f"{variant_grout_label} {variant.name}",
+                    "value": f"{group_name}/{variant.name}",
+                }
+            ))
 
     for additional_app in apps_settings.additional_apps:
         group_name = additional_app.name
         if not additional_app.enabled or not group_name:
             continue
 
-        app_variants = list(additional_app.variants)
-        if not app_variants:
+        if not additional_app.variants:
             continue
 
-        group_label = additional_app.label
+        group_label = additional_app.name
         if not group_label:
             group_label = group_name
 
-        app_variants.sort(key=lambda x: x.label or x.name, reverse=True)
-        enum_variants = all_variants_by_group_label.setdefault(
-            group_label, []
-        )
-        enum_variants.extend([
-            {
-                "label": f"{group_label} {variant.label or variant.name}",
-                "value": f"{group_name}/{variant.name}",
-            }
-            for variant in app_variants
-        ])
+        for variant in additional_app.variants:
+            variant_grout_label = variant.group_label or group_label
 
-    all_variants = []
-    for key, value in sorted(all_variants_by_group_label.items()):
-        all_variants.extend(value)
-    return all_variants
+            all_variants.append((
+                variant_grout_label,
+                {
+                    "label": f"{variant_grout_label} {variant.name}",
+                    "value": f"{group_name}/{variant.name}",
+                }
+            ))
+
+    all_variants.sort(key=lambda item: (item[0], item[1]["label"]))
+    return [item for _, item in all_variants]
 
 
 async def tools_enum(
@@ -148,10 +144,9 @@ async def tools_enum(
     enum_variants = []
     for tool_group in settings.tool_groups:
         group_name = tool_group.name
-        group_label = tool_group.label or group_name
         enum_variants.extend([
             {
-                "label": f"{group_label} {variant.label or variant.name}",
+                "label": f"{group_name} {variant.name}",
                 "value": f"{group_name}/{variant.name}",
             }
             for variant in tool_group.variants
@@ -184,7 +179,6 @@ class MultiplatformStrList(BaseSettingsModel):
 
 class AppVariant(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
     executables: MultiplatformStrList = SettingsField(
         default_factory=MultiplatformStrList, title="Executables"
     )
@@ -205,6 +199,14 @@ class AppVariant(BaseSettingsModel):
             " supports its own logging."
         )
     )
+
+    @validator("name")
+    def validate_name(cls, value):
+        if "/" in value:
+            raise BadRequestException(
+                f"Application variant ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
@@ -241,7 +243,6 @@ class AppGroup(BaseSettingsModel):
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
     host_name: str = SettingsField("", title="Host name")
     icon: str = SettingsField("", title="Icon")
     environment: str = SettingsField(
@@ -258,6 +259,14 @@ class AdditionalAppGroup(BaseSettingsModel):
         section="Variants",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if "/" in value:
+            raise BadRequestException(
+                f"Application group ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("variants")
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
@@ -270,9 +279,7 @@ class AdditionalAppGroup(BaseSettingsModel):
 
 class ToolVariantModel(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
     host_names: list[str] = SettingsField(default_factory=list, title="Hosts")
-    # TODO use applications enum if possible
     app_variants: list[str] = SettingsField(
         default_factory=list,
         title="Applications",
@@ -285,6 +292,14 @@ class ToolVariantModel(BaseSettingsModel):
         syntax="json",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool variant ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("environment")
     def validate_json(cls, value):
         return validate_json_dict(value)
@@ -292,7 +307,6 @@ class ToolVariantModel(BaseSettingsModel):
 
 class ToolGroupModel(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
     environment: str = SettingsField(
         default="{}",
         title="Environments",
@@ -300,6 +314,15 @@ class ToolGroupModel(BaseSettingsModel):
         syntax="json",
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
+
+
+    @validator("name")
+    def validate_name(cls, value):
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool group ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
