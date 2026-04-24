@@ -188,11 +188,8 @@ class AppVariant(BaseSettingsModel):
     group_label: str = SettingsField(
         "",
         title="Group label",
-        placeholder="Leave empty to use group label",
-        description=(
-            "Group label used for UI purposes."
-            " If not set, label from group is used."
-        ),
+        placeholder="Override group label for this variant",
+        description="Override group label used for UI purposes.",
     )
     executables: MultiplatformStrList = SettingsField(
         default_factory=MultiplatformStrList, title="Executables"
