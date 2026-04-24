@@ -182,6 +182,12 @@ class MultiplatformStrList(BaseSettingsModel):
 
 class AppVariant(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
+    group_label: str = SettingsField(
+        "",
+        title="Group label",
+        placeholder="Override group label for this variant",
+        description="Override group label used for UI purposes.",
+    )
     executables: MultiplatformStrList = SettingsField(
         default_factory=MultiplatformStrList, title="Executables"
     )
