@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import copy
+from dataclasses import dataclass
 import json
 import platform
 import collections
@@ -13,7 +14,12 @@ import ayon_api
 
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.settings import get_project_settings
-from ayon_core.lib import Logger, get_ayon_username, filter_profiles
+from ayon_core.lib import (
+    Logger,
+    get_ayon_username,
+    filter_profiles,
+    get_settings_variant,
+)
 from ayon_core.addon import AddonsManager
 from ayon_core.pipeline.template_data import get_template_data
 from ayon_core.pipeline.workfile import (
@@ -46,6 +52,8 @@ except ImportError:
 
 if typing.TYPE_CHECKING:
     from .defs import Application
+
+IDENTIFIER_PREFIX = "application.launch."
 
 
 def parse_environments(
@@ -291,14 +299,138 @@ def _get_app_full_names_from_settings(
     return full_names
 
 
+@dataclass
+class ActionInfoContext:
+    project_name: str
+    entity_type: str
+    entity_ids: list[str]
+    entity_subtypes: list[str]
+
+
+@dataclass
+class ActionInfo:
+    context: ActionInfoContext
+    addon_name: str
+    addon_version: str
+    identifier: str
+    app_name: str
+    group_label: str
+    variant_label: str | None
+    icon: dict[str, Any] | None
+
+    @staticmethod
+    def from_webaction(
+        context: ActionInfoContext,
+        action: dict[str, Any],
+    ) -> "ActionInfo":
+        identifier = action["identifier"]
+        variant_label = action["label"]
+        group_label = action.get("groupLabel")
+        if not group_label:
+            group_label = variant_label or identifier
+            variant_label = None
+
+        app_name = identifier.removeprefix(IDENTIFIER_PREFIX)
+        return ActionInfo(
+            context=context,
+            addon_name=action["addonName"],
+            addon_version=action["addonVersion"],
+            identifier=identifier,
+            app_name=app_name,
+            group_label=group_label,
+            variant_label=variant_label,
+            icon=action["icon"],
+        )
+
+
+def get_applications_action_info_for_task(
+    project_name: str,
+    task_id: str,
+    task_type: str,
+) -> list[ActionInfo]:
+    """Helper function to get actions for a given task.
+
+    This function uses server side endpoint to resolve which actions are
+        available for a given project respecting project bundle.
+
+    Args:
+        project_name (str): Project entity.
+        task_id (str): Task id.
+        task_type (str): Task type.
+
+    Returns:
+        list[ActionInfo]: Applications actions available for the task.
+
+    """
+    variant = get_settings_variant()
+    context = ActionInfoContext(
+        project_name=project_name,
+        entity_type="task",
+        entity_ids=[task_id],
+        entity_subtypes=[task_type],
+    )
+    return [
+        ActionInfo.from_webaction(context, action)
+        for action in ayon_api.get_actions(
+            project_name,
+            entity_type=context.entity_type,
+            entity_ids=context.entity_ids,
+            entity_subtypes=context.entity_subtypes,
+            variant=variant,
+            mode="simple",
+        )
+        if action["identifier"].startswith(IDENTIFIER_PREFIX)
+    ]
+
+
+def get_applications_action_info_for_workfile(
+    project_name: str,
+    workfile_id: str,
+) -> list[ActionInfo]:
+    """Helper function to get actions for a given workfile.
+
+    This function uses server side endpoint to resolve which actions are
+        available for a given project respecting project bundle.
+
+    Args:
+        project_name (str): Project entity.
+        workfile_id (str): Workfile id.
+
+    Returns:
+        list[ActionInfo]: Applications actions available for the workfile.
+
+    """
+    variant = get_settings_variant()
+    context = ActionInfoContext(
+        project_name=project_name,
+        entity_type="workfile",
+        entity_ids=[workfile_id],
+        entity_subtypes=[],
+    )
+    return [
+        ActionInfo.from_webaction(context, action)
+        for action in ayon_api.get_actions(
+            project_name,
+            entity_type=context.entity_type,
+            entity_ids=context.entity_ids,
+            entity_subtypes=context.entity_subtypes,
+            variant=variant,
+            mode="dynamic",
+        )
+        if action["identifier"].startswith(IDENTIFIER_PREFIX)
+    ]
+
+
 def get_applications_for_context(
     project_name: str,
     folder_entity: dict[str, Any],
     task_entity: dict[str, Any],
-    project_settings: Optional[dict[str, Any]] = None,
-    project_entity: Optional[dict[str, Any]] = None,
+    project_settings: dict[str, Any] | None = None,
+    project_entity: dict[str, Any] | None = None,
 ) -> list[str]:
     """Get applications for context based on project settings.
+
+    The action does respect project bundle.
 
     Args:
         project_name (str): Name of project.
@@ -311,6 +443,35 @@ def get_applications_for_context(
         list[str]: List of applications that can be used in given context.
 
     """
+    if not task_entity:
+        return []
+
+    if project_entity is not None and "data" not in project_entity:
+        project_entity = None
+
+    if project_entity is None:
+        project_entity = ayon_api.get_project(project_name)
+
+    current_project_bundle = os.getenv("AYON_BUNDLE_NAME")
+    project_data = project_entity["data"]
+    variant = get_settings_variant()
+    project_bundle = project_data.get("bundle", {}).get(variant, None)
+    use_webactions = (
+        project_bundle
+        and project_bundle != current_project_bundle
+    )
+
+    task_type = task_entity["taskType"]
+    if use_webactions:
+        return [
+            app_info.app_name
+            for app_info in get_applications_action_info_for_task(
+                project_name,
+                task_entity["id"],
+                task_type,
+            )
+        ]
+
     if project_settings is None:
         project_settings = get_project_settings(project_name)
     apps_settings = project_settings["applications"]
@@ -323,10 +484,6 @@ def get_applications_for_context(
             project_entity = ayon_api.get_project(project_name)
         apps = project_entity["attrib"].get("applications")
         return apps or []
-
-    task_type = None
-    if task_entity:
-        task_type = task_entity["taskType"]
 
     profile = filter_profiles(
         project_applications["profiles"],
