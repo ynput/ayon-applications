@@ -122,16 +122,6 @@ def _get_task_types_by_app_name(
         for task_type in project_entity.task_types
     }
     task_types_by_app_name = collections.defaultdict(set)
-    if not addon_settings["project_applications"]["enabled"]:
-        project_apps = project_entity.original_attributes.get(
-            "applications", []
-        )
-        for app_full_name, item in app_items_by_name.items():
-            if app_full_name in project_apps:
-                task_types_by_app_name[app_full_name] |= (
-                    project_task_types.copy()
-                )
-        return task_types_by_app_name
 
     profiles = copy.deepcopy(
         addon_settings["project_applications"]["profiles"]

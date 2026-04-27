@@ -315,21 +315,12 @@ def get_applications_for_context(
         project_settings = get_project_settings(project_name)
     apps_settings = project_settings["applications"]
 
-    # Use attributes to get available applications
-    # - this is older source of the information, will be deprecated in future
-    project_applications = apps_settings["project_applications"]
-    if not project_applications["enabled"]:
-        if project_entity is None:
-            project_entity = ayon_api.get_project(project_name)
-        apps = project_entity["attrib"].get("applications")
-        return apps or []
-
     task_type = None
     if task_entity:
         task_type = task_entity["taskType"]
 
     profile = filter_profiles(
-        project_applications["profiles"],
+        apps_settings["project_applications"]["profiles"],
         {"task_types": task_type}
     )
     if profile:
@@ -361,19 +352,6 @@ def get_tools_for_context(
         project_settings = get_project_settings(project_name)
     apps_settings = project_settings["applications"]
 
-    project_tools = apps_settings["project_tools"]
-    # Use attributes to get available tools
-    # - this is older source of the information, will be deprecated in future
-    if not project_tools["enabled"]:
-        tools = None
-        if task_entity:
-            tools = task_entity["attrib"].get("tools")
-
-        if tools is None and folder_entity:
-            tools = folder_entity["attrib"].get("tools")
-
-        return tools or []
-
     folder_path = task_type = task_name = None
     if folder_entity:
         folder_path = folder_entity["path"]
@@ -382,7 +360,7 @@ def get_tools_for_context(
         task_name = task_entity["name"]
 
     profile = filter_profiles(
-        project_tools["profiles"],
+        apps_settings["project_tools"]["profiles"],
         {
             "folder_paths": folder_path,
             "task_types": task_type,
