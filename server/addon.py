@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 from .constants import LABELS_BY_GROUP_NAME
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
-    get_action_manifests,
+    get_simple_action_manifests,
     get_dynamic_action_manifests,
     IDENTIFIER_PREFIX,
     IDENTIFIER_WORKFILE_PREFIX,
@@ -147,7 +147,7 @@ class ApplicationsAddon(BaseServerAddon):
         project_name: str | None = None,
         variant: str = "production",
     ) -> list["SimpleActionManifest"]:
-        return await get_action_manifests(
+        return await get_simple_action_manifests(
             self,
             project_name=project_name,
             variant=variant,
