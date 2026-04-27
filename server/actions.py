@@ -1,4 +1,3 @@
-import collections
 import os
 import copy
 import typing
@@ -10,12 +9,8 @@ from ayon_server.actions import (
     ActionContext,
 )
 
-from ayon_server.entities import ProjectEntity, TaskEntity, WorkfileEntity
-try:
-    # Added in ayon-backend 1.8.0
-    from ayon_server.forms import SimpleForm
-except ImportError:
-    SimpleForm = None
+from ayon_server.entities import TaskEntity, WorkfileEntity
+from ayon_server.forms import SimpleForm
 
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
@@ -37,7 +32,7 @@ async def get_simple_action_manifests(
     addon: "ApplicationsAddon",
     project_name: str | None,
     variant: str,
-) -> list[DynamicActionManifest]:
+) -> list[SimpleActionManifest]:
     return [
         SimpleActionManifest(
             order=100,
@@ -190,6 +185,11 @@ async def _get_task_action_manifests(
             category="Applications",
             icon=app_item["icon"],
             order=0,
+            config_fields=SimpleForm().boolean(
+                "skip_last_workfile",
+                label="Skip last workfile",
+                value=False,
+            ),
             addon_name=addon.name,
         )
         for app_item in app_items
