@@ -9,8 +9,6 @@ import logging
 import typing
 from typing import Optional, Any
 
-import ayon_api
-
 from ayon_core import AYON_CORE_ROOT
 from ayon_core.settings import get_project_settings
 from ayon_core.lib import Logger, get_ayon_username, filter_profiles
