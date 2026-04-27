@@ -2,25 +2,6 @@
 
 This module contains the server side of the Applications addon.
 It is responsible for managing settings and initial setup of addon.
-
-## Attributes backward compatibility
-Current and previous versions of applications addon did use AYON attributes
-to define applications and tools for a project and task.
-
-This system was replaced with a new system using settings. This change is
-not 100% backwards compatible, we need to make sure that older versions of
-the addon don't break initialization.
-
-Older versions of the addon used settings of other versions, but
-the settings structure did change which can cause that combination of old
-and new Applications addon on server can cause crashes.
-
-First version introduction settings does support both settings and attributes
-so the handling of older versions is part of the addon, but following versions
-have to find some clever way how to avoid the issues.
-
-Version stored under 'ATTRIBUTES_VERSION_MILESTONE' should be last released
-version that used only old attribute system.
 """
 import os
 from typing import Any
@@ -31,23 +12,12 @@ import semver
 from ayon_server.lib.postgres import Postgres
 from ayon_server.logging import logger
 from ayon_server.events import EventStream, EventModel
-from ayon_server.addons import BaseServerAddon, AddonLibrary
+from ayon_server.addons import BaseServerAddon
 from ayon_server.actions.config import set_action_config
 from ayon_server.actions.context import ActionContext
-from ayon_server.entities.core import attribute_library
 from ayon_server.entities.user import UserEntity
 from ayon_server.helpers.project_list import get_project_list
-
-try:
-    # Added in ayon-backend 1.8.0
-    from ayon_server.utils import hash_data
-except ImportError:
-    import hashlib
-    import json
-    def hash_data(data):
-        if not isinstance(data, str):
-            data = json.dumps(data)
-        return hashlib.sha256(data.encode("utf-8")).hexdigest()
+from ayon_server.utils import hash_data
 
 if TYPE_CHECKING:
     from ayon_server.actions import (
@@ -57,7 +27,6 @@ if TYPE_CHECKING:
         DynamicActionManifest,
     )
 
-from .constants import LABELS_BY_GROUP_NAME
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
 from .actions import (
     get_simple_action_manifests,
@@ -66,8 +35,6 @@ from .actions import (
     IDENTIFIER_WORKFILE_PREFIX,
     DEBUG_TERMINAL_ID,
 )
-
-ATTRIBUTES_VERSION_MILESTONE = (1, 0, 0)
 
 HOST_TO_EXT_MAPPING = {
     "aftereffects": {".aep"},
@@ -235,29 +202,6 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def get_default_settings(self):
         return self.get_settings_model()(**DEFAULT_VALUES)
-
-    async def pre_setup(self):
-        """Make sure older version of addon use the new way of attributes."""
-
-        instance = AddonLibrary.getinstance()
-        app_defs = instance.data.get(self.name)
-        old_addon = app_defs.versions.get("0.1.0")
-        if old_addon is not None:
-            # Override 'create_applications_attribute' for older versions
-            #   - avoid infinite server restart loop
-            old_addon.create_applications_attribute = (
-                self.create_applications_attribute
-            )
-
-        # Update older versions of applications addon to use new
-        #   '_update_enums'
-        # - new function skips newer addon versions without 'has_attributes'
-        version_objs, _invalid_versions = parse_versions(app_defs.versions)
-        for addon_version, version_obj in version_objs:
-            # Last release with only old attribute system
-            if version_obj < ATTRIBUTES_VERSION_MILESTONE:
-                addon = app_defs.versions[addon_version]
-                addon._update_enums = self._update_enums
 
     async def create_action_config_hash(
         self,
