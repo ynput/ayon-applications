@@ -1,4 +1,3 @@
-import collections
 import os
 import copy
 import typing
@@ -10,12 +9,8 @@ from ayon_server.actions import (
     ActionContext,
 )
 
-from ayon_server.entities import ProjectEntity, TaskEntity, WorkfileEntity
-try:
-    # Added in ayon-backend 1.8.0
-    from ayon_server.forms import SimpleForm
-except ImportError:
-    SimpleForm = None
+from ayon_server.entities import TaskEntity, WorkfileEntity
+from ayon_server.forms import SimpleForm
 
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
@@ -31,6 +26,28 @@ _GROUP_LABEL_AVAILABLE = "group_label" in _manifest_fields
 
 if typing.TYPE_CHECKING:
     from .addon import ApplicationsAddon
+
+
+async def get_simple_action_manifests(
+    addon: "ApplicationsAddon",
+    project_name: str | None,
+    variant: str,
+) -> list[SimpleActionManifest]:
+    return [
+        SimpleActionManifest(
+            order=100,
+            identifier=DEBUG_TERMINAL_ID,
+            label="Terminal",
+            category="Applications",
+            entity_type="task",
+            allow_multiselection=False,
+            icon={
+                "type": "material-symbols",
+                "name": "terminal",
+                "color": "#e8770e",
+            },
+        ),
+    ]
 
 
 def _sort_getter(item):
@@ -55,7 +72,7 @@ def get_items_for_app_groups(groups):
         if icon_name:
             icon = {
                 "type": "url",
-                "url": "{addon_url}/public/icons/" + icon_name,
+                "url": f"{{addon_url}}/public/icons/{icon_name}",
             }
 
         for variant in group["variants"]:
@@ -75,27 +92,12 @@ def get_items_for_app_groups(groups):
                 "icon": icon,
             })
 
-    items.sort(key=_sort_getter)
     return items
 
 
-def _prepare_label_kwargs(item):
-    group_label = item["group_label"]
-    variant_label = item["variant_label"]
-    if _GROUP_LABEL_AVAILABLE:
-        return {
-            "label": variant_label,
-            "group_label": group_label,
-        }
-
-    return {
-        "label": f"{group_label} {variant_label}",
-    }
-
-
-def _get_app_items_by_name(
+def _get_app_items(
     addon_settings: dict[str, Any]
-) -> dict[str, dict[str, Any]]:
+) -> list[dict[str, Any]]:
     app_settings = addon_settings["applications"]
     app_groups = app_settings.pop("additional_apps")
     for group_name, value in app_settings.items():
@@ -105,131 +107,150 @@ def _get_app_items_by_name(
         app_groups.append(value)
 
     # This is very simplified profiles logic
-    app_items = get_items_for_app_groups(app_groups)
-    return {
-        item["value"]: item
-        for item in app_items
-    }
+    return get_items_for_app_groups(app_groups)
 
 
-def _get_task_types_by_app_name(
-    app_items_by_name: dict[str, dict[str, Any]],
+def _get_applications_for_task_type(
     addon_settings: dict[str, Any],
-    project_entity: ProjectEntity
-) -> dict[str, set[str]]:
-    project_task_types = {
-        task_type["name"]
-        for task_type in project_entity.task_types
-    }
-    task_types_by_app_name = collections.defaultdict(set)
-    if not addon_settings["project_applications"]["enabled"]:
-        project_apps = project_entity.original_attributes.get(
-            "applications", []
-        )
-        for app_full_name, item in app_items_by_name.items():
-            if app_full_name in project_apps:
-                task_types_by_app_name[app_full_name] |= (
-                    project_task_types.copy()
-                )
-        return task_types_by_app_name
-
+    task_type: str,
+) -> list[dict[str, Any]]:
+    app_items = _get_app_items(addon_settings)
     profiles = copy.deepcopy(
         addon_settings["project_applications"]["profiles"]
     )
 
-    generic_apps = None
-    used_task_types = set()
+    filtered_profile = None
     for profile in profiles:
-        allowed_apps = set(app_items_by_name.keys())
-        if profile["allow_type"] != "all_applications":
-            allowed_apps &= set(profile["applications"])
-
         if not profile["task_types"]:
-            if generic_apps is None:
-                generic_apps = allowed_apps
+            if filtered_profile is None:
+                filtered_profile = profile
             continue
 
-        task_types = set(profile["task_types"]) - used_task_types
-        if not task_types:
-            continue
+        if task_type in profile["task_types"]:
+            filtered_profile = profile
+            break
 
-        for app_name in allowed_apps:
-            task_types_by_app_name[app_name] |= task_types
-
-        used_task_types |= task_types
-
-    generic_task_types = project_task_types - used_task_types
-    if generic_task_types and generic_apps:
-        for app_name in generic_apps:
-            task_types_by_app_name[app_name] |= generic_task_types
-    return task_types_by_app_name
-
-
-async def get_action_manifests(
-    addon: "ApplicationsAddon",
-    project_name: str,
-    variant: str,
-):
-    if not project_name:
+    if filtered_profile is None:
         return []
 
-    project_entity = await ProjectEntity.load(project_name)
+    if filtered_profile["allow_type"] == "all_applications":
+        app_items.sort(key=_sort_getter)
+        return app_items
+
+    app_items_by_name = {
+        app_item["value"]: app_item
+        for app_item in app_items
+    }
+
+    fitlered_items = []
+    for app_name in filtered_profile["applications"]:
+        app_item = app_items_by_name.get(app_name)
+        if app_item is not None:
+            fitlered_items.append(app_item)
+    return fitlered_items
+
+
+async def _get_task_action_manifests(
+    addon: "ApplicationsAddon",
+    context: ActionContext,
+    variant: str,
+) -> list[DynamicActionManifest]:
+    project_name = context.project_name
+    if (
+        not project_name
+        or not context.entity_ids
+        or len(context.entity_ids) != 1
+    ):
+        return []
+
+    task_id = context.entity_ids[0]
+    task_entity = await TaskEntity.load(project_name, task_id)
+    if task_entity is None:
+        return []
 
     settings_model = await addon.get_project_settings(
         project_name, variant=variant
     )
     addon_settings = settings_model.dict()
 
-    app_items_by_name = _get_app_items_by_name(addon_settings)
-
-    task_types_by_app_name = _get_task_types_by_app_name(
-        app_items_by_name,
+    app_items = _get_applications_for_task_type(
         addon_settings,
-        project_entity,
+        task_entity.task_type,
     )
-
-    output = [
-        SimpleActionManifest(
-            order=100,
-            identifier=DEBUG_TERMINAL_ID,
-            label="Terminal",
+    return [
+        DynamicActionManifest(
+            identifier=f"{IDENTIFIER_PREFIX}{app_item['value']}",
+            label=app_item["variant_label"],
+            group_label=app_item["group_label"],
             category="Applications",
-            entity_type="task",
-            allow_multiselection=False,
-            icon={
-                "type": "material-symbols",
-                "name": "terminal",
-                "color": "#e8770e",
-            },
-        ),
+            icon=app_item["icon"],
+            order=0,
+            config_fields=SimpleForm().boolean(
+                "skip_last_workfile",
+                label="Skip last workfile",
+                value=False,
+            ),
+            addon_name=addon.name,
+        )
+        for app_item in app_items
     ]
 
-    kwargs = {}
-    if SimpleForm is not None:
-        kwargs["config_fields"] = SimpleForm().boolean(
-            "skip_last_workfile",
-            label="Skip last workfile",
-            value=False,
-        )
 
-    for app_name, task_types in task_types_by_app_name.items():
-        if not task_types:
+async def _get_workfile_action_manifests(
+    addon: "ApplicationsAddon",
+    context: ActionContext,
+    variant: str,
+) -> list[DynamicActionManifest]:
+    project_name = context.project_name
+    if (
+        not project_name
+        or not context.entity_ids
+        or len(context.entity_ids) != 1
+    ):
+        return []
+
+    entity_id = context.entity_ids[0]
+    workfile_entity = await WorkfileEntity.load(
+        project_name=project_name,
+        entity_id=entity_id,
+    )
+    if not workfile_entity:
+        return []
+
+    host_name = workfile_entity.data.get("host_name")
+    if not host_name:
+        return []
+
+    task_id = workfile_entity.task_id
+    task_entity = await TaskEntity.load(project_name, task_id)
+    if task_entity is None:
+        return []
+
+    settings_model = await addon.get_project_settings(
+        project_name, variant=variant
+    )
+    addon_settings = settings_model.dict()
+
+    app_items = _get_applications_for_task_type(
+        addon_settings,
+        task_entity.task_type,
+    )
+    manifests = []
+    for app_item in app_items:
+        if app_item["host_name"] != host_name:
             continue
-        app_item = app_items_by_name[app_name]
-        output.append(
-            SimpleActionManifest(
-                identifier=f"{IDENTIFIER_PREFIX}{app_name}",
-                **_prepare_label_kwargs(app_item),
+        manifests.append(
+            DynamicActionManifest(
+                identifier=f"{IDENTIFIER_WORKFILE_PREFIX}{app_item['value']}",
+                label=app_item["variant_label"],
+                group_label=app_item["group_label"],
                 category="Applications",
                 icon=app_item["icon"],
                 order=0,
-                entity_type="task",
-                entity_subtypes=list(task_types),
-                allow_multiselection=False,
-                **kwargs
+                addon_name=addon.name,
             )
         )
-    return output
+    return manifests
 
 
 async def get_dynamic_action_manifests(
@@ -237,77 +258,17 @@ async def get_dynamic_action_manifests(
     context: ActionContext,
     variant: str,
 ) -> list[DynamicActionManifest]:
-    project_name = context.project_name
-    if not project_name or context.entity_type != "workfile":
-        return []
-
-    workfile_entities = [
-        await WorkfileEntity.load(
-            project_name=project_name,
-            entity_id=entity_id,
+    if context.entity_type == "task":
+        return await _get_task_action_manifests(
+            addon,
+            context,
+            variant,
         )
-        for entity_id in context.entity_ids
-    ]
-    host_names = set()
-    for workfile_entity in workfile_entities:
-        host_name = workfile_entity.data.get("host_name")
-        if host_name:
-            host_names.add(host_name)
 
-    if not host_names:
-        return []
-
-    settings_model = await addon.get_project_settings(
-        project_name, variant=variant
-    )
-    addon_settings = settings_model.dict()
-
-    project_entity = await ProjectEntity.load(project_name)
-
-    app_items_by_name = _get_app_items_by_name(addon_settings)
-
-    task_types_by_app_name = _get_task_types_by_app_name(
-        app_items_by_name,
-        addon_settings,
-        project_entity,
-    )
-    app_names_by_task_type = collections.defaultdict(set)
-    for app_name, task_types in task_types_by_app_name.items():
-        for task_type in task_types:
-            app_names_by_task_type[task_type].add(app_name)
-
-    task_ids = {
-        workfile_entity.task_id
-        for workfile_entity in workfile_entities
-    }
-    task_entities = [
-        await TaskEntity.load(project_name, task_id)
-        for task_id in task_ids
-    ]
-    task_types = {
-        task_entity.task_type
-        for task_entity in task_entities
-    }
-
-    collected_apps = set()
-    output = []
-    for task_type in task_types:
-        for app_name in app_names_by_task_type[task_type]:
-            if app_name in collected_apps:
-                continue
-            collected_apps.add(app_name)
-
-            app_item = app_items_by_name[app_name]
-            if app_item["host_name"] not in host_names:
-                continue
-            output.append(DynamicActionManifest(
-                identifier=f"{IDENTIFIER_WORKFILE_PREFIX}{app_name}",
-                **_prepare_label_kwargs(app_item),
-                category="Applications",
-                icon=app_item["icon"],
-                order=0,
-                addon_name=addon.name,
-                addon_version=addon.version,
-            ))
-
-    return output
+    if context.entity_type == "workfile":
+        return await _get_workfile_action_manifests(
+            addon,
+            context,
+            variant,
+        )
+    return []

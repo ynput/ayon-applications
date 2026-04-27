@@ -462,15 +462,6 @@ class ProjectToolsProfile(BaseSettingsModel):
 
 
 class ProjectApplicationsModel(BaseSettingsModel):
-    enabled: bool = SettingsField(
-        True,
-        title="Use Applications profiles instead of attribute",
-        description=(
-            "Use applications attribute on the project instead of these"
-            " profiles. Attribute based applications will"
-            " be deprecated in future versions of applications addon."
-        ),
-    )
     profiles: list[ProjectApplicationsProfile] = SettingsField(
         default_factory=list,
         title="Profiles",
@@ -478,15 +469,6 @@ class ProjectApplicationsModel(BaseSettingsModel):
 
 
 class ProjectToolsModel(BaseSettingsModel):
-    enabled: bool = SettingsField(
-        True,
-        title="Use Tools profiles instead of attribute",
-        description=(
-            "Use tools attribute on folders and tasks instead of these"
-            " profiles. Attribute based tools will"
-            " be deprecated in future versions of applications addon."
-        ),
-    )
     profiles: list[ProjectToolsProfile] = SettingsField(
         default_factory=list,
         title="Profiles",
@@ -552,7 +534,6 @@ def _get_tools_defaults():
 
 
 DEFAULT_VALUES = {
-    "only_available": True,
     "project_applications": {
         "profiles": [
             {
