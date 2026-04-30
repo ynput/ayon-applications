@@ -91,9 +91,7 @@ async def applications_enum(
         group_label = app_field.field_info.title
 
         for variant in app_group.variants:
-            # TODO uncomment when PR adding group_label is merged
-            # variant_grout_label = variant.group_label or group_label
-            variant_grout_label = group_label
+            variant_grout_label = variant.group_label or group_label
             label = f"{variant_grout_label} {variant.label or variant.name}"
             all_variants.append((
                 variant_grout_label,
