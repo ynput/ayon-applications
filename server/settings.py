@@ -188,6 +188,8 @@ class AppVariant(BaseSettingsModel):
         "",
         section="UI Options",
         title="Label",
+        placeholder="'Name' value is used",
+        description="Use variant name if empty",
     )
     group_label: str = SettingsField(
         "",
