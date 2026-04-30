@@ -5,7 +5,7 @@
             "label": "Arnold for Houdini (example)",
             "variants": [
                 {
-                    "name": "5-4-2-7",
+                    "name": "5.4.2.7",
                     "label": "",
                     "host_names": [
                         "houdini"
@@ -21,14 +21,14 @@
             "label": "Arnold for Maya (example)",
             "variants": [
                 {
-                    "name": "5-3-1-0",
+                    "name": "5.3.1.0",
                     "label": "",
                     "host_names": [],
                     "environment": "{\n    \"MTOA_VERSION\": \"5.3.1.0\"\n}",
                     "app_variants": []
                 },
                 {
-                    "name": "5-3-4-1",
+                    "name": "5.3.4.1",
                     "label": "",
                     "host_names": [],
                     "environment": "{\n    \"MTOA_VERSION\": \"5.3.4.1\"\n}",
@@ -42,7 +42,7 @@
             "label": "Redshift for Maya (example)",
             "variants": [
                 {
-                    "name": "3-5-23",
+                    "name": "3.5.23",
                     "label": "",
                     "host_names": [],
                     "environment": "{\n    \"REDSHIFT_VERSION\": \"3.5.23\"\n}",
@@ -52,11 +52,10 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"REDSHIFT_COREDATAPATH\": {\n        \"darwin\": \"{STUDIO_SW}/APP/REDSHIFT/{REDSHIFT_VERSION}/MAC\",\n        \"linux\": \"{STUDIO_SW}/APP/REDSHIFT/{REDSHIFT_VERSION}/LINUX\",\n        \"windows\": \"{STUDIO_SW}/APP/REDSHIFT/{REDSHIFT_VERSION}/WINDOWS\"\n    },\n    \"REDSHIFT_ABORTONLICENSEFAIL\": \"0\",\n    \"MAYA_MODULE_PATH\": [\n        \"{STUDIO_SW}/APP/REDSHIFT\",\n        \"{MAYA_MODULE_PATH}\"\n    ],\n    \"MAYA_PLUG_IN_PATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Plugins/Maya/{MAYA_VERSION}/nt-x86-64\",\n            \"{MAYA_PLUG_IN_PATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/{MAYA_VERSION}\",\n            \"{MAYA_PLUG_IN_PATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/{MAYA_VERSION}\",\n            \"{MAYA_PLUG_IN_PATH}\"\n        ]\n    },\n    \"MAYA_SCRIPT_PATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Plugins/Maya/Common/scripts\",\n            \"{MAYA_SCRIPT_PATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/scripts\",\n            \"{MAYA_SCRIPT_PATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/scripts\",\n            \"{MAYA_SCRIPT_PATH}\"\n        ]\n    },\n    \"REDSHIFT_PROCEDURALSPATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Procedurals\",\n            \"{REDSHIFT_PROCEDURALSPATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/procedurals\",\n            \"{REDSHIFT_PROCEDURALSPATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/procedurals\",\n            \"{REDSHIFT_PROCEDURALSPATH}\"\n        ]\n    },\n    \"REDSHIFT_MAYAEXTENSIONSPATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Plugins/Maya/{MAYA_VERSION}/nt-x86-64/extensions\",\n            \"{REDSHIFT_MAYAEXTENSIONSPATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/{MAYA_VERSION}/extensions\",\n            \"{REDSHIFT_MAYAEXTENSIONSPATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/{MAYA_VERSION}/extensions\",\n            \"{REDSHIFT_MAYAEXTENSIONSPATH}\"\n        ]\n    },\n    \"XBMLANGPATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Plugins/Maya/Common/icons\",\n            \"{XBMLANGPATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/icons\",\n            \"{XBMLANGPATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/icons\",\n            \"{XBMLANGPATH}\"\n        ]\n    },\n    \"MAYA_RENDER_DESC_PATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Plugins/Maya/Common/rendererDesc\",\n            \"{MAYA_RENDER_DESC_PATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/rendererDesc\",\n            \"{MAYA_RENDER_DESC_PATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/rendererDesc\",\n            \"{MAYA_RENDER_DESC_PATH}\"\n        ]\n    },\n    \"MAYA_CUSTOM_TEMPLATE_PATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Plugins/Maya/Common/scripts/NETemplates\",\n            \"{MAYA_CUSTOM_TEMPLATE_PATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/scripts/NETemplates\",\n            \"{MAYA_CUSTOM_TEMPLATE_PATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/redshift4maya/common/scripts/NETemplates\",\n            \"{MAYA_CUSTOM_TEMPLATE_PATH}\"\n        ]\n    },\n    \"PATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/bin\",\n            \"{PATH}\"\n        ]\n    }\n}"
         },
         {
-            "name": "redshift3dsmax",
-            "label": "Redshift for 3dsmax (example)",
+            "name": "Redshift for 3dsmax (example)",
             "variants": [
                 {
-                    "name": "3-5-19",
+                    "name": "3.5.19",
                     "label": "",
                     "host_names": [
                         "max"
@@ -90,7 +89,7 @@
             "label": "mGear for Maya (example)",
             "variants": [
                 {
-                    "name": "4-0-7",
+                    "name": "4.0.7",
                     "label": "",
                     "host_names": [],
                     "environment": "{\n    \"MGEAR_VERSION\": \"4.0.7\"\n}",
@@ -134,7 +133,7 @@
             "label": "Vray for Nuke (example)",
             "variants": [
                 {
-                    "name": "5-20-00",
+                    "name": "5.20.00",
                     "label": "",
                     "host_names": [
                         "nuke"

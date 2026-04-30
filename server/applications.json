@@ -98,6 +98,7 @@
             "variants": [
                 {
                     "name": "2024",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\3ds Max 2024\\3dsmax.exe"
@@ -114,6 +115,7 @@
                 },
                 {
                     "name": "2023",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\3ds Max 2023\\3dsmax.exe"
@@ -155,8 +157,8 @@
                     "environment": "{\n    \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021/bin/python2.7\",\n    \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021/python\",\n    \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021\"\n}"
                 },
                 {
-                    "name": "2021_1",
-                    "label": "2021.1",
+                    "name": "2021.1",
+                    "label": "",
                     "executables": {
                         "windows": [],
                         "darwin": [
@@ -174,8 +176,8 @@
                     "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021.1/bin/python2.7\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021.1/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021.1\"\n}"
                 },
                 {
-                    "name": "2024-2",
-                    "label": "2024.2",
+                    "name": "2024.2",
+                    "label": "",
                     "executables": {
                         "windows": [],
                         "darwin": [
@@ -201,7 +203,7 @@
             "variants": [
                 {
                     "name": "1.5.2",
-                    "label": "1.5.2",
+                    "label": "",
                     "executables": {
                         "windows": ["C:\\software\\gaffer-1.5.2.0-windows\\bin\\gaffer.cmd"],
                         "darwin": [],
@@ -217,8 +219,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -238,8 +240,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -259,8 +261,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -287,8 +289,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -312,8 +314,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -337,8 +339,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -369,8 +371,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -394,8 +396,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -419,8 +421,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -451,8 +453,8 @@
             "environment": "{\n    \"WORKFILES_STARTUP\": \"0\",\n    \"TAG_ASSETBUILD_STARTUP\": \"0\"\n}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -476,8 +478,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -501,8 +503,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -533,8 +535,8 @@
             "environment": "{\n    \"WORKFILES_STARTUP\": \"0\",\n    \"TAG_ASSETBUILD_STARTUP\": \"0\"\n}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -558,8 +560,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -583,8 +585,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -714,8 +716,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "19-5",
-                    "label": "19.5",
+                    "name": "19.5",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 19.5.805\\bin\\houdini.exe"
@@ -733,8 +735,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "19-0",
-                    "label": "19.0",
+                    "name": "19.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 19.0.720\\bin\\houdini.exe"
@@ -752,8 +754,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "18-5",
-                    "label": "18.5",
+                    "name": "18.5",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 18.5.759\\bin\\houdini.exe"
@@ -771,8 +773,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "20-5",
-                    "label": "20.5",
+                    "name": "20.5",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 20.5.332\\bin\\houdini.exe"
@@ -797,7 +799,7 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "3-6-5",
+                    "name": "3.6.5",
                     "label": "3.6.5 LTS",
                     "executables": {
                         "windows": [
@@ -822,7 +824,7 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "4-2",
+                    "name": "4.2",
                     "label": "4.2 LTS",
                     "executables": {
                         "linux": [],
@@ -847,8 +849,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "4-4",
-                    "label": "4.4",
+                    "name": "4.4",
+                    "label": "",
                     "executables": {
                         "linux": [],
                         "darwin": [
@@ -872,8 +874,8 @@
                     "environment": "{\n    \"AYON_BLENDER_USE_SYSTEM_PATH\": \"1\"\n}"
                 },
                 {
-                    "name": "5-0",
-                    "label": "5.0",
+                    "name": "5.0",
+                    "label": "",
                     "executables": {
                         "linux": [],
                         "darwin": [
@@ -1205,8 +1207,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "stable",
-                    "label": "Stable",
+                    "name": "Stable",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Substance 3D Painter\\Adobe Substance 3D Painter.exe"
@@ -1230,7 +1232,7 @@
             "variants": [
                 {
                     "name": "2025",
-                    "label": "2025",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Substance 3D Designer\\Adobe Substance 3D Designer.exe"
@@ -1253,8 +1255,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "10-0",
-                    "label": "10.0",
+                    "name": "10.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\SpeedTree\\SpeedTree Modeler v10.0.0\\win64\\SpeedTree_Modeler.exe"
@@ -1277,8 +1279,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "5-2",
-                    "label": "5.2",
+                    "name": "5.2",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Epic Games\\UE_5.2\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
@@ -1294,8 +1296,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "5-3",
-                    "label": "5.3",
+                    "name": "5.3",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Epic Games\\UE_5.3\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
@@ -1311,8 +1313,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "5-4",
-                    "label": "5.4",
+                    "name": "5.4",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Epic Games\\UE_5.4\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
@@ -1336,6 +1338,7 @@
             "variants": [
                 {
                     "name": "2023",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "c:\\Program Files\\Faceform\\Wrap 2023.10.2\\Wrap.exe"
@@ -1359,6 +1362,7 @@
             "variants": [
                 {
                     "name": "1.0.0",
+                    "label": "",
                     "executables": {
                         "windows": [],
                         "darwin": [],
@@ -1380,6 +1384,7 @@
             "variants": [
                 {
                     "name": "2024",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Maxon ZBrush 2024\\ZBrush.exe"
@@ -1402,8 +1407,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "7-1v2",
-                    "label": "7.1v2",
+                    "name": "7.1v2",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\3DE4_win64_r7.1v2\\bin\\3DE4.exe"
@@ -1495,8 +1500,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "2024-5",
-                    "label": "2024.5",
+                    "name": "2024.5",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Silhouette 2024.5\\Silhouette.exe"
@@ -1515,7 +1520,7 @@
             "variants": [
                 {
                     "name": "5",
-                    "label": "5",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Marmoset\\Toolbag 5\\toolbag.exe"
@@ -1538,8 +1543,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "1-0-0",
-                    "label": "1.0.0",
+                    "name": "1.0.0",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\ShapeFX Loki\\bin\\loki.exe"
@@ -1562,8 +1567,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "main",
-                    "label": "Main",
+                    "name": "Main",
+                    "label": "",
                     "redirect_output": false,
                     "executables": {
                         "windows": [
@@ -1603,8 +1608,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "12-0-0",
-                    "label": "2025",
+                    "name": "2025",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2025\\bin\\mochapro.exe"
@@ -1620,8 +1625,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "11-5-0",
-                    "label": "2024.5",
+                    "name": "2024.5",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2024.5\\bin\\mochapro.exe"
@@ -1637,8 +1642,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "8-0-0",
-                    "label": "2021",
+                    "name": "2021",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2021\\bin\\mochapro.exe"
@@ -1662,7 +1667,7 @@
             "variants": [
                 {
                     "name": "2025.2",
-                    "label": "2025",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Marvelous Designer Personal\\MarvelousDesigner_Personal.exe"
@@ -1686,7 +1691,7 @@
             "variants": [
                 {
                     "name": "2025.2",
-                    "label": "2025",
+                    "label": "",
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\CLO Standalone OnlineAuth\\CLO_Standalone_OnlineAuth_x64.exe"
