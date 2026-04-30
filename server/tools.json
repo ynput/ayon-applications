@@ -1,10 +1,12 @@
 {
     "tool_groups": [
         {
-            "name": "Arnold for Houdini (example)",
+            "name": "htoa",
+            "label": "Arnold for Houdini (example)",
             "variants": [
                 {
                     "name": "5.4.2.7",
+                    "label": "",
                     "host_names": [
                         "houdini"
                     ],
@@ -15,16 +17,19 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"HOUDINI_PATH\": [\n        \"{STUDIO_SW}/APP/HTOA/{HTOA_VERSION}/HOUDINI{HOUDINI_VERSION}/WINDOWS/htoa-6.1.3.3_rdb15014_houdini-{HTOA_VERSION}\",\n        \"{HOUDINI_PATH}\"\n    ],\n    \"PATH\": {\n        \"windows\": [\n            \"{STUDIO_SW}/APP/HTOA/{HTOA_VERSION}/HOUDINI{HOUDINI_VERSION}/WINDOWS/htoa-6.1.3.3_rdb15014_houdini-{HTOA_VERSION}/scripts/bin\",\n            \"{PATH}\"\n        ]\n    }\n}"
         },
         {
-            "name": "Arnold for Maya (example)",
+            "name": "mtoa",
+            "label": "Arnold for Maya (example)",
             "variants": [
                 {
                     "name": "5.3.1.0",
+                    "label": "",
                     "host_names": [],
                     "environment": "{\n    \"MTOA_VERSION\": \"5.3.1.0\"\n}",
                     "app_variants": []
                 },
                 {
                     "name": "5.3.4.1",
+                    "label": "",
                     "host_names": [],
                     "environment": "{\n    \"MTOA_VERSION\": \"5.3.4.1\"\n}",
                     "app_variants": []
@@ -33,10 +38,12 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"MTOA\": {\n        \"darwin\": \"{STUDIO_SW}/APP/MTOA/{MTOA_VERSION}/MAYA{MAYA_VERSION}/MAC\",\n        \"linux\": \"{STUDIO_SW}/APP/MTOA/{MTOA_VERSION}/MAYA{MAYA_VERSION}/LINUX\",\n        \"windows\": \"{STUDIO_SW}/APP/MTOA/{MTOA_VERSION}/MAYA{MAYA_VERSION}/WINDOWS\"\n    },\n    \"MAYA_MODULE_PATH\": [\n        \"{STUDIO_SW}/APP/MTOA\",\n        \"{MAYA_MODULE_PATH}\"\n    ],\n    \"DYLD_LIBRARY_PATH\": {\n        \"darwin\": \"{MTOA}/bin\"\n    },\n    \"PATH\": {\n        \"windows\": [\n            \"{MTOA}/bin\",\n            \"{PATH}\"\n        ]\n    },\n    \"XBMLANGPATH\": [\n        \"{MTOA}/icons\",\n        \"{XBMLANGPATH}\"\n    ],\n    \"MAYA_RENDER_DESC_PATH\": [\n        \"{MTOA}\",\n        \"{MAYA_RENDER_DESC_PATH}\"\n    ],\n    \"MTOA_STARTUP_LOG_VERBOSITY\": \"3\"\n}"
         },
         {
-            "name": "Redshift for Maya (example)",
+            "name": "redshiftMaya",
+            "label": "Redshift for Maya (example)",
             "variants": [
                 {
                     "name": "3.5.23",
+                    "label": "",
                     "host_names": [],
                     "environment": "{\n    \"REDSHIFT_VERSION\": \"3.5.23\"\n}",
                     "app_variants": []
@@ -49,6 +56,7 @@
             "variants": [
                 {
                     "name": "3.5.19",
+                    "label": "",
                     "host_names": [
                         "max"
                     ],
@@ -59,10 +67,12 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"REDSHIFT_COREDATAPATH\": {\n        \"darwin\": \"{STUDIO_SW}/APP/REDSHIFT/{REDSHIFT_VERSION}/MAC\",\n        \"linux\": \"{STUDIO_SW}/APP/REDSHIFT/{REDSHIFT_VERSION}/LINUX\",\n        \"windows\": \"{STUDIO_SW}/APP/REDSHIFT/{REDSHIFT_VERSION}/WINDOWS\"\n    },\n    \"REDSHIFT_ABORTONLICENSEFAIL\": \"0\",\n    \"REDSHIFT_PROCEDURALSPATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/Procedurals\",\n            \"{REDSHIFT_PROCEDURALSPATH}\"\n        ],\n        \"linux\": [\n            \"{REDSHIFT_COREDATAPATH}/procedurals\",\n            \"{REDSHIFT_PROCEDURALSPATH}\"\n        ],\n        \"darwin\": [\n            \"{REDSHIFT_COREDATAPATH}/procedurals\",\n            \"{REDSHIFT_PROCEDURALSPATH}\"\n        ]\n    },\n    \"PATH\": {\n        \"windows\": [\n            \"{REDSHIFT_COREDATAPATH}/bin\",\n            \"{PATH}\"\n        ]\n    }\n}"
         },
         {
-            "name": "Renderman for Maya (example)",
+            "name": "rendermanMaya",
+            "label": "Renderman for Maya (example)",
             "variants": [
                 {
-                    "name": "24.3 RFM",
+                    "name": "24-3-maya",
+                    "label": "24.3 RFM",
                     "host_names": [
                         "maya"
                     ],
@@ -75,10 +85,12 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"RFMTREE\": {\n        \"darwin\": \"{STUDIO_SW}/APP/RENDERMAN/{RM_VERSION}/MAC/MAYA\",\n        \"linux\": \"{STUDIO_SW}/APP/RENDERMAN/{RM_VERSION}/LINUX/MAYA\",\n        \"windows\": \"{STUDIO_SW}/APP/RENDERMAN/{RM_VERSION}/WINDOWS/MAYA\"\n    },\n    \"RMANTREE\": {\n        \"darwin\": \"{STUDIO_SW}/APP/RENDERMAN/{RM_VERSION}/MAC/RenderManProServer-{RM_VERSION}\",\n        \"linux\": \"{STUDIO_SW}/APP/RENDERMAN/{RM_VERSION}/LINUX/RenderManProServer-{RM_VERSION}\",\n        \"windows\": \"{STUDIO_SW}/APP/RENDERMAN/{RM_VERSION}/WINDOWS/RenderManProServer-{RM_VERSION}\"\n    },\n    \"MAYA_MODULE_PATH\": [\n        \"{STUDIO_SW}/APP/RENDERMAN\",\n        \"{MAYA_MODULE_PATH}\"\n    ],\n    \"PIXAR_LICENSE_FILE\": \"{STUDIO_SW}/APP/RENDERMAN/pixar.license\",\n    \"RFM_DO_NOT_CREATE_MODULE_FILE\": \"1\"\n}"
         },
         {
-            "name": "mGear for Maya (example)",
+            "name": "mGear",
+            "label": "mGear for Maya (example)",
             "variants": [
                 {
                     "name": "4.0.7",
+                    "label": "",
                     "host_names": [],
                     "environment": "{\n    \"MGEAR_VERSION\": \"4.0.7\"\n}",
                     "app_variants": []
@@ -87,10 +99,12 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"MGEAR_ROOT\": \"{STUDIO_SW}/APP/MGEAR/{MGEAR_VERSION}/MAYA{MAYA_VERSION}/windows/x64\",\n    \"MAYA_MODULE_PATH\": [\n        \"{STUDIO_SW}/APP/MGEAR/{MGEAR_VERSION}/release\",\n        \"{MAYA_MODULE_PATH}\"\n    ]\n}"
         },
         {
-            "name": "Yeti for Maya (example)",
+            "name": "yetiMaya",
+            "label": "Yeti for Maya (example)",
             "variants": [
                 {
                     "name": "4.2.11",
+                    "label": "",
                     "host_names": [],
                     "environment": "{\n    \"YETI_VERSION\": \"4.2.11\"\n}",
                     "app_variants": []
@@ -99,10 +113,12 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"YETI_HOME\": {\n        \"darwin\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/MAC\",\n        \"linux\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/LINUX\",\n        \"windows\": \"{STUDIO_SW}/APP/YETI/{YETI_VERSION}/MAYA{MAYA_VERSION}/WINDOWS\"\n    },\n    \"YETI_TMP\": {\n        \"windows\": \"C:/temp\",\n        \"darwin\": \"/tmp\",\n        \"linux\": \"/tmp\"\n    },\n    \"MAYA_MODULE_PATH\": [\n        \"{STUDIO_SW}/APP/YETI\",\n        \"{MAYA_MODULE_PATH}\"\n    ]\n}"
         },
         {
-            "name": "Vray for Maya (example)",
+            "name": "vrayMaya",
+            "label": "Vray for Maya (example)",
             "variants": [
                 {
                     "name": "6.10.01",
+                    "label": "",
                     "host_names": [
                         "maya"
                     ],
@@ -113,10 +129,12 @@
             "environment": "{\n    \"_comment_\": \"{STUDIO_SW} points to software repository. Can be defined in Core addon globally\",\n\n    \"MAYA_MODULE_PATH\": {\n        \"windows\": [\n            \"{STUDIO_SW}/APP/VRAY/{VRAY_VERSION}/MAYA{MAYA_VERSION}/WINDOWS/maya_root/modules\",\n            \"{MAYA_MODULE_PATH}\"\n        ],\n        \"linux\": [\n            \"{STUDIO_SW}/APP/VRAY/{VRAY_VERSION}/MAYA{MAYA_VERSION}/LINUX/maya_root/modules\",\n            \"{MAYA_MODULE_PATH}\"\n        ],\n        \"darwin\": [\n            \"{STUDIO_SW}/APP/VRAY/{VRAY_VERSION}/MAYA{MAYA_VERSION}/MAC/maya_root/modules\",\n            \"{MAYA_MODULE_PATH}\"\n        ]\n    },\n    \"VRAY_AUTH_CLIENT_FILE_PATH\": \"{STUDIO_SW}/APP/VRAY\"\n}"
         },
         {
-            "name": "Vray for Nuke (example)",
+            "name": "vraynuke",
+            "label": "Vray for Nuke (example)",
             "variants": [
                 {
                     "name": "5.20.00",
+                    "label": "",
                     "host_names": [
                         "nuke"
                     ],
