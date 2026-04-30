@@ -94,11 +94,11 @@ async def applications_enum(
             # TODO uncomment when PR adding group_label is merged
             # variant_grout_label = variant.group_label or group_label
             variant_grout_label = group_label
-
+            label = f"{variant_grout_label} {variant.label or variant.name}"
             all_variants.append((
                 variant_grout_label,
                 {
-                    "label": f"{variant_grout_label} {variant.name}",
+                    "label": label,
                     "value": f"{group_name}/{variant.name}",
                 }
             ))
@@ -111,19 +111,17 @@ async def applications_enum(
         if not additional_app.variants:
             continue
 
-        group_label = additional_app.name
-        if not group_label:
-            group_label = group_name
+        group_label = additional_app.label or group_name
 
         for variant in additional_app.variants:
             # TODO uncomment when PR adding group_label is merged
             # variant_grout_label = variant.group_label or group_label
             variant_grout_label = group_label
-
+            label = f"{variant_grout_label} {variant.label or variant.name}"
             all_variants.append((
                 variant_grout_label,
                 {
-                    "label": f"{variant_grout_label} {variant.name}",
+                    "label": label,
                     "value": f"{group_name}/{variant.name}",
                 }
             ))
@@ -147,9 +145,10 @@ async def tools_enum(
     enum_variants = []
     for tool_group in settings.tool_groups:
         group_name = tool_group.name
+        group_label = tool_group.label or group_name
         enum_variants.extend([
             {
-                "label": f"{group_name} {variant.name}",
+                "label": f"{group_label} {variant.label or variant.name}",
                 "value": f"{group_name}/{variant.name}",
             }
             for variant in tool_group.variants
@@ -182,6 +181,7 @@ class MultiplatformStrList(BaseSettingsModel):
 
 class AppVariant(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
+    label: str = SettingsField("", title="Label")
     group_label: str = SettingsField(
         "",
         title="Group label",
@@ -255,6 +255,7 @@ class AppGroup(BaseSettingsModel):
 class AdditionalAppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     name: str = SettingsField("", title="Name")
+    label: str = SettingsField("", title="Label")
     host_name: str = SettingsField("", title="Host name")
     icon: str = SettingsField("", title="Icon")
     environment: str = SettingsField(
@@ -294,6 +295,7 @@ class AdditionalAppGroup(BaseSettingsModel):
 
 class ToolVariantModel(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
+    label: str = SettingsField("", title="Label")
     host_names: list[str] = SettingsField(default_factory=list, title="Hosts")
     app_variants: list[str] = SettingsField(
         default_factory=list,
@@ -325,6 +327,7 @@ class ToolVariantModel(BaseSettingsModel):
 
 class ToolGroupModel(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
+    label: str = SettingsField("", title="Label")
     environment: str = SettingsField(
         default="{}",
         title="Environments",
