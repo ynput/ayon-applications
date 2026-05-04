@@ -73,6 +73,7 @@ def get_items_for_app_groups(groups):
                 "group_label": variant_group_label,
                 "variant_label": variant_label,
                 "icon": icon,
+                "show_grouped": variant["show_grouped"],
             })
 
     items.sort(key=_sort_getter)
@@ -82,7 +83,7 @@ def get_items_for_app_groups(groups):
 def _prepare_label_kwargs(item):
     group_label = item["group_label"]
     variant_label = item["variant_label"]
-    if _GROUP_LABEL_AVAILABLE:
+    if _GROUP_LABEL_AVAILABLE and item["show_grouped"]:
         return {
             "label": variant_label,
             "group_label": group_label,

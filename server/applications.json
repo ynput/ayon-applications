@@ -8,6 +8,7 @@
                 {
                     "name": "2026",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2026\\bin\\maya.exe"
@@ -29,6 +30,7 @@
                 {
                     "name": "2025",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2025\\bin\\maya.exe"
@@ -50,6 +52,7 @@
                 {
                     "name": "2024",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2024\\bin\\maya.exe"
@@ -71,6 +74,7 @@
                 {
                     "name": "2023",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\Maya2023\\bin\\maya.exe"
@@ -138,6 +142,7 @@
                 {
                     "name": "2021",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [],
                         "darwin": [
@@ -157,6 +162,7 @@
                 {
                     "name": "2021_1",
                     "label": "2021.1",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [],
                         "darwin": [
@@ -176,6 +182,7 @@
                 {
                     "name": "2024-2",
                     "label": "2024.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [],
                         "darwin": [
@@ -202,6 +209,7 @@
                 {
                     "name": "1.5.2",
                     "label": "1.5.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": ["C:\\software\\gaffer-1.5.2.0-windows\\bin\\gaffer.cmd"],
                         "darwin": [],
@@ -219,6 +227,7 @@
                 {
                     "name": "15-0",
                     "label": "15.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -240,6 +249,7 @@
                 {
                     "name": "14-0",
                     "label": "14.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -261,6 +271,7 @@
                 {
                     "name": "13-2",
                     "label": "13.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -289,6 +300,7 @@
                 {
                     "name": "15-0",
                     "label": "15.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -314,6 +326,7 @@
                 {
                     "name": "14-0",
                     "label": "14.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -339,6 +352,7 @@
                 {
                     "name": "13-2",
                     "label": "13.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -371,6 +385,7 @@
                 {
                     "name": "15-0",
                     "label": "15.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -396,6 +411,7 @@
                 {
                     "name": "14-0",
                     "label": "14.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -421,6 +437,7 @@
                 {
                     "name": "13-2",
                     "label": "13.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -453,6 +470,7 @@
                 {
                     "name": "15-0",
                     "label": "15.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -478,6 +496,7 @@
                 {
                     "name": "14-0",
                     "label": "14.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -503,6 +522,7 @@
                 {
                     "name": "13-2",
                     "label": "13.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -535,6 +555,7 @@
                 {
                     "name": "15-0",
                     "label": "15.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke15.0v2\\Nuke15.0.exe"
@@ -560,6 +581,7 @@
                 {
                     "name": "14-0",
                     "label": "14.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke14.0v5\\Nuke14.0.exe"
@@ -585,6 +607,7 @@
                 {
                     "name": "13-2",
                     "label": "13.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Nuke13.2v5\\Nuke13.2.exe"
@@ -617,6 +640,7 @@
                 {
                     "name": "20",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blackmagic Design\\Fusion 20\\Fusion.exe"
@@ -634,6 +658,7 @@
                 {
                     "name": "19",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blackmagic Design\\Fusion 19\\Fusion.exe"
@@ -651,6 +676,7 @@
                 {
                     "name": "18",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blackmagic Design\\Fusion 18\\Fusion.exe"
@@ -668,6 +694,7 @@
                 {
                     "name": "17",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blackmagic Design\\Fusion 17\\Fusion.exe"
@@ -692,6 +719,7 @@
                 {
                     "name": "stable",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:/Program Files/Blackmagic Design/DaVinci Resolve/Resolve.exe"
@@ -716,6 +744,7 @@
                 {
                     "name": "19-5",
                     "label": "19.5",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 19.5.805\\bin\\houdini.exe"
@@ -735,6 +764,7 @@
                 {
                     "name": "19-0",
                     "label": "19.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 19.0.720\\bin\\houdini.exe"
@@ -754,6 +784,7 @@
                 {
                     "name": "18-5",
                     "label": "18.5",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 18.5.759\\bin\\houdini.exe"
@@ -773,6 +804,7 @@
                 {
                     "name": "20-5",
                     "label": "20.5",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Side Effects Software\\Houdini 20.5.332\\bin\\houdini.exe"
@@ -799,6 +831,7 @@
                 {
                     "name": "3-6-5",
                     "label": "3.6.5 LTS",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Blender Foundation\\Blender 3.6\\blender.exe"
@@ -824,6 +857,7 @@
                 {
                     "name": "4-2",
                     "label": "4.2 LTS",
+                    "show_grouped": true,
                     "executables": {
                         "linux": [],
                         "darwin": [
@@ -849,6 +883,7 @@
                 {
                     "name": "4-4",
                     "label": "4.4",
+                    "show_grouped": true,
                     "executables": {
                         "linux": [],
                         "darwin": [
@@ -874,6 +909,7 @@
                 {
                     "name": "5-0",
                     "label": "5.0",
+                    "show_grouped": true,
                     "executables": {
                         "linux": [],
                         "darwin": [
@@ -907,6 +943,7 @@
                 {
                     "name": "22",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "c:\\Program Files (x86)\\Toon Boom Animation\\Toon Boom Harmony 22 Premium\\win64\\bin\\HarmonyPremium.exe"
@@ -926,6 +963,7 @@
                 {
                     "name": "21",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "c:\\Program Files (x86)\\Toon Boom Animation\\Toon Boom Harmony 21 Premium\\win64\\bin\\HarmonyPremium.exe"
@@ -952,6 +990,7 @@
                 {
                     "name": "animation_11-64bits",
                     "label": "11 (64bits)",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\TVPaint Developpement\\TVPaint Animation 11 (64bits)\\TVPaint Animation 11 (64bits).exe"
@@ -969,6 +1008,7 @@
                 {
                     "name": "animation_11-32bits",
                     "label": "11 (32bits)",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files (x86)\\TVPaint Developpement\\TVPaint Animation 11 (32bits)\\TVPaint Animation 11 (32bits).exe"
@@ -993,6 +1033,7 @@
                 {
                     "name": "2023",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2023\\Photoshop.exe"
@@ -1012,6 +1053,7 @@
                 {
                     "name": "2024",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2024\\Photoshop.exe"
@@ -1031,6 +1073,7 @@
                 {
                     "name": "2025",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Photoshop 2025\\Photoshop.exe"
@@ -1057,6 +1100,7 @@
                 {
                     "name": "2023",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2023\\Support Files\\AfterFX.exe"
@@ -1076,6 +1120,7 @@
                 {
                     "name": "2024",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2024\\Support Files\\AfterFX.exe"
@@ -1095,6 +1140,7 @@
                 {
                     "name": "2025",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe After Effects 2025\\Support Files\\AfterFX.exe"
@@ -1121,6 +1167,7 @@
                 {
                     "name": "2023",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2023\\Adobe Premiere Pro.exe"
@@ -1140,6 +1187,7 @@
                 {
                     "name": "2024",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2024\\Adobe Premiere Pro.exe"
@@ -1159,6 +1207,7 @@
                 {
                     "name": "2025",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2025\\Adobe Premiere Pro.exe"
@@ -1185,6 +1234,7 @@
                 {
                     "name": "local",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [],
                         "darwin": [],
@@ -1207,6 +1257,7 @@
                 {
                     "name": "stable",
                     "label": "Stable",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Substance 3D Painter\\Adobe Substance 3D Painter.exe"
@@ -1231,6 +1282,7 @@
                 {
                     "name": "2025",
                     "label": "2025",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Adobe\\Adobe Substance 3D Designer\\Adobe Substance 3D Designer.exe"
@@ -1255,6 +1307,7 @@
                 {
                     "name": "10-0",
                     "label": "10.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\SpeedTree\\SpeedTree Modeler v10.0.0\\win64\\SpeedTree_Modeler.exe"
@@ -1279,6 +1332,7 @@
                 {
                     "name": "5-2",
                     "label": "5.2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Epic Games\\UE_5.2\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
@@ -1296,6 +1350,7 @@
                 {
                     "name": "5-3",
                     "label": "5.3",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Epic Games\\UE_5.3\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
@@ -1313,6 +1368,7 @@
                 {
                     "name": "5-4",
                     "label": "5.4",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Epic Games\\UE_5.4\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
@@ -1336,6 +1392,8 @@
             "variants": [
                 {
                     "name": "2023",
+                    "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "c:\\Program Files\\Faceform\\Wrap 2023.10.2\\Wrap.exe"
@@ -1359,6 +1417,8 @@
             "variants": [
                 {
                     "name": "1.0.0",
+                    "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [],
                         "darwin": [],
@@ -1380,6 +1440,8 @@
             "variants": [
                 {
                     "name": "2024",
+                    "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Maxon ZBrush 2024\\ZBrush.exe"
@@ -1404,6 +1466,7 @@
                 {
                     "name": "7-1v2",
                     "label": "7.1v2",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\3DE4_win64_r7.1v2\\bin\\3DE4.exe"
@@ -1423,6 +1486,7 @@
                 {
                     "name": "2025",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\MotionBuilder 2025\\bin\\x64\\motionbuilder.exe"
@@ -1435,6 +1499,7 @@
                 {
                     "name": "2024",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Autodesk\\MotionBuilder 2024\\bin\\x64\\motionbuilder.exe"
@@ -1454,6 +1519,7 @@
                 {
                     "name": "2025",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Maxon Cinema 4D 2025\\Cinema 4D.exe"
@@ -1466,6 +1532,7 @@
                 {
                     "name": "2024",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Maxon Cinema 4D 2024\\Cinema 4D.exe"
@@ -1478,6 +1545,7 @@
                 {
                     "name": "2023",
                     "label": "",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Maxon Cinema 4D 2023\\Cinema 4D.exe"
@@ -1497,6 +1565,7 @@
                 {
                     "name": "2024-5",
                     "label": "2024.5",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Silhouette 2024.5\\Silhouette.exe"
@@ -1516,6 +1585,7 @@
                 {
                     "name": "5",
                     "label": "5",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Marmoset\\Toolbag 5\\toolbag.exe"
@@ -1540,6 +1610,7 @@
                 {
                     "name": "1-0-0",
                     "label": "1.0.0",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\ShapeFX Loki\\bin\\loki.exe"
@@ -1564,6 +1635,7 @@
                 {
                     "name": "main",
                     "label": "Main",
+                    "show_grouped": true,
                     "redirect_output": false,
                     "executables": {
                         "windows": [
@@ -1605,6 +1677,7 @@
                 {
                     "name": "12-0-0",
                     "label": "2025",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2025\\bin\\mochapro.exe"
@@ -1622,6 +1695,7 @@
                 {
                     "name": "11-5-0",
                     "label": "2024.5",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2024.5\\bin\\mochapro.exe"
@@ -1639,6 +1713,7 @@
                 {
                     "name": "8-0-0",
                     "label": "2021",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\BorisFX\\Mocha Pro 2021\\bin\\mochapro.exe"
@@ -1663,6 +1738,7 @@
                 {
                     "name": "2025.2",
                     "label": "2025",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\Marvelous Designer Personal\\MarvelousDesigner_Personal.exe"
@@ -1687,6 +1763,7 @@
                 {
                     "name": "2025.2",
                     "label": "2025",
+                    "show_grouped": true,
                     "executables": {
                         "windows": [
                             "C:\\Program Files\\CLO Standalone OnlineAuth\\CLO_Standalone_OnlineAuth_x64.exe"

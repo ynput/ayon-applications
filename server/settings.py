@@ -184,15 +184,29 @@ class MultiplatformStrList(BaseSettingsModel):
 
 class AppVariant(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
+    label: str = SettingsField(
+        "",
+        section="UI Options",
+        title="Label",
+        placeholder="'Name' value is used",
+        description="Use variant name if empty",
+    )
     group_label: str = SettingsField(
         "",
         title="Group label",
         placeholder="Override group label for this variant",
         description="Override group label used for UI purposes.",
     )
+    show_grouped: bool = SettingsField(
+        default=True,
+        title="Group in UI",
+        description="Variant will be grouped by group label in UI.",
+    )
+
     executables: MultiplatformStrList = SettingsField(
-        default_factory=MultiplatformStrList, title="Executables"
+        default_factory=MultiplatformStrList,
+        section="Launch Options",
+        title="Executables",
     )
     arguments: MultiplatformStrList = SettingsField(
         default_factory=MultiplatformStrList, title="Arguments"
