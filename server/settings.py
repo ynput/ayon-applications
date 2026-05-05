@@ -226,6 +226,17 @@ class AppVariant(BaseSettingsModel):
         )
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application variant ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("environment")
     def validate_json(cls, value):
         return validate_json_dict(value)
@@ -278,6 +289,17 @@ class AdditionalAppGroup(BaseSettingsModel):
         section="Variants",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application group ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("variants")
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
@@ -305,6 +327,17 @@ class ToolVariantModel(BaseSettingsModel):
         syntax="json",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool variant ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("environment")
     def validate_json(cls, value):
         return validate_json_dict(value)
@@ -320,6 +353,17 @@ class ToolGroupModel(BaseSettingsModel):
         syntax="json",
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool group ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
