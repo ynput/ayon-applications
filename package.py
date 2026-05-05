@@ -1,6 +1,6 @@
 name = "applications"
 title = "Applications"
-version = "1.3.7+syntheyes"
+version = "1.3.7"
 
 client_dir = "ayon_applications"
 
