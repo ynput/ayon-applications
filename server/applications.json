@@ -162,8 +162,8 @@
                     "environment": "{\n    \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021/bin/python2.7\",\n    \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021/python\",\n    \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021\"\n}"
                 },
                 {
-                    "name": "2021_1",
-                    "label": "2021.1",
+                    "name": "2021.1",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [],
@@ -182,8 +182,8 @@
                     "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2021.1/bin/python2.7\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2021.1/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2021.1\"\n}"
                 },
                 {
-                    "name": "2024-2",
-                    "label": "2024.2",
+                    "name": "2024.2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [],
@@ -227,8 +227,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -249,8 +249,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -271,8 +271,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -300,8 +300,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -326,8 +326,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -352,8 +352,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -385,8 +385,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -411,8 +411,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -437,8 +437,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -470,8 +470,8 @@
             "environment": "{\n    \"WORKFILES_STARTUP\": \"0\",\n    \"TAG_ASSETBUILD_STARTUP\": \"0\"\n}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -496,8 +496,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -522,8 +522,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -555,8 +555,8 @@
             "environment": "{\n    \"WORKFILES_STARTUP\": \"0\",\n    \"TAG_ASSETBUILD_STARTUP\": \"0\"\n}",
             "variants": [
                 {
-                    "name": "15-0",
-                    "label": "15.0",
+                    "name": "15.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -581,8 +581,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "14-0",
-                    "label": "14.0",
+                    "name": "14.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -607,8 +607,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "13-2",
-                    "label": "13.2",
+                    "name": "13.2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -744,8 +744,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "19-5",
-                    "label": "19.5",
+                    "name": "19.5",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -764,8 +764,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "19-0",
-                    "label": "19.0",
+                    "name": "19.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -784,8 +784,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "18-5",
-                    "label": "18.5",
+                    "name": "18.5",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -804,8 +804,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "20-5",
-                    "label": "20.5",
+                    "name": "20.5",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -831,7 +831,7 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "3-6-5",
+                    "name": "3.6.5",
                     "label": "3.6.5 LTS",
                     "show_grouped": true,
                     "executables": {
@@ -857,7 +857,7 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "4-2",
+                    "name": "4.2",
                     "label": "4.2 LTS",
                     "show_grouped": true,
                     "executables": {
@@ -883,8 +883,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "4-4",
-                    "label": "4.4",
+                    "name": "4.4",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "linux": [],
@@ -909,8 +909,8 @@
                     "environment": "{\n    \"AYON_BLENDER_USE_SYSTEM_PATH\": \"1\"\n}"
                 },
                 {
-                    "name": "5-0",
-                    "label": "5.0",
+                    "name": "5.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "linux": [],
@@ -1307,8 +1307,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "10-0",
-                    "label": "10.0",
+                    "name": "10.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1332,8 +1332,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "5-2",
-                    "label": "5.2",
+                    "name": "5.2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1350,8 +1350,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "5-3",
-                    "label": "5.3",
+                    "name": "5.3",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1368,8 +1368,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "5-4",
-                    "label": "5.4",
+                    "name": "5.4",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1466,8 +1466,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "7-1v2",
-                    "label": "7.1v2",
+                    "name": "7.1v2",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1565,8 +1565,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "2024-5",
-                    "label": "2024.5",
+                    "name": "2024.5",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1610,8 +1610,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "1-0-0",
-                    "label": "1.0.0",
+                    "name": "1.0.0",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1677,8 +1677,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "12-0-0",
-                    "label": "2025",
+                    "name": "2025",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1695,8 +1695,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "11-5-0",
-                    "label": "2024.5",
+                    "name": "2024.5",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1713,8 +1713,8 @@
                     "environment": "{}"
                 },
                 {
-                    "name": "8-0-0",
-                    "label": "2021",
+                    "name": "2021",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1739,7 +1739,7 @@
             "variants": [
                 {
                     "name": "2025.2",
-                    "label": "2025",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
@@ -1764,7 +1764,7 @@
             "variants": [
                 {
                     "name": "2025.2",
-                    "label": "2025",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
