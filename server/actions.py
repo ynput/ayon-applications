@@ -62,14 +62,18 @@ def get_items_for_app_groups(groups):
             variant_name = variant["name"]
             if not variant_name:
                 continue
+            variant_group_label = variant["group_label"]
+            if not variant_group_label:
+                variant_group_label = group_label
             variant_label = variant["label"] or variant_name
             full_name = f"{group_name}/{variant_name}"
             items.append({
                 "host_name": group["host_name"],
                 "value": full_name,
-                "group_label": group_label,
+                "group_label": variant_group_label,
                 "variant_label": variant_label,
                 "icon": icon,
+                "show_grouped": variant["show_grouped"],
             })
 
     items.sort(key=_sort_getter)
@@ -79,7 +83,7 @@ def get_items_for_app_groups(groups):
 def _prepare_label_kwargs(item):
     group_label = item["group_label"]
     variant_label = item["variant_label"]
-    if _GROUP_LABEL_AVAILABLE:
+    if _GROUP_LABEL_AVAILABLE and item["show_grouped"]:
         return {
             "label": variant_label,
             "group_label": group_label,
