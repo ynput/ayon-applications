@@ -233,7 +233,7 @@ class AppVariant(BaseSettingsModel):
 
         if "/" in value:
             raise BadRequestException(
-                f"Application variant ({value}) can't contain '/'"
+                f"Application variant '{value}' can't contain '/'"
             )
         return value
 
