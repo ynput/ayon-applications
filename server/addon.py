@@ -37,6 +37,10 @@ from ayon_server.actions.context import ActionContext
 from ayon_server.entities.core import attribute_library
 from ayon_server.entities.user import UserEntity
 from ayon_server.helpers.project_list import get_project_list
+from ayon_server.bundles.project_bundles import (
+    has_project_bundle,
+    get_project_bundle_addons,
+)
 
 try:
     # Added in ayon-backend 1.8.0
@@ -59,6 +63,12 @@ if TYPE_CHECKING:
 
 from .constants import LABELS_BY_GROUP_NAME
 from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
+from .utils import (
+    ApplicationItem,
+    ToolItem,
+    get_application_items,
+    get_tool_items,
+)
 from .actions import (
     get_action_manifests,
     get_dynamic_action_manifests,
@@ -342,6 +352,64 @@ class ApplicationsAddon(BaseServerAddon):
             prj_tools["enabled"] = False
         return overrides
 
+    async def get_application_items(
+        self, project_name: str | None, variant: str
+    ) -> list[ApplicationItem]:
+        if project_name is None:
+            settings = await self.get_studio_settings(variant=variant)
+        else:
+            settings = await self.get_project_settings(
+                project_name, variant=variant
+            )
+        return get_application_items(settings.dict())
+
+    async def get_tool_items(
+        self, project_name: str | None, variant: str
+    ) -> list[ToolItem]:
+        if project_name is None:
+            settings = await self.get_studio_settings(variant=variant)
+        else:
+            settings = await self.get_project_settings(
+                project_name, variant=variant
+            )
+        return get_tool_items(settings.dict())
+
+    async def get_applications_for_context(
+        self, project_name: str | None, variant: str
+    ) -> list[ApplicationItem]:
+        """Get applications available for a given context.
+
+        This method can be used by other addons to get applciations available
+            for a given project and variant. It will return applciations based
+            on variant and project bundle if project has any.
+
+        Will work only if the addon version is new enough to have
+            'get_tool_items' method, otherwise it will return empty list.
+
+        """
+        addon = await self._get_addon_for_context(project_name, variant)
+        if hasattr(addon, "get_application_items"):
+            return await addon.get_application_items(project_name, variant)
+        return []
+
+    async def get_tools_for_context(
+        self, project_name: str | None, variant: str
+    ) -> list[ToolItem]:
+        """Get tools available for a given context.
+
+        This method can be used by other addons to get tools available for
+            a given project and variant. It will return tools based on variant
+            and project bundle if project has any.
+
+        Will work only if the addon version is new enough to have
+            'get_tool_items' method, otherwise it will return empty list.
+
+        """
+        addon = await self._get_addon_for_context(project_name, variant)
+        if hasattr(addon, "get_tool_items"):
+            return await addon.get_tool_items(project_name, variant)
+        return []
+
     # --------------------------------------
     # Backwards compatibility for attributes
     # --------------------------------------
@@ -591,3 +659,38 @@ class ApplicationsAddon(BaseServerAddon):
                 "project_names": project_names,
             }
         )
+
+    async def _get_studio_bundle_addon(self, variant: str):
+        addon_library = AddonLibrary.getinstance()
+        if (addon_def := addon_library.data.get(self.name)) is None:
+            return None
+        addon_versions_by_name = (
+            await addon_library.get_addon_versions_by_variant(variant)
+        )
+        version = addon_versions_by_name.get(self.name)
+        return addon_def.get(version)
+
+    async def _get_addon_for_context(
+        self, project_name: str | None, variant: str
+    ):
+        if (
+            project_name is None
+            or variant not in ("production", "staging")
+            or not await has_project_bundle(project_name, variant=variant)
+        ):
+            return await self._get_studio_bundle_addon(variant)
+
+        addons = await get_project_bundle_addons(
+            project_name, variant=variant
+        )
+        version = addons.get(self.name)
+        if not version or version == "__disable__":
+            return None
+
+        if version == "__inherit__":
+            return await self._get_studio_bundle_addon(variant)
+
+        addon_library = AddonLibrary.getinstance()
+        if (addon_def := addon_library.data.get(self.name)) is None:
+            return None
+        return addon_def.get(version)
