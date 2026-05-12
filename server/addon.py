@@ -374,6 +374,32 @@ class ApplicationsAddon(BaseServerAddon):
             )
         return get_tool_items(settings.dict())
 
+    async def get_addon_for_context(
+        self, project_name: str | None, variant: str
+    ) -> "ApplicationsAddon" | None:
+        """Find applications addon version for a given context."""
+        if (
+            project_name is None
+            or variant not in ("production", "staging")
+            or not await has_project_bundle(project_name, variant=variant)
+        ):
+            return await self._get_studio_bundle_addon(variant)
+
+        addons = await get_project_bundle_addons(
+            project_name, variant=variant
+        )
+        version = addons.get(self.name)
+        if not version or version == "__disable__":
+            return None
+
+        if version == "__inherit__":
+            return await self._get_studio_bundle_addon(variant)
+
+        addon_library = AddonLibrary.getinstance()
+        if (addon_def := addon_library.data.get(self.name)) is None:
+            return None
+        return addon_def.get(version)
+
     async def get_applications_for_context(
         self, project_name: str | None, variant: str
     ) -> list[ApplicationItem]:
@@ -668,29 +694,4 @@ class ApplicationsAddon(BaseServerAddon):
             await addon_library.get_addon_versions_by_variant(variant)
         )
         version = addon_versions_by_name.get(self.name)
-        return addon_def.get(version)
-
-    async def _get_addon_for_context(
-        self, project_name: str | None, variant: str
-    ):
-        if (
-            project_name is None
-            or variant not in ("production", "staging")
-            or not await has_project_bundle(project_name, variant=variant)
-        ):
-            return await self._get_studio_bundle_addon(variant)
-
-        addons = await get_project_bundle_addons(
-            project_name, variant=variant
-        )
-        version = addons.get(self.name)
-        if not version or version == "__disable__":
-            return None
-
-        if version == "__inherit__":
-            return await self._get_studio_bundle_addon(variant)
-
-        addon_library = AddonLibrary.getinstance()
-        if (addon_def := addon_library.data.get(self.name)) is None:
-            return None
         return addon_def.get(version)
