@@ -39,6 +39,7 @@ def get_application_items(
 
     return get_items_for_app_groups(app_groups)
 
+
 def get_tool_items(
     addon_settings: dict[str, Any]
 ) -> list[ToolItem]:
