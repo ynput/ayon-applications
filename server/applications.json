@@ -1158,6 +1158,26 @@
                         "linux": []
                     },
                     "environment": "{}"
+                },
+                {
+                    "name": "2026",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe After Effects 2026\\Support Files\\AfterFX.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2026/Adobe After Effects 2026.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
                 }
             ]
         },
