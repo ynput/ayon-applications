@@ -62,7 +62,11 @@ if TYPE_CHECKING:
     )
 
 from .constants import LABELS_BY_GROUP_NAME
-from .settings import ApplicationsAddonSettings, DEFAULT_VALUES
+from .settings import (
+    ApplicationsAddonSettings,
+    DEFAULT_VALUES,
+    applications_enum,
+)
 from .utils import (
     ApplicationItem,
     ToolItem,
@@ -399,6 +403,57 @@ class ApplicationsAddon(BaseServerAddon):
         if (addon_def := addon_library.data.get(self.name)) is None:
             return None
         return addon_def.get(version)
+
+    async def get_applications_settings_enum(
+        self,
+        *,
+        project_name: str | None = None,
+        settings_variant: str = None,
+    ):
+        """Helper that can be used to get applications enum for settings.
+
+        Example:
+            from ayon_server.addons import AddonLibrary
+
+            async def apps_enum(project_name, addon, settings_variant):
+                addon_library = AddonLibrary.getinstance()
+                app_addons = addon_library.data.get("applications") or {}
+                for addon in app_addons.values():
+                    if not hasattr(addon, "get_applications_settings_enum"):
+                        continue
+                    return await addon.get_applications_settings_enum(
+                        project_name=project_name,
+                        settings_variant=settings_variant,
+                    )
+                return []
+
+            class SomeSettingsModel(BaseModel):
+                application: str = SettingsField(
+                    default_factory=list,
+                    title="Applications",
+                    enum_resolver=apps_enum,
+                )
+        """
+        if settings_variant is None:
+            settings_variant = "production"
+        addon = await self.get_addon_for_context(
+            project_name, settings_variant
+        )
+        if addon is self:
+            return await applications_enum(
+                project_name=project_name,
+                addon=addon,
+                settings_variant=settings_variant,
+            )
+
+        if hasattr(addon, "get_applications_settings_enum"):
+            v_enum_func = addon.get_applications_settings_enum()
+            return await v_enum_func(
+                project_name=project_name,
+                addon=addon,
+                settings_variant=settings_variant,
+            )
+        return []
 
     async def get_applications_for_context(
         self, project_name: str | None, variant: str
