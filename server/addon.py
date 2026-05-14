@@ -376,7 +376,7 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def get_addon_for_context(
         self, project_name: str | None, variant: str
-    ) -> "ApplicationsAddon" | None:
+    ) -> BaseServerAddon | None:
         """Find applications addon version for a given context."""
         if (
             project_name is None
