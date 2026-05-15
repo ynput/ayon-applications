@@ -418,9 +418,8 @@ class ApplicationsAddon(BaseServerAddon):
             async def apps_enum(project_name, addon, settings_variant):
                 addon_library = AddonLibrary.getinstance()
                 app_addons = addon_library.data.get("applications") or {}
-                for addon in app_addons.values():
-                    if not hasattr(addon, "get_applications_settings_enum"):
-                        continue
+                addon = app_addons.latest
+                if hasattr(addon, "get_applications_settings_enum"):
                     return await addon.get_applications_settings_enum(
                         project_name=project_name,
                         settings_variant=settings_variant,
