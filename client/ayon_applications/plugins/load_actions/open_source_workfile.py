@@ -12,6 +12,7 @@ from ayon_core.pipeline.actions import (
 )
 from ayon_core.style import load_stylesheet
 from qtpy import QtWidgets, QtCore
+from ayon_applications.ui.debug_terminal_launch import choose_app
 
 if TYPE_CHECKING:
     from ayon_applications.manager import Application
@@ -43,8 +44,18 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             return False
 
         for version in selection.get_selected_version_entities():
-            if version.get("attrib", {}).get("source"):
+            source = version.get("attrib", {}).get("source")
+
+            if not source:
+                return False
+
+            if source.startswith("{root"):
                 return True
+
+            elif os.path.exists(source):
+                # Assume it's a valid source workfile
+                return True
+
         return False
 
     def execute_simple_action(
@@ -88,9 +99,8 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 f"No compatible applications found for {file_ext}",
                 success=False,
             )
-
-        # Check the source app that was used to create the publish
-        source_app_full_name = version.get("data", {}).get("ayon_app_name")
+        apps_addon = addons_manager["applications"]
+        selected_app_name = choose_app(apps_addon, compatible_apps)
 
         anatomy = selection.get_project_anatomy()
         workfile_path: str = anatomy.fill_root(source_path)
@@ -100,28 +110,26 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 success=False,
             )
 
-        # Show selection dialog
-        selected_app = self._show_app_dialog(
-            compatible_apps, workfile_name, selection.project_name,
-            source_app_full_name=source_app_full_name
-        )
-
-        if not selected_app:
+        if not selected_app_name:
             return LoaderActionResult("Cancelled", success=False)
+
+        selected_app = next(
+            app for app in compatible_apps
+            if app.full_name == selected_app_name
+        )
 
         # Launch application
         try:
             self._launch_app(
                 selected_app,
                 version,
-                source_path,
+                workfile_path,
                 selection.project_name,
                 addons_manager,
-                anatomy,
             )
             return LoaderActionResult(
-                f"<b>{selected_app['label']}</b> launched with "
-                f"<b>{workfile_name}</b>",
+                f"<b>{selected_app.full_label or selected_app.label}</b> "
+                f"launched with <b>{workfile_name}</b>",
                 success=True,
             )
         except Exception as e:
