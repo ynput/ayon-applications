@@ -106,6 +106,50 @@ def _get_task_types_by_app_name(
     return task_types_by_app_name
 
 
+def _get_app_names_by_task_type(
+    app_items_by_name: dict[str, ApplicationItem],
+    addon_settings: dict[str, Any],
+    project_entity: ProjectEntity
+) -> dict[str, list[str]]:
+    profiles = copy.deepcopy(
+        addon_settings["project_applications"]["profiles"]
+    )
+
+    default_profile = None
+    profiles_by_task_type = {}
+    for profile in profiles:
+        if not profile["task_types"]:
+            if default_profile is None:
+                default_profile = profile
+            continue
+
+        for task_type in profile["task_types"]:
+            profiles_by_task_type.setdefault(task_type, profile)
+
+    app_names_by_task_type = {
+        task_type["name"]: []
+        for task_type in project_entity.task_types
+    }
+    for task_type in project_entity.task_types:
+        task_type_name = task_type["name"]
+        task_type_profile = profiles_by_task_type.get(task_type_name)
+        if task_type_profile is None:
+            task_type_profile = default_profile
+            if task_type_profile is None:
+                continue
+
+        if task_type_profile["allow_type"] == "all_applications":
+            profile_apps = list(app_items_by_name.keys())
+            profile_apps.sort()
+        else:
+            profile_apps = list(task_type_profile["applications"])
+
+        if profile_apps:
+            app_names_by_task_type[task_type_name] = profile_apps
+
+    return app_names_by_task_type
+
+
 async def get_action_manifests(
     addon: "ApplicationsAddon",
     project_name: str,
@@ -123,7 +167,7 @@ async def get_action_manifests(
 
     app_items_by_name = _get_app_items_by_name(addon_settings)
 
-    task_types_by_app_name = _get_task_types_by_app_name(
+    app_names_by_task_type = _get_app_names_by_task_type(
         app_items_by_name,
         addon_settings,
         project_entity,
@@ -153,23 +197,22 @@ async def get_action_manifests(
             value=False,
         )
 
-    for app_name, task_types in task_types_by_app_name.items():
-        if not task_types:
-            continue
-        app_item = app_items_by_name[app_name]
-        output.append(
-            SimpleActionManifest(
-                identifier=f"{IDENTIFIER_PREFIX}{app_name}",
-                **_prepare_label_kwargs(app_item),
-                category="Applications",
-                icon=app_item.icon,
-                order=0,
-                entity_type="task",
-                entity_subtypes=list(task_types),
-                allow_multiselection=False,
-                **kwargs
+    for task_type, app_names in app_names_by_task_type.items():
+        for app_name in app_names:
+            app_item = app_items_by_name[app_name]
+            output.append(
+                SimpleActionManifest(
+                    identifier=f"{IDENTIFIER_PREFIX}{app_name}",
+                    **_prepare_label_kwargs(app_item),
+                    category="Applications",
+                    icon=app_item.icon,
+                    order=0,
+                    entity_type="task",
+                    entity_subtypes=[task_type],
+                    allow_multiselection=False,
+                    **kwargs
+                )
             )
-        )
     return output
 
 
