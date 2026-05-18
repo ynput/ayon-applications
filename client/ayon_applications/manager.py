@@ -21,7 +21,7 @@ from ayon_core.lib import (
     get_linux_launcher_args,
     modules_from_path,
 )
-from ayon_core.settings import get_studio_settings
+from ayon_core.settings import get_studio_settings, get_project_settings
 
 from .constants import DEFAULT_ENV_SUBGROUP
 from .defs import (
@@ -261,6 +261,11 @@ class ApplicationLaunchContext:
         self.env_group: str = env_group
 
         self.data: dict[str, Any] = dict(data)
+        project_name = self.data.get("project_name")
+        if project_name and "project_settings" not in self.data:
+            self.data["project_settings"] = get_project_settings(
+                project_name
+            )
 
         launch_args = []
         if executable is not None:

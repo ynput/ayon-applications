@@ -54,6 +54,7 @@ DEFAULT_APP_GROUPS = {
     "marmoset",
     "loki",
     "marvelousdesigner",
+    "clo",
 }
 
 
@@ -183,9 +184,29 @@ class MultiplatformStrList(BaseSettingsModel):
 
 class AppVariant(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
+    label: str = SettingsField(
+        "",
+        section="UI Options",
+        title="Label",
+        placeholder="'Name' value is used",
+        description="Use variant name if empty",
+    )
+    group_label: str = SettingsField(
+        "",
+        title="Group label",
+        placeholder="Override group label for this variant",
+        description="Override group label used for UI purposes.",
+    )
+    show_grouped: bool = SettingsField(
+        default=True,
+        title="Group in UI",
+        description="Variant will be grouped by group label in UI.",
+    )
+
     executables: MultiplatformStrList = SettingsField(
-        default_factory=MultiplatformStrList, title="Executables"
+        default_factory=MultiplatformStrList,
+        section="Launch Options",
+        title="Executables",
     )
     arguments: MultiplatformStrList = SettingsField(
         default_factory=MultiplatformStrList, title="Arguments"
@@ -204,6 +225,17 @@ class AppVariant(BaseSettingsModel):
             " supports its own logging."
         )
     )
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application variant '{value}' can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
@@ -257,6 +289,17 @@ class AdditionalAppGroup(BaseSettingsModel):
         section="Variants",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application group ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("variants")
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
@@ -284,6 +327,17 @@ class ToolVariantModel(BaseSettingsModel):
         syntax="json",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool variant ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("environment")
     def validate_json(cls, value):
         return validate_json_dict(value)
@@ -299,6 +353,17 @@ class ToolGroupModel(BaseSettingsModel):
         syntax="json",
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool group ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
@@ -365,6 +430,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="OpenRV")
     marvelousdesigner: AppGroup = SettingsField(
         default_factory=AppGroup, title="Marvelous Designer")
+    clo: AppGroup = SettingsField(
+        default_factory=AppGroup, title="CLO")
     zbrush: AppGroup = SettingsField(
         default_factory=AppGroup, title="Zbrush")
     equalizer: AppGroup = SettingsField(
