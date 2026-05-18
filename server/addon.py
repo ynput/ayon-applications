@@ -15,7 +15,6 @@ from ayon_server.events import EventStream, EventModel
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.actions.config import set_action_config
 from ayon_server.actions.context import ActionContext
-from ayon_server.entities.core import attribute_library
 from ayon_server.entities.user import UserEntity
 from ayon_server.helpers.project_list import get_project_list
 from ayon_server.bundles.project_bundles import (
@@ -42,7 +41,6 @@ if TYPE_CHECKING:
         DynamicActionManifest,
     )
 
-from .constants import LABELS_BY_GROUP_NAME
 from .settings import (
     ApplicationsAddonSettings,
     DEFAULT_VALUES,
