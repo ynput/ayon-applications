@@ -489,6 +489,7 @@ class ProjectApplicationsProfile(BaseSettingsModel):
         default_factory=list,
         title="Applications",
         description="Applications available for filtered context",
+        widget="sortable_multiselect",
         enum_resolver=applications_enum,
     )
 
