@@ -8,6 +8,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 import semver
+from fastapi import Query
 
 from ayon_server.lib.postgres import Postgres
 from ayon_server.logging import logger
@@ -133,6 +134,12 @@ class ApplicationsAddon(BaseServerAddon):
             "bundle.updated",
             self._on_bundle_updated,
             all_nodes=False,
+        )
+
+        self.add_endpoint(
+            "apps/{project_name}/task/{task_id}",
+            self._get_task_applications_endpoint,
+            method="GET",
         )
 
     async def get_simple_actions(
@@ -541,3 +548,22 @@ class ApplicationsAddon(BaseServerAddon):
         )
         version = addon_versions_by_name.get(self.name)
         return addon_def.get(version)
+
+    async def _get_task_applications_endpoint(
+        self,
+        project_name: str,
+        task_id: str,
+        variant: str | None = Query(None, title="Settings Variant"),
+    ):
+        if variant is None:
+            variant = "production"
+        addon = self.get_addon_for_context(project_name, variant)
+        app_items = []
+        if hasattr(addon, "get_applications_items_for_task"):
+            app_items = await self.get_applications_items_for_task(
+                project_name, task_id, variant
+            )
+
+        return {
+            "applications": [app_item for app_item in app_items]
+        }

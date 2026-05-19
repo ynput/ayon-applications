@@ -217,6 +217,29 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             server_url, "addons", self.name, "icons", icon_name
         ])
 
+    def get_application_items_for_task(
+        self, project_name: str, task_id: str
+    ) -> list[dict[str, Any]]:
+        """Get application items for task.
+
+        Args:
+            project_name (str): Project name.
+            task_id (str): Task name.
+
+        Returns:
+            list[ApplicationItem]: Application items for task.
+
+        """
+        variant = get_settings_variant()
+        response = ayon_api.get(
+            f"addons/{self.name}/{self.version}/"
+            f"apps/{project_name}/task/{task_id}?variant={variant}"
+        )
+
+        return get_application_items_for_task(
+            project_name, task_name, self.manager
+        )
+
     def launch_application(
         self,
         app_name: str,
