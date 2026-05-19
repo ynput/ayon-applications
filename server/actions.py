@@ -1,6 +1,4 @@
-import copy
 import typing
-from typing import Any
 
 from ayon_server.actions import (
     SimpleActionManifest,
@@ -15,7 +13,11 @@ try:
 except ImportError:
     SimpleForm = None
 
-from .utils import get_application_items, ApplicationItem
+from .utils import (
+    get_app_names_by_task_type,
+    get_application_items,
+    ApplicationItem,
+)
 
 IDENTIFIER_PREFIX = "application.launch."
 IDENTIFIER_WORKFILE_PREFIX = "application.launch-workfile."
@@ -43,59 +45,6 @@ def _prepare_label_kwargs(item: ApplicationItem) -> dict[str, str]:
     }
 
 
-def _get_app_items_by_name(
-    addon_settings: dict[str, Any]
-) -> dict[str, ApplicationItem]:
-    return {
-        item.full_name: item
-        for item in get_application_items(addon_settings)
-    }
-
-
-def _get_app_names_by_task_type(
-    app_items_by_name: dict[str, ApplicationItem],
-    addon_settings: dict[str, Any],
-    project_entity: ProjectEntity
-) -> dict[str, list[str]]:
-    profiles = copy.deepcopy(
-        addon_settings["project_applications"]["profiles"]
-    )
-
-    default_profile = None
-    profiles_by_task_type = {}
-    for profile in profiles:
-        if not profile["task_types"]:
-            if default_profile is None:
-                default_profile = profile
-            continue
-
-        for task_type in profile["task_types"]:
-            profiles_by_task_type.setdefault(task_type, profile)
-
-    app_names_by_task_type = {
-        task_type["name"]: []
-        for task_type in project_entity.task_types
-    }
-    for task_type in project_entity.task_types:
-        task_type_name = task_type["name"]
-        task_type_profile = profiles_by_task_type.get(task_type_name)
-        if task_type_profile is None:
-            task_type_profile = default_profile
-            if task_type_profile is None:
-                continue
-
-        if task_type_profile["allow_type"] == "all_applications":
-            profile_apps = list(app_items_by_name.keys())
-            profile_apps.sort()
-        else:
-            profile_apps = list(task_type_profile["applications"])
-
-        if profile_apps:
-            app_names_by_task_type[task_type_name] = profile_apps
-
-    return app_names_by_task_type
-
-
 async def get_action_manifests(
     addon: "ApplicationsAddon",
     project_name: str,
@@ -111,12 +60,19 @@ async def get_action_manifests(
     )
     addon_settings = settings_model.dict()
 
-    app_items_by_name = _get_app_items_by_name(addon_settings)
-
-    app_names_by_task_type = _get_app_names_by_task_type(
-        app_items_by_name,
+    app_items = get_application_items(addon_settings)
+    app_items_by_name = {
+        item.full_name: item
+        for item in app_items
+    }
+    task_type_names = {
+        task_type["name"]
+        for task_type in project_entity.task_types
+    }
+    app_names_by_task_type = get_app_names_by_task_type(
         addon_settings,
-        project_entity,
+        task_type_names,
+        app_items=app_items,
     )
 
     output = [
@@ -192,15 +148,11 @@ async def get_dynamic_action_manifests(
     )
     addon_settings = settings_model.dict()
 
-    project_entity = await ProjectEntity.load(project_name)
-
-    app_items_by_name = _get_app_items_by_name(addon_settings)
-
-    app_names_by_task_type = _get_app_names_by_task_type(
-        app_items_by_name,
-        addon_settings,
-        project_entity,
-    )
+    app_items = get_application_items(addon_settings)
+    app_items_by_name = {
+        item.full_name: item
+        for item in app_items
+    }
 
     task_ids = {
         workfile_entity.task_id
@@ -214,6 +166,11 @@ async def get_dynamic_action_manifests(
         task_entity.task_type
         for task_entity in task_entities
     }
+    app_names_by_task_type = get_app_names_by_task_type(
+        addon_settings,
+        task_types,
+        app_items=app_items,
+    )
 
     collected_apps = set()
     output = []
