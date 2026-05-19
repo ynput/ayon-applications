@@ -1,21 +1,17 @@
 """Loader action to open source workfiles in Tray Browser."""
 from __future__ import annotations
 import os
-from typing import Optional, Any, TYPE_CHECKING
+from typing import Optional, Any
 
 import ayon_api
-from ayon_core.addon import IHostAddon, AddonsManager
+from ayon_core.addon import IHostAddon
 from ayon_core.pipeline.actions import (
     LoaderSimpleActionPlugin,
     LoaderActionSelection,
     LoaderActionResult,
 )
-from ayon_core.style import load_stylesheet
-from qtpy import QtWidgets, QtCore
+from ayon_core.lib import run_ayon_launcher_process
 from ayon_applications.ui.debug_terminal_launch import choose_app
-
-if TYPE_CHECKING:
-    from ayon_applications.manager import Application
 
 
 class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
@@ -120,12 +116,25 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
 
         # Launch application
         try:
-            self._launch_app(
-                selected_app,
-                version,
-                workfile_path,
-                selection.project_name,
-                addons_manager,
+            product_id = version["productId"]
+            task_id = version.get("taskId")
+            project_name = selection.project_name
+            product = ayon_api.get_product_by_id(project_name, product_id)
+            folder = ayon_api.get_folder_by_id(
+                project_name, product["folderId"]
+            )
+            task = (
+                ayon_api.get_task_by_id(project_name, task_id)
+                if task_id else None
+            )
+            run_ayon_launcher_process(
+                "addon", "applications", "launch",
+                "--project", project_name,
+                "--folder", folder["path"],
+                "--task", task["name"] if task else None,
+                "--app", selected_app.full_name,
+                "--workfile-path", workfile_path,
+                "--use-last-workfile", "0",
             )
             return LoaderActionResult(
                 f"<b>{selected_app.full_label or selected_app.label}</b> "
@@ -190,102 +199,3 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 compatible.append(app)
 
         return compatible
-
-    def _show_app_dialog(
-            self,
-            apps: list["Application"],
-            workfile_name: str,
-            project_name: str,
-            source_app_full_name: Optional[str] = None):
-        """Show application selection dialog."""
-        dialog = QtWidgets.QDialog()
-        dialog.setWindowTitle("Open Source Workfile")
-        dialog.setMinimumWidth(400)
-        dialog.setStyleSheet(load_stylesheet())
-
-        layout = QtWidgets.QVBoxLayout(dialog)
-
-        info = QtWidgets.QLabel(
-            f"<h3>Open Source Workfile</h3>"
-            f"<p><b>Workfile:</b> {workfile_name}</p>"
-            f"<p><b>Project:</b> {project_name}</p>"
-        )
-        info.setTextFormat(QtCore.Qt.RichText)
-        layout.addWidget(info)
-
-        app_list = QtWidgets.QListWidget()
-        preferred_index = 0
-        for i, app in enumerate(apps):
-            label = app.full_label or app.name
-
-            # Highlight the app that was used to create the publish so that
-            # the user knows it's the recommended one to open with.
-            if source_app_full_name and app.full_name == source_app_full_name:
-                preferred_index = i
-                label += " (used to create publish)"
-
-            # TODO: Show application icon if available
-            item = QtWidgets.QListWidgetItem(label)
-            item.setData(QtCore.Qt.UserRole, app)
-            app_list.addItem(item)
-
-        # Preselect the first entry or the one matching the source app
-        app_list.setCurrentRow(preferred_index)
-
-        layout.addWidget(app_list)
-
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addStretch()
-        cancel_btn = QtWidgets.QPushButton("Cancel")
-        open_btn = QtWidgets.QPushButton("Open")
-        open_btn.setDefault(True)
-        btn_layout.addWidget(cancel_btn)
-        btn_layout.addWidget(open_btn)
-        layout.addLayout(btn_layout)
-
-        open_btn.clicked.connect(dialog.accept)
-        cancel_btn.clicked.connect(dialog.reject)
-        app_list.itemDoubleClicked.connect(dialog.accept)
-
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            item = app_list.currentItem()
-            if not item:
-                return None
-
-            return item.data(QtCore.Qt.UserRole)
-        return None
-
-    def _launch_app(
-        self,
-        app: "Application",
-        version: dict,
-        workfile_path: str,
-        project_name: str,
-        addons_manager: AddonsManager,
-    ):
-        """Launch application with workfile."""
-
-        # This incorrectly assumes that the workfile lives in the same context
-        # as the published product. This may not always be the case, because
-        # e.g. a product may be published from a different task or folder.
-        # TODO: Correctly resolve the context of the source workfile.
-        product_id = version["productId"]
-        task_id = version.get("taskId")
-
-        product = ayon_api.get_product_by_id(project_name, product_id)
-        folder = ayon_api.get_folder_by_id(project_name, product["folderId"])
-        task = ayon_api.get_task_by_id(project_name,
-                                       task_id) if task_id else None
-
-        # TODO: Launch should perhaps not go through addon directly
-        #  but go through AYON subprocess to ensure correct bundle
-        #  is also initialized for e.g. per-project bundles, etc.
-        apps_addon = addons_manager["applications"]
-        apps_addon.launch_application(
-            app_name=app.full_name,
-            project_name=project_name,
-            folder_path=folder["path"],
-            task_name=task["name"] if task else None,
-            workfile_path=workfile_path,
-            use_last_workfile=False,
-        )
