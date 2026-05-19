@@ -1,4 +1,3 @@
-import collections
 import copy
 import typing
 from typing import Any
@@ -51,49 +50,6 @@ def _get_app_items_by_name(
         item.full_name: item
         for item in get_application_items(addon_settings)
     }
-
-
-def _get_task_types_by_app_name(
-    app_items_by_name: dict[str, ApplicationItem],
-    addon_settings: dict[str, Any],
-    project_entity: ProjectEntity
-) -> dict[str, set[str]]:
-    project_task_types = {
-        task_type["name"]
-        for task_type in project_entity.task_types
-    }
-    task_types_by_app_name = collections.defaultdict(set)
-
-    profiles = copy.deepcopy(
-        addon_settings["project_applications"]["profiles"]
-    )
-
-    generic_apps = None
-    used_task_types = set()
-    for profile in profiles:
-        allowed_apps = set(app_items_by_name.keys())
-        if profile["allow_type"] != "all_applications":
-            allowed_apps &= set(profile["applications"])
-
-        if not profile["task_types"]:
-            if generic_apps is None:
-                generic_apps = allowed_apps
-            continue
-
-        task_types = set(profile["task_types"]) - used_task_types
-        if not task_types:
-            continue
-
-        for app_name in allowed_apps:
-            task_types_by_app_name[app_name] |= task_types
-
-        used_task_types |= task_types
-
-    generic_task_types = project_task_types - used_task_types
-    if generic_task_types and generic_apps:
-        for app_name in generic_apps:
-            task_types_by_app_name[app_name] |= generic_task_types
-    return task_types_by_app_name
 
 
 def _get_app_names_by_task_type(
@@ -240,15 +196,11 @@ async def get_dynamic_action_manifests(
 
     app_items_by_name = _get_app_items_by_name(addon_settings)
 
-    task_types_by_app_name = _get_task_types_by_app_name(
+    app_names_by_task_type = _get_app_names_by_task_type(
         app_items_by_name,
         addon_settings,
         project_entity,
     )
-    app_names_by_task_type = collections.defaultdict(set)
-    for app_name, task_types in task_types_by_app_name.items():
-        for task_type in task_types:
-            app_names_by_task_type[task_type].add(app_name)
 
     task_ids = {
         workfile_entity.task_id
