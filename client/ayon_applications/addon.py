@@ -352,6 +352,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             .option("--folder", required=True, help="Folder path")
             .option("--task", required=True, help="Task name")
             .option(
+                "--workfile-path",
+                required=False,
+                help="Workfile path",
+                default=None,
+            )
+            .option(
                 "--use-last-workfile",
                 help="Use last workfile",
                 default=None,
@@ -366,6 +372,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             .option("--app", required=True, help="Full application name")
             .option("--project", required=True, help="Project name")
             .option("--task-id", required=True, help="Task id")
+            .option(
+                "--workfile-path",
+                required=False,
+                help="Workfile path",
+                default=None,
+            )
             .option(
                 "--use-last-workfile",
                 help="Use last workfile",
@@ -446,7 +458,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         folder: str,
         task: str,
         app: str,
-        use_last_workfile: Optional["BoolArg"],
+        workfile_path: Optional[str] = None,
+        use_last_workfile: Optional["BoolArg"] = None,
     ) -> None:
         """Launch application.
 
@@ -455,16 +468,26 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             folder (str): Folder path.
             task (str): Task name.
             app (str): Full application name e.g. 'maya/2024'.
-            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+            workfile_path (str | None): Workfile path to use.
+            use_last_workfile (Literal["1", "0"] | None): Explicitly tell
                 to use last workfile.
 
         """
-        if use_last_workfile is not None:
+        if workfile_path:
+            use_last_workfile = False
+
+        elif use_last_workfile is not None:
             use_last_workfile = env_value_to_bool(
                 use_last_workfile, default=None
             )
+
         self.launch_application(
-            app, project, folder, task, use_last_workfile=use_last_workfile,
+            app,
+            project,
+            folder,
+            task,
+            workfile_path=workfile_path,
+            use_last_workfile=use_last_workfile,
         )
 
     def _cli_launch_with_task_id(
@@ -472,7 +495,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         project: str,
         task_id: str,
         app: str,
-        use_last_workfile: Optional["BoolArg"],
+        workfile_path: Optional[str] = None,
+        use_last_workfile: Optional["BoolArg"] = None,
     ) -> None:
         """Launch application using project name, task id and full app name.
 
@@ -480,11 +504,15 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             project (str): Project name.
             task_id (str): Task id.
             app (str): Full application name e.g. 'maya/2024'.
-            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+            workfile_path (str | None): Workfile path to use.
+            use_last_workfile (Literal["1", "0"] | None): Explicitly tell
                 to use last workfile.
 
         """
-        if use_last_workfile is not None:
+        if workfile_path:
+            use_last_workfile = False
+
+        elif use_last_workfile is not None:
             use_last_workfile = env_value_to_bool(
                 value=use_last_workfile, default=None
             )
@@ -500,6 +528,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             project,
             folder_entity["path"],
             task_entity["name"],
+            workfile_path=workfile_path,
             use_last_workfile=use_last_workfile,
         )
 
