@@ -15,6 +15,7 @@ from ayon_server.events import EventStream, EventModel
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.actions.config import set_action_config
 from ayon_server.actions.context import ActionContext
+from ayon_server.entities import TaskEntity
 from ayon_server.entities.user import UserEntity
 from ayon_server.helpers.project_list import get_project_list
 from ayon_server.bundles.project_bundles import (
@@ -51,6 +52,7 @@ from .utils import (
     ToolItem,
     get_application_items,
     get_tool_items,
+    get_app_names_by_task_type,
 )
 from .actions import (
     get_action_manifests,
@@ -311,6 +313,35 @@ class ApplicationsAddon(BaseServerAddon):
                 project_name, variant=variant
             )
         return get_tool_items(settings.dict())
+
+    async def get_applications_items_for_task(
+        self,
+        project_name: str,
+        task_id: str,
+        variant: str,
+    ) -> list[ApplicationItem]:
+        settings = await self.get_project_settings(
+            project_name, variant=variant
+        )
+        settings_value = settings.dict()
+
+        app_items = get_application_items(settings_value)
+        app_items_by_name = {
+            app_item.full_name: app_item
+            for app_item in app_items
+        }
+
+        task_entity = await TaskEntity.load(project_name, task_id)
+        app_names_by_task_type = get_app_names_by_task_type(
+            settings_value,
+            {task_entity.task_type},
+            app_items=app_items,
+        )
+        output = []
+        for app_name in app_names_by_task_type[task_entity.task_type]:
+            app_item = app_items_by_name[app_name]
+            output.append(app_item)
+        return output
 
     async def get_addon_for_context(
         self, project_name: str | None, variant: str
