@@ -13,6 +13,7 @@ import ayon_api
 
 from ayon_core.lib import (
     run_ayon_launcher_process,
+    get_settings_variant,
     is_headless_mode_enabled,
     env_value_to_bool,
 )
@@ -222,12 +223,28 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     ) -> list[dict[str, Any]]:
         """Get application items for task.
 
+        This is meant as api for other addons to get application items for
+            specific task. It does handle project bundles and settings
+            variant. Works with version >= 1.3.7 .
+
         Args:
             project_name (str): Project name.
             task_id (str): Task name.
 
+        Example application dict (may vary based on applications
+            addon version):
+            {
+                "host_name": str
+                "full_name": str
+                "full_label": str
+                "group_label": str
+                "variant_label": str
+                "icon": dict[str, str] | None
+                "show_grouped": bool
+            }
+
         Returns:
-            list[ApplicationItem]: Application items for task.
+            list[dict]: Application items for task.
 
         """
         variant = get_settings_variant()
@@ -235,10 +252,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"addons/{self.name}/{self.version}/"
             f"apps/{project_name}/task/{task_id}?variant={variant}"
         )
-
-        return get_application_items_for_task(
-            project_name, task_name, self.manager
-        )
+        return response.data["applications"]
 
     def launch_application(
         self,
