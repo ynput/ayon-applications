@@ -43,7 +43,8 @@ class FileChangeWatcher(QtCore.QObject):
 
         Args:
             parent: Optional parent QObject.
-            debounce_ms: Milliseconds to debounce rapid events (default: 150ms).
+            debounce_ms: Milliseconds to debounce rapid events
+                (default: 150ms).
 
         """
         super().__init__(parent)
