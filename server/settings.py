@@ -184,9 +184,29 @@ class MultiplatformStrList(BaseSettingsModel):
 
 class AppVariant(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
+    label: str = SettingsField(
+        "",
+        section="UI Options",
+        title="Label",
+        placeholder="'Name' value is used",
+        description="Use variant name if empty",
+    )
+    group_label: str = SettingsField(
+        "",
+        title="Group label",
+        placeholder="Override group label for this variant",
+        description="Override group label used for UI purposes.",
+    )
+    show_grouped: bool = SettingsField(
+        default=True,
+        title="Group in UI",
+        description="Variant will be grouped by group label in UI.",
+    )
+
     executables: MultiplatformStrList = SettingsField(
-        default_factory=MultiplatformStrList, title="Executables"
+        default_factory=MultiplatformStrList,
+        section="Launch Options",
+        title="Executables",
     )
     arguments: MultiplatformStrList = SettingsField(
         default_factory=MultiplatformStrList, title="Arguments"
@@ -205,6 +225,17 @@ class AppVariant(BaseSettingsModel):
             " supports its own logging."
         )
     )
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application variant '{value}' can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
@@ -258,6 +289,17 @@ class AdditionalAppGroup(BaseSettingsModel):
         section="Variants",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application group ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("variants")
     def validate_unique_name(cls, value):
         ensure_unique_names(value)
@@ -285,6 +327,17 @@ class ToolVariantModel(BaseSettingsModel):
         syntax="json",
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool variant ({value}) can't contain '/'"
+            )
+        return value
+
     @validator("environment")
     def validate_json(cls, value):
         return validate_json_dict(value)
@@ -300,6 +353,17 @@ class ToolGroupModel(BaseSettingsModel):
         syntax="json",
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool group ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
@@ -425,6 +489,7 @@ class ProjectApplicationsProfile(BaseSettingsModel):
         default_factory=list,
         title="Applications",
         description="Applications available for filtered context",
+        widget="sortable_multiselect",
         enum_resolver=applications_enum,
     )
 
@@ -456,15 +521,6 @@ class ProjectToolsProfile(BaseSettingsModel):
 
 
 class ProjectApplicationsModel(BaseSettingsModel):
-    enabled: bool = SettingsField(
-        True,
-        title="Use Applications profiles instead of attribute",
-        description=(
-            "Use applications attribute on the project instead of these"
-            " profiles. Attribute based applications will"
-            " be deprecated in future versions of applications addon."
-        ),
-    )
     profiles: list[ProjectApplicationsProfile] = SettingsField(
         default_factory=list,
         title="Profiles",
@@ -472,15 +528,6 @@ class ProjectApplicationsModel(BaseSettingsModel):
 
 
 class ProjectToolsModel(BaseSettingsModel):
-    enabled: bool = SettingsField(
-        True,
-        title="Use Tools profiles instead of attribute",
-        description=(
-            "Use tools attribute on folders and tasks instead of these"
-            " profiles. Attribute based tools will"
-            " be deprecated in future versions of applications addon."
-        ),
-    )
     profiles: list[ProjectToolsProfile] = SettingsField(
         default_factory=list,
         title="Profiles",
@@ -546,7 +593,6 @@ def _get_tools_defaults():
 
 
 DEFAULT_VALUES = {
-    "only_available": True,
     "project_applications": {
         "profiles": [
             {
