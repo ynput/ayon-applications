@@ -9,9 +9,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING, Optional, Union
 
-from ayon_applications.process import (
-    ProcessInfo, ProcessManager, ProcessState
-)
+from ayon_applications.process import ProcessInfo, ProcessManager, ProcessState
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
 from qtpy import QtCore, QtGui, QtWidgets
@@ -37,7 +35,17 @@ class FileChangeWatcher(QtCore.QObject):
     """Qt-based file watcher with rotation handling and debounce."""
     changed = QtCore.Signal(object)  # emits Path (as object)
 
-    def __init__(self, parent=None, debounce_ms: int = 150) -> None:
+    def __init__(
+            self,
+            parent: QtCore.QObject | None = None,
+            debounce_ms: int = 150) -> None:
+        """Initialize the file watcher.
+
+        Args:
+            parent: Optional parent QObject.
+            debounce_ms: Milliseconds to debounce rapid events (default: 150ms).
+
+        """
         super().__init__(parent)
         self._watcher = QtCore.QFileSystemWatcher(self)
         self._target: Optional[Path] = None
@@ -1403,7 +1411,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             self._status_bar.showMessage(
                 "Cannot delete a descendant process from DB")
             self._set_loading_state(loading=False)
-
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa: N802
         """Apply stylesheet when the window is shown."""
