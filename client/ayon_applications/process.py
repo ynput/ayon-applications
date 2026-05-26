@@ -9,6 +9,7 @@ import platform
 import sqlite3
 import threading
 from dataclasses import dataclass
+from enum import Enum
 from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple, Optional
@@ -26,6 +27,13 @@ class ProcessIdTriplet(NamedTuple):
     start_time: Optional[float]  # the same goes for start time
 
 
+class ProcessState(Enum):
+    """State of the process."""
+    ACTIVE = 1
+    INACTIVE = 2
+    UNKNOWN = 3
+
+
 @dataclass
 class ProcessInfo:
     """Information about a process launched by the addon.
@@ -40,6 +48,9 @@ class ProcessInfo:
         pid (int): Process ID of the launched process.
         active (bool): Whether the process is currently active.
         output (Path): Output of the process.
+        start_time (float): Start time of the process in
+            seconds since the epoch.
+        created_at (str): Timestamp of when the process info was created in
 
     """
 
@@ -54,6 +65,7 @@ class ProcessInfo:
     output: Optional[Path] = None
     start_time: Optional[float] = None
     created_at: Optional[str] = None
+    state: ProcessState = ProcessState.UNKNOWN
 
     def __post_init__(self) -> None:
         """Post-initialization to compute the hash if not provided."""
@@ -307,7 +319,12 @@ class ProcessManager:
         """
         return self.get_process_info_by_pid(os.getpid())
 
-    def get_all_process_info(self) -> list[ProcessInfo]:
+    def get_all_process_info(
+            self,
+            top_count: Optional[int] = None,
+            newer_than: Optional[float] = None
+
+    ) -> list[ProcessInfo]:
         """Get all process information from the database.
 
         Returns:
@@ -315,7 +332,8 @@ class ProcessManager:
         """
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
-        cursor.execute("SELECT * FROM process_info ORDER BY created_at DESC")
+        sql = "SELECT * FROM process_info ORDER BY created_at DESC"
+        cursor.execute(sql)
         rows = cursor.fetchall()
 
         processes: list[ProcessInfo] = [
@@ -343,9 +361,29 @@ class ProcessManager:
         # (stronger protection against PID reuse).
         pid_triplets: list[ProcessIdTriplet] = []
         processes_with_pid = []
-        for proc in processes:
-            if proc.pid is None:
+        for idx, proc in enumerate(processes):
+            # Time filter takes precedence. If requested and process is not
+            # newer, skip it regardless of `top_count`.
+            if (
+                newer_than is not None
+                and (
+                    proc.start_time is None
+                    or proc.start_time <= newer_than
+                )
+            ):
+                # Keep state as UNKNOWN and active as False
                 continue
+
+            # If top_count is set, only check processes within that window.
+            if top_count is not None and idx >= top_count:
+                # Keep state as UNKNOWN and active as False
+                continue
+
+            if proc.pid is None:
+                proc.state = ProcessState.INACTIVE
+                proc.active = False
+                continue
+
             exe = proc.executable.as_posix()
             pid_triplets.append(
                 ProcessIdTriplet(proc.pid, exe, proc.start_time))
@@ -353,9 +391,14 @@ class ProcessManager:
 
         if pid_triplets:
             running_status = self._are_processes_running(pid_triplets)
-            for proc, (_, is_running) in zip(  # noqa: B905
+            for proc, (_, is_running) in zip(
                     processes_with_pid, running_status):
                 proc.active = is_running
+                proc.state = (
+                    ProcessState.ACTIVE
+                    if is_running
+                    else ProcessState.INACTIVE
+                )
 
         return processes
 
@@ -656,6 +699,7 @@ class ProcessManager:
                 )
                 # If psutil returned the process, it's currently running
                 proc_info.active = True
+                proc_info.state = ProcessState.ACTIVE
                 descendants.append(proc_info)
         return descendants
 
