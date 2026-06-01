@@ -88,7 +88,11 @@ def _get_app_names_by_task_type(
             profile_apps = list(app_items_by_name.keys())
             profile_apps.sort()
         else:
-            profile_apps = list(task_type_profile["applications"])
+            profile_apps = [
+                app_name
+                for app_name in task_type_profile["applications"]
+                if app_name in app_items_by_name
+            ]
 
         if profile_apps:
             app_names_by_task_type[task_type_name] = profile_apps
