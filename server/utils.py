@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import os
 from typing import Any
+import urllib.parse
 
 from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
@@ -61,14 +62,18 @@ def get_items_for_app_groups(groups):
         if not icon_name:
             icon_name = group.get("icon")
 
-        if icon_name:
-            icon_name = os.path.basename(icon_name)
-
         icon = None
         if icon_name:
+
+            url = urllib.parse.urlparse(icon_name)
+            if not url.scheme:
+                # it's a bare filename served from this addons public folder
+                icon_name = os.path.basename(icon_name)
+                icon_name = f"{{addon_url}}/public/icons/{icon_name}"
+
             icon = {
                 "type": "url",
-                "url": "{addon_url}/public/icons/" + icon_name,
+                "url": icon_name,
             }
 
         for variant in group["variants"]:
