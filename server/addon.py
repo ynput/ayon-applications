@@ -442,6 +442,16 @@ class ApplicationsAddon(BaseServerAddon):
         addon = await self.get_addon_for_context(project_name, variant)
         if hasattr(addon, "get_application_items"):
             return await addon.get_application_items(project_name, variant)
+
+        try:
+            return await self._guess_application_items(
+                addon, project_name, variant
+            )
+        except Exception:
+            logger.trace(
+                "Failed to collect available applications"
+                f" from applications addon '{addon.version}'."
+            )
         return []
 
     async def get_tools_for_context(
@@ -557,13 +567,72 @@ class ApplicationsAddon(BaseServerAddon):
     ):
         if variant is None:
             variant = "production"
-        app_items = []
         addon = await self.get_addon_for_context(project_name, variant)
         if hasattr(addon, "get_applications_items_for_task"):
             app_items = await self.get_applications_items_for_task(
                 project_name, task_id, variant
             )
+        else:
+            try:
+                app_items = await self._guess_application_items_for_task(
+                    addon, project_name, task_id, variant
+                )
+            except Exception:
+                app_items = []
+                logger.trace(
+                    "Failed to collect available applications"
+                    f" from applications addon '{addon.version}'."
+                )
 
         return {
             "applications": [app_item for app_item in app_items]
         }
+
+    async def _guess_application_items(
+        self,
+        addon: BaseServerAddon | None,
+        project_name: str,
+        variant: str
+    ) -> list[ApplicationItem]:
+        if addon is None:
+            return []
+
+        settings = await self.get_project_settings(
+            project_name, variant=variant
+        )
+        settings_value = settings.dict()
+
+        return get_application_items(settings_value)
+
+    async def _guess_application_items_for_task(
+        self,
+        addon: BaseServerAddon | None,
+        project_name: str,
+        task_id: str,
+        variant: str
+    ) -> list[ApplicationItem]:
+        if addon is None:
+            return []
+
+        settings = await self.get_project_settings(
+            project_name, variant=variant
+        )
+        settings_value = settings.dict()
+
+        app_items = get_application_items(settings_value)
+        app_items_by_name = {
+            app_item.full_name: app_item
+            for app_item in app_items
+        }
+
+        task_entity = await TaskEntity.load(project_name, task_id)
+        app_names_by_task_type = get_app_names_by_task_type(
+            settings_value,
+            {task_entity.task_type},
+            app_items=app_items,
+        )
+        output = []
+        for app_name in app_names_by_task_type[task_entity.task_type]:
+            app_item = app_items_by_name[app_name]
+            output.append(app_item)
+        return output
