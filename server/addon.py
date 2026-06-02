@@ -439,7 +439,7 @@ class ApplicationsAddon(BaseServerAddon):
             'get_tool_items' method, otherwise it will return empty list.
 
         """
-        addon = await self._get_addon_for_context(project_name, variant)
+        addon = await self.get_addon_for_context(project_name, variant)
         if hasattr(addon, "get_application_items"):
             return await addon.get_application_items(project_name, variant)
         return []
@@ -457,7 +457,7 @@ class ApplicationsAddon(BaseServerAddon):
             'get_tool_items' method, otherwise it will return empty list.
 
         """
-        addon = await self._get_addon_for_context(project_name, variant)
+        addon = await self.get_addon_for_context(project_name, variant)
         if hasattr(addon, "get_tool_items"):
             return await addon.get_tool_items(project_name, variant)
         return []
@@ -557,8 +557,8 @@ class ApplicationsAddon(BaseServerAddon):
     ):
         if variant is None:
             variant = "production"
-        addon = self.get_addon_for_context(project_name, variant)
         app_items = []
+        addon = await self.get_addon_for_context(project_name, variant)
         if hasattr(addon, "get_applications_items_for_task"):
             app_items = await self.get_applications_items_for_task(
                 project_name, task_id, variant
