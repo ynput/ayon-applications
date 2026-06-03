@@ -1103,7 +1103,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         # Filters
         self._top_count_spin = QtWidgets.QSpinBox()
-        self._top_count_spin.setRange(11, 1000)
+        self._top_count_spin.setRange(1, 256)
         self._top_count_spin.setValue(
             self._controller.filter_top_count or 10
         )
