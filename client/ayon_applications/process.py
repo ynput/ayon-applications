@@ -322,7 +322,7 @@ class ProcessManager:
     def get_all_process_info(
         self,
         top_count: int | None = None,
-        newer_than: float| None = None
+        newer_than: float | None = None
     ) -> list[ProcessInfo]:
         """Get all process information from the database.
 
@@ -480,7 +480,7 @@ class ProcessManager:
     def _is_process_running(
             pid: int,
             executable: str,
-            start_time: float| None = None) -> bool:
+            start_time: float | None = None) -> bool:
         """Check if a process is running using psutil.
 
         Args:

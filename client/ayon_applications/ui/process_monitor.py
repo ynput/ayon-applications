@@ -188,7 +188,7 @@ class ProcessRefreshWorker(QRunnable):
         self,
         manager: ProcessManager,
         top_count: int | None = None,
-        newer_than: float| None = None
+        newer_than: float | None = None
     ):
         """Initialize the worker."""
         super().__init__()
