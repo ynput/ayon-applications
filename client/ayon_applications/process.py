@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 from hashlib import sha256
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from ayon_core.lib import get_launcher_local_dir
 
@@ -24,7 +24,7 @@ class ProcessIdTriplet(NamedTuple):
     """Triplet of process identification values."""
     pid: int
     executable: str
-    start_time: Optional[float]  # the same goes for start time
+    start_time: float | None  # the same goes for start time
 
 
 class ProcessState(Enum):
@@ -59,12 +59,12 @@ class ProcessInfo:
     args: list[str]
     env: dict[str, str]
     cwd: str
-    hash: Optional[str] = None
-    pid: Optional[int] = None
+    hash: str | None = None
+    pid: int | None = None
     active: bool = False
-    output: Optional[Path] = None
-    start_time: Optional[float] = None
-    created_at: Optional[str] = None
+    output: Path | None = None
+    start_time: float | None = None
+    created_at: str | None = None
     state: ProcessState = ProcessState.UNKNOWN
 
     def __post_init__(self) -> None:
@@ -153,8 +153,8 @@ class ProcessManager:
     def get_process_info_hash_by_values(
         executable: Path,
         name: str,
-        pid: Optional[int] = None,
-        start_time: Optional[float] = None,
+        pid: int | None = None,
+        start_time: float | None = None,
     ) -> str:
         """Get hash of the process information by values.
 
@@ -216,7 +216,7 @@ class ProcessManager:
         )
         cnx.commit()
 
-    def get_process_info(self, process_hash: str) -> Optional[ProcessInfo]:
+    def get_process_info(self, process_hash: str) -> ProcessInfo | None:
         """Get process information by hash.
 
         Args:
@@ -249,7 +249,7 @@ class ProcessManager:
         )
 
     def get_process_info_by_name(
-        self, name: str) -> Optional[ProcessInfo]:
+        self, name: str) -> ProcessInfo | None:
         """Get process information by name.
 
         Args:
@@ -280,7 +280,7 @@ class ProcessManager:
             created_at=row[9],
         )
 
-    def get_process_info_by_pid(self, pid: int) -> Optional[ProcessInfo]:
+    def get_process_info_by_pid(self, pid: int) -> ProcessInfo | None:
         """Get process information by process id.
 
         Args:
@@ -311,7 +311,7 @@ class ProcessManager:
             created_at=row[9],
         )
 
-    def get_current_process_info(self) -> Optional[ProcessInfo]:
+    def get_current_process_info(self) -> ProcessInfo | None:
         """Get information for the current process.
 
         Returns:
@@ -320,10 +320,9 @@ class ProcessManager:
         return self.get_process_info_by_pid(os.getpid())
 
     def get_all_process_info(
-            self,
-            top_count: Optional[int] = None,
-            newer_than: Optional[float] = None
-
+        self,
+        top_count: int | None = None,
+        newer_than: float| None = None
     ) -> list[ProcessInfo]:
         """Get all process information from the database.
 
@@ -481,7 +480,7 @@ class ProcessManager:
     def _is_process_running(
             pid: int,
             executable: str,
-            start_time: Optional[float] = None) -> bool:
+            start_time: float| None = None) -> bool:
         """Check if a process is running using psutil.
 
         Args:
@@ -592,7 +591,7 @@ class ProcessManager:
         return result
 
     @staticmethod
-    def get_executable_path_by_pid(pid: int) -> Optional[Path]:
+    def get_executable_path_by_pid(pid: int) -> Path | None:
         """Get the executable path of a process by its PID using psutil.
 
         Args:
@@ -620,7 +619,7 @@ class ProcessManager:
 
     @staticmethod
     def get_process_start_time(
-            process: subprocess.Popen) -> Optional[float]:
+            process: subprocess.Popen) -> float | None:
         """Get the start time of a process using psutil.
 
         Returns:
@@ -642,7 +641,7 @@ class ProcessManager:
         return start_time
 
     @staticmethod
-    def get_process_start_time_by_pid(pid: int) -> Optional[float]:
+    def get_process_start_time_by_pid(pid: int) -> float | None:
         """Get the start time of a process by PID using psutil.
 
         Args:

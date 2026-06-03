@@ -6,8 +6,9 @@ import enum
 from datetime import datetime, timezone
 from logging import getLogger
 from pathlib import Path
+import time
 from time import perf_counter
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from ayon_applications.process import ProcessInfo, ProcessManager, ProcessState
 from ayon_core.style import load_stylesheet
@@ -28,7 +29,7 @@ DEFAULT_RELOAD_INTERVAL = 2000
 if TYPE_CHECKING:
     from types import TracebackType
 
-ModelIndex = Union[QModelIndex, QPersistentModelIndex]
+ModelIndex = QModelIndex | QPersistentModelIndex
 
 
 class FileChangeWatcher(QtCore.QObject):
@@ -49,7 +50,7 @@ class FileChangeWatcher(QtCore.QObject):
         """
         super().__init__(parent)
         self._watcher = QtCore.QFileSystemWatcher(self)
-        self._target: Optional[Path] = None
+        self._target: Path | None = None
 
         # debounce timer to coalesce bursts of events
         # QFileSystemWatcher can emit multiple events for a single change
@@ -61,7 +62,7 @@ class FileChangeWatcher(QtCore.QObject):
         self._watcher.fileChanged.connect(self._on_any_change)
         self._watcher.directoryChanged.connect(self._on_any_change)
 
-    def set_target(self, file_path: Optional[Path]) -> None:
+    def set_target(self, file_path: Path | None) -> None:
         """Start watching given file and its parent directory."""
         self.stop()
         self._target = file_path
@@ -115,10 +116,10 @@ class CatchTime:
 
     def __exit__(
             self,
-            type_: Optional[type[BaseException]],
-            value: Optional[BaseException],
-            traceback: Optional[TracebackType],
-    ) -> Optional[bool]:
+            type_: type[BaseException] | None,
+            value: BaseException | None,
+            traceback: TracebackType | None,
+    ) -> bool | None:
         """Stop timing and store elapsed time.
 
         Returns:
@@ -186,8 +187,8 @@ class ProcessRefreshWorker(QRunnable):
     def __init__(
         self,
         manager: ProcessManager,
-        top_count: Optional[int] = None,
-        newer_than: Optional[float] = None
+        top_count: int | None = None,
+        newer_than: float| None = None
     ):
         """Initialize the worker."""
         super().__init__()
@@ -272,7 +273,7 @@ class CleanupWorker(QRunnable):
     def __init__(self,
                  manager: ProcessManager,
                  cleanup_type: str,
-                 process_hash: Optional[str] = None) -> None:
+                 process_hash: str | None = None) -> None:
         """Initialize the worker.
 
         Args:
@@ -334,7 +335,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def __init__(
             self,
             manager: ProcessManager,
-            parent: Optional[QtCore.QObject] = None,
+            parent: QtCore.QObject | None = None,
             ) -> None:
         """Initialize the model.
 
@@ -382,7 +383,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                     child = parent_item.child(i, self.columns.NAME)
                     if child is None:
                         continue
-                    cproc: Optional[ProcessInfo] = child.data(
+                    cproc: ProcessInfo | None = child.data(
                         QtCore.Qt.ItemDataRole.UserRole)
                     if (
                         cproc
@@ -516,13 +517,13 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         # After updating children, refresh parent's icon
         # (parent ProcessInfo stored in UserRole)
         with contextlib.suppress(Exception):
-            parent_proc: Optional[ProcessInfo] = parent_item.data(
+            parent_proc: ProcessInfo | None = parent_item.data(
                 QtCore.Qt.ItemDataRole.UserRole
             )
             if parent_proc is not None:
                 parent_item.setIcon(self._status_icon(parent_proc))
 
-    def get_process_at_row(self, row: int) -> Optional[ProcessInfo]:
+    def get_process_at_row(self, row: int) -> ProcessInfo | None:
         """Get the ProcessInfo stored at the given row.
 
         Args:
@@ -541,7 +542,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     def get_process_at_index(
         self, index: QtCore.QModelIndex
-    ) -> Optional[ProcessInfo]:
+    ) -> ProcessInfo | None:
         """Get the ProcessInfo stored at the given index.
 
         Args:
@@ -576,7 +577,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             top_item = root.child(r, self.columns.NAME)
             if top_item is None:
                 continue
-            proc: Optional[ProcessInfo] = top_item.data(
+            proc: ProcessInfo | None = top_item.data(
                 QtCore.Qt.ItemDataRole.UserRole
             )
             if proc and proc.hash and proc.hash in hashes:
@@ -586,14 +587,14 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 child = top_item.child(cr, self.columns.NAME)
                 if child is None:
                     continue
-                cproc: Optional[ProcessInfo] = child.data(
+                cproc: ProcessInfo | None = child.data(
                     QtCore.Qt.ItemDataRole.UserRole
                 )
                 if cproc and cproc.hash and cproc.hash in hashes:
                     results.append(self.indexFromItem(child))
         return results
 
-    def get_index_by_hash(self, hash_: str) -> Optional[QtCore.QModelIndex]:
+    def get_index_by_hash(self, hash_: str) -> QtCore.QModelIndex | None:
         """Get model index for process matching given hash.
 
         Args:
@@ -609,7 +610,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     def _data_display_role(  # noqa: C901, PLR0911, PLR0912
         self, column: int, process: ProcessInfo
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get display text for a given column and process.
 
         Args:
@@ -695,7 +696,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         def key_func(  # noqa: PLR0911
             process: ProcessInfo,
-        ) -> Union[str, int, float]:
+        ) -> str | int | float:
             """Key function for sorting based on column.
 
             Returns:
@@ -741,7 +742,7 @@ class ProcessMonitorController(QtCore.QObject):
     # New: descendants refreshed signal (parent_hash, descendants)
     descendants_refreshed = QtCore.Signal(object, list)
 
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    def __init__(self, parent: QtCore.QObject | None = None):
         """Initialize the controller."""
         super().__init__(parent)
         self.manager = ProcessManager()
@@ -750,8 +751,8 @@ class ProcessMonitorController(QtCore.QObject):
         self._file_watcher.changed.connect(self._on_file_changed)
 
         # Filters
-        self.filter_top_count: Optional[int] = 10
-        self.filter_newer_than_hours: Optional[int] = 8
+        self.filter_top_count: int = 10
+        self.filter_newer_than_hours: int | None = 8
 
         # Timers (created once)
         self._refresh_timer = QtCore.QTimer(self)
@@ -762,7 +763,7 @@ class ProcessMonitorController(QtCore.QObject):
         self._file_reload_timer.timeout.connect(self._on_file_reload_timeout)
         self._file_reload_timer.setSingleShot(False)
         self._file_reload_interval = 2000
-        self._file_reload_target: Optional[Path] = None
+        self._file_reload_target: Path | None = None
 
     # Timer control
     def start_timers(self) -> None:
@@ -782,7 +783,7 @@ class ProcessMonitorController(QtCore.QObject):
         """Refresh process data in background thread."""
         newer_than_ts = None
         if self.filter_newer_than_hours is not None:
-            import time
+
             newer_than_ts = time.time() - (self.filter_newer_than_hours * 3600)
 
         try:
@@ -840,7 +841,7 @@ class ProcessMonitorController(QtCore.QObject):
         except Exception as exc:  # noqa: BLE001
             self.error.emit(str(exc))
 
-    def load_file_content(self, file_path: Optional[Path]) -> None:
+    def load_file_content(self, file_path: Path | None) -> None:
         """Load file content in background thread.
 
         Args:
@@ -968,7 +969,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             self._on_processes_refreshed
         )
         self._controller.file_content.connect(self._on_file_content)
-        # self._controller.cleanup_finished.connect(self._on_cleanup_finished)
         self._controller.error.connect(self._on_error)
         # New: descendants
         self._controller.descendants_refreshed.connect(
@@ -1136,10 +1136,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.Shape.VLine)
         line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        toolbar_layout.addWidget(line)
-        toolbar_layout.addWidget(QtWidgets.QLabel("Check Status:"))
-        toolbar_layout.addWidget(self._top_count_spin)
-        toolbar_layout.addWidget(self._hours_spin)
+        toolbar_layout.addWidget(line, 0)
+        toolbar_layout.addWidget(QtWidgets.QLabel("Check Status:"), 0)
+        toolbar_layout.addWidget(self._top_count_spin, 0)
+        toolbar_layout.addWidget(self._hours_spin, 0)
 
         toolbar_layout.addStretch(1)
         toolbar_layout.addWidget(self._loading_label, 0)
@@ -1277,7 +1277,8 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             and process.active
         ):
             self._controller.stop_file_reload()
-            self._controller.start_file_watch(process.output)
+            if process.output:
+                self._controller.start_file_watch(process.output)
         else:
             self._controller.stop_file_watch()
             self._controller.stop_file_reload()
