@@ -179,6 +179,7 @@ def get_app_environments_for_context(
     launch_type: Optional[str] = None,
     env: Optional[dict[str, str]] = None,
     addons_manager: Optional[AddonsManager] = None,
+    start_last_workfile: bool = False,
 ) -> dict[str, str]:
     """Prepare environment variables by context.
     Args:
@@ -195,6 +196,7 @@ def get_app_environments_for_context(
             `os.environ` is used when not passed.
         addons_manager (Optional[AddonsManager]): Initialized modules
             manager.
+        start_last_workfile (bool): Whether to start last workfile.
 
     Returns:
         dict: Environments for passed context and application.
@@ -212,6 +214,7 @@ def get_app_environments_for_context(
         env=env,
         addons_manager=addons_manager,
         modules_manager=addons_manager,
+        start_last_workfile=start_last_workfile,
     )
     context.run_prelaunch_hooks()
     return context.env
