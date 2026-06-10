@@ -7,6 +7,7 @@ import traceback
 import tempfile
 import warnings
 import typing
+import urllib.parse
 from typing import Optional, Any
 
 import ayon_api
@@ -195,6 +196,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     ) -> Optional[str]:
         """Get icon path.
 
+        icon filename can be either a full URL (http/https/file/...)
+        or a bare filename. Full URLs are used as is while bare filenames
+        resolve to the addons icons folder.
+
         Method does not validate if icon filename exist on server.
 
         Args:
@@ -208,6 +213,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """
         if not icon_filename:
             return None
+
+        # check if its a full URL
+        url = urllib.parse.urlparse(icon_filename)
+        if url.scheme:
+            return icon_filename
+
         icon_name = os.path.basename(icon_filename)
         if server:
             base_url = ayon_api.get_base_url()
