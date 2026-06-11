@@ -666,11 +666,12 @@ class ApplicationsAddon(BaseServerAddon):
         project_name: str,
         task_id: str,
         variant: str | None = Query(None, title="Settings Variant"),
+        version: str | None = Query(None, title="Addon version"),
     ):
         if variant is None:
             variant = "production"
         app_items = await self.get_applications_items_for_task(
-            project_name, task_id, variant
+            project_name, task_id=task_id, variant=variant, version=version
         )
 
         return {
