@@ -300,16 +300,46 @@ class ApplicationsAddon(BaseServerAddon):
             )
 
     async def get_application_items(
-        self, project_name: str | None, variant: str
+        self,
+        project_name: str | None,
+        variant: str,
+        *,
+        version: str | None = None,
     ) -> list[ApplicationItem]:
-        addon = await self.get_addon_for_context(project_name, variant)
+        """Get available applications for a project and variant.
+
+        Meant as api function for other addons that need access to tools for
+            a given project and variant. It can resolve which addon version
+            should be used and get the information for the context, or just
+            pass in specific version to get the information for.
+
+        In case the addon version does not support the functionality yet (or
+            anymore) it will try to guess it based on settings, or returns
+            empty list.
+
+        Args:
+            project_name (str): Project name.
+            variant (str): Variant name, e.g. "production" or "staging".
+            version (str | None): Addon version to get tools for. If not
+                provided, it will use the resolved addon version for the
+                context.
+
+        Returns:
+            list[ApplicationItem]: List of available applications
+                for the context.
+
+        """
+        if version is not None:
+            addon = self._get_addon_version(version)
+        else:
+            addon = await self.get_addon_for_context(project_name, variant)
         if addon is None:
             return []
 
         if addon is not self:
             if hasattr(addon, "get_application_items"):
                 return await addon.get_application_items(
-                    project_name, variant=variant
+                    project_name, variant=variant, version=addon.version
                 )
 
             return await self._guess_application_items(
@@ -325,16 +355,46 @@ class ApplicationsAddon(BaseServerAddon):
         return get_application_items(settings.dict())
 
     async def get_tool_items(
-        self, project_name: str | None, variant: str
+        self,
+        project_name: str | None,
+        variant: str,
+        *,
+        version: str | None = None,
     ) -> list[ToolItem]:
-        addon = await self.get_addon_for_context(project_name, variant)
+        """Get available tools for a project and variant.
+
+        Meant as api function for other addons that need access to tools for
+            a given project and variant. It can resolve which addon version
+            should be used and get the information for the context, or just
+            pass in specific version to get the information for.
+
+        In case the addon version does not support the functionality yet (or
+            anymore) it will try to guess it based on settings, or returns
+            empty list.
+
+        Args:
+            project_name (str): Project name.
+            variant (str): Variant name, e.g. "production" or "staging".
+            version (str | None): Addon version to get tools for. If not
+                provided, it will use the resolved addon version for the
+                context.
+
+        Returns:
+            list[ToolItem]: List of available tools for the context.
+
+        """
+        if version is not None:
+            addon = self._get_addon_version(version)
+        else:
+            addon = await self.get_addon_for_context(project_name, variant)
+
         if addon is None:
             return []
 
         if addon is not self:
             if hasattr(addon, "get_tool_items"):
                 return await addon.get_tool_items(
-                    project_name, variant=variant
+                    project_name, variant=variant, version=addon.version
                 )
             return await self._guess_tool_items(addon, project_name, variant)
 
@@ -351,15 +411,24 @@ class ApplicationsAddon(BaseServerAddon):
         project_name: str,
         task_id: str,
         variant: str,
+        *,
+        version: str | None = None,
     ) -> list[ApplicationItem]:
-        addon = await self.get_addon_for_context(project_name, variant)
+        if version is not None:
+            addon = self._get_addon_version(version)
+        else:
+            addon = await self.get_addon_for_context(project_name, variant)
+
         if addon is None:
             return []
 
         if addon is not self:
             if hasattr(addon, "get_applications_items_for_task"):
-                return await self.get_applications_items_for_task(
-                    project_name, task_id, variant
+                return await addon.get_applications_items_for_task(
+                    project_name,
+                    task_id=task_id,
+                    variant=variant,
+                    version=addon.version,
                 )
             return await self._guess_application_items_for_task(
                 addon, project_name, task_id, variant
@@ -408,11 +477,7 @@ class ApplicationsAddon(BaseServerAddon):
 
         if version == "__inherit__":
             return await self._get_studio_bundle_addon(variant)
-
-        addon_library = AddonLibrary.getinstance()
-        if (addon_def := addon_library.data.get(self.name)) is None:
-            return None
-        return addon_def.get(version)
+        return self._get_addon_version(version)
 
     async def get_applications_settings_enum(
         self,
@@ -576,7 +641,17 @@ class ApplicationsAddon(BaseServerAddon):
             }
         )
 
-    async def _get_studio_bundle_addon(self, variant: str):
+    def _get_addon_version(self, version: str) -> BaseServerAddon | None:
+        if self.version == version:
+            return self
+        addon_library = AddonLibrary.getinstance()
+        if (addon_def := addon_library.data.get(self.name)) is None:
+            return None
+        return addon_def.get(version)
+
+    async def _get_studio_bundle_addon(
+        self, variant: str
+    ) -> BaseServerAddon | None:
         addon_library = AddonLibrary.getinstance()
         if (addon_def := addon_library.data.get(self.name)) is None:
             return None
