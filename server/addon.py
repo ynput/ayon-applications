@@ -416,7 +416,7 @@ class ApplicationsAddon(BaseServerAddon):
             )
         return []
 
-    async def get_applications_items_for_task(
+    async def get_application_items_for_task(
         self,
         project_name: str,
         task_id: str,
@@ -434,9 +434,9 @@ class ApplicationsAddon(BaseServerAddon):
 
         if (
             addon is not self
-            and hasattr(addon, "get_applications_items_for_task")
+            and hasattr(addon, "get_application_items_for_task")
         ):
-            return await addon.get_applications_items_for_task(
+            return await addon.get_application_items_for_task(
                 project_name,
                 task_id=task_id,
                 variant=variant,
@@ -686,7 +686,7 @@ class ApplicationsAddon(BaseServerAddon):
     ):
         if variant is None:
             variant = "production"
-        app_items = await self.get_applications_items_for_task(
+        app_items = await self.get_application_items_for_task(
             project_name, task_id=task_id, variant=variant, version=version
         )
 
