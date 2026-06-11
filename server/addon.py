@@ -137,6 +137,12 @@ class ApplicationsAddon(BaseServerAddon):
         )
 
         self.add_endpoint(
+            "apps/{project_name}",
+            self._get_applications_endpoint,
+            method="GET",
+        )
+
+        self.add_endpoint(
             "apps/{project_name}/task/{task_id}",
             self._get_task_applications_endpoint,
             method="GET",
@@ -676,6 +682,22 @@ class ApplicationsAddon(BaseServerAddon):
         )
         version = addon_versions_by_name.get(self.name)
         return addon_def.get(version)
+
+    async def _get_applications_endpoint(
+        self,
+        project_name: str,
+        variant: str | None = Query(None, title="Settings Variant"),
+        version: str | None = Query(None, title="Addon version"),
+    ):
+        if variant is None:
+            variant = "production"
+        app_items = await self.get_application_items(
+            project_name, variant=variant, version=version
+        )
+
+        return {
+            "applications": [app_item for app_item in app_items]
+        }
 
     async def _get_task_applications_endpoint(
         self,
