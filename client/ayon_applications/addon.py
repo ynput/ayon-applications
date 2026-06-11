@@ -229,23 +229,24 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             server_url, "addons", self.name, "icons", icon_name
         ])
 
-    def get_application_items_for_task(
+    def get_application_items(
         self,
         project_name: str,
-        task_id: str,
+        task_id: str | None = None,
         *,
         variant: str | None = None,
         version: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Get application items for task.
+        """Get application items.
 
         This is meant as api for other addons to get application items for
-            specific task. It does handle project bundles and settings
-            variant. Works with version >= 1.3.7 .
+            a given context. Can also filter applications for a specific task.
+
+        It does handle project bundles and settings variant automatically.
 
         Args:
             project_name (str): Project name.
-            task_id (str): Task name.
+            task_id (str | None): Task id for which applications are fitlered.
             variant (str | None): Settings variant. Current settings variant
                 is used if not passed in.
             version (str | None): Specific version of applications addon
@@ -265,7 +266,23 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             }
 
         Returns:
-            list[dict]: Application items for task.
+            list[dict]: Application items.
+
+        """
+        if variant is None:
+            variant = get_settings_variant()
+
+        query = f"?variant={variant}"
+        if version is not None:
+            query += f"&version={version}"
+        task_path = ""
+        if task_id:
+            task_path = f"/task/{task_id}"
+        response = ayon_api.get(
+            f"addons/{self.name}/{self.version}/"
+            f"apps/{project_name}{task_path}{query}"
+        )
+        return response.data["applications"]
 
         """
         if variant is None:
