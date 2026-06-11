@@ -302,6 +302,20 @@ class ApplicationsAddon(BaseServerAddon):
     async def get_application_items(
         self, project_name: str | None, variant: str
     ) -> list[ApplicationItem]:
+        addon = await self.get_addon_for_context(project_name, variant)
+        if addon is None:
+            return []
+
+        if addon is not self:
+            if hasattr(addon, "get_application_items"):
+                return await addon.get_application_items(
+                    project_name, variant=variant
+                )
+
+            return await self._guess_application_items(
+                addon, project_name, variant
+            )
+
         if project_name is None:
             settings = await self.get_studio_settings(variant=variant)
         else:
@@ -313,6 +327,17 @@ class ApplicationsAddon(BaseServerAddon):
     async def get_tool_items(
         self, project_name: str | None, variant: str
     ) -> list[ToolItem]:
+        addon = await self.get_addon_for_context(project_name, variant)
+        if addon is None:
+            return []
+
+        if addon is not self:
+            if hasattr(addon, "get_tool_items"):
+                return await addon.get_tool_items(
+                    project_name, variant=variant
+                )
+            return await self._guess_tool_items(addon, project_name, variant)
+
         if project_name is None:
             settings = await self.get_studio_settings(variant=variant)
         else:
@@ -327,6 +352,19 @@ class ApplicationsAddon(BaseServerAddon):
         task_id: str,
         variant: str,
     ) -> list[ApplicationItem]:
+        addon = await self.get_addon_for_context(project_name, variant)
+        if addon is None:
+            return []
+
+        if addon is not self:
+            if hasattr(addon, "get_applications_items_for_task"):
+                return await self.get_applications_items_for_task(
+                    project_name, task_id, variant
+                )
+            return await self._guess_application_items_for_task(
+                addon, project_name, task_id, variant
+            )
+
         settings = await self.get_project_settings(
             project_name, variant=variant
         )
@@ -431,33 +469,25 @@ class ApplicationsAddon(BaseServerAddon):
     ) -> list[ApplicationItem]:
         """Get applications available for a given context.
 
-        This method can be used by other addons to get applciations available
-            for a given project and variant. It will return applciations based
+        DUPLICATE of 'get_application_items' method.
+
+        This method can be used by other addons to get applications available
+            for a given project and variant. It will return applications based
             on variant and project bundle if project has any.
 
         Will work only if the addon version is new enough to have
-            'get_tool_items' method, otherwise it will return empty list.
+            'get_application_items' method, otherwise it will return
+            empty list.
 
         """
-        addon = await self.get_addon_for_context(project_name, variant)
-        if hasattr(addon, "get_application_items"):
-            return await addon.get_application_items(project_name, variant)
-
-        try:
-            return await self._guess_application_items(
-                addon, project_name, variant
-            )
-        except Exception:
-            logger.trace(
-                "Failed to collect available applications"
-                f" from applications addon '{addon.version}'."
-            )
-        return []
+        return await self.get_application_items(project_name, variant)
 
     async def get_tools_for_context(
         self, project_name: str | None, variant: str
     ) -> list[ToolItem]:
         """Get tools available for a given context.
+
+        DUPLICATE of 'get_tool_items' method.
 
         This method can be used by other addons to get tools available for
             a given project and variant. It will return tools based on variant
@@ -467,10 +497,7 @@ class ApplicationsAddon(BaseServerAddon):
             'get_tool_items' method, otherwise it will return empty list.
 
         """
-        addon = await self.get_addon_for_context(project_name, variant)
-        if hasattr(addon, "get_tool_items"):
-            return await addon.get_tool_items(project_name, variant)
-        return []
+        return await self.get_tool_items(project_name, variant)
 
     # --------------------------------------------
     # Auto-fill of host_name in workfiles entities
@@ -567,27 +594,19 @@ class ApplicationsAddon(BaseServerAddon):
     ):
         if variant is None:
             variant = "production"
-        addon = await self.get_addon_for_context(project_name, variant)
-        if hasattr(addon, "get_applications_items_for_task"):
-            app_items = await self.get_applications_items_for_task(
-                project_name, task_id, variant
-            )
-        else:
-            try:
-                app_items = await self._guess_application_items_for_task(
-                    addon, project_name, task_id, variant
-                )
-            except Exception:
-                app_items = []
-                logger.trace(
-                    "Failed to collect available applications"
-                    f" from applications addon '{addon.version}'."
-                )
+        app_items = await self.get_applications_items_for_task(
+            project_name, task_id, variant
+        )
 
         return {
             "applications": [app_item for app_item in app_items]
         }
 
+    # Guess applications and tools of other applications addon versions
+    #   based on expecting same settings structure.
+    # Added to support 'get_application_items' and 'get_tool_items'
+    #   while using older addon versions that don't have the methods
+    #   available.
     async def _guess_application_items(
         self,
         addon: BaseServerAddon | None,
@@ -601,8 +620,15 @@ class ApplicationsAddon(BaseServerAddon):
             project_name, variant=variant
         )
         settings_value = settings.dict()
+        try:
+            return get_application_items(settings_value)
 
-        return get_application_items(settings_value)
+        except Exception:
+            logger.trace(
+                "Failed to collect available applications"
+                f" from applications addon '{addon.version}'."
+            )
+        return []
 
     async def _guess_application_items_for_task(
         self,
@@ -618,21 +644,52 @@ class ApplicationsAddon(BaseServerAddon):
             project_name, variant=variant
         )
         settings_value = settings.dict()
-
-        app_items = get_application_items(settings_value)
-        app_items_by_name = {
-            app_item.full_name: app_item
-            for app_item in app_items
-        }
-
         task_entity = await TaskEntity.load(project_name, task_id)
-        app_names_by_task_type = get_app_names_by_task_type(
-            settings_value,
-            {task_entity.task_type},
-            app_items=app_items,
-        )
+
         output = []
-        for app_name in app_names_by_task_type[task_entity.task_type]:
-            app_item = app_items_by_name[app_name]
-            output.append(app_item)
+        try:
+            app_items = get_application_items(settings_value)
+            app_items_by_name = {
+                app_item.full_name: app_item
+                for app_item in app_items
+            }
+
+            app_names_by_task_type = get_app_names_by_task_type(
+                settings_value,
+                {task_entity.task_type},
+                app_items=app_items,
+            )
+            for app_name in app_names_by_task_type[task_entity.task_type]:
+                app_item = app_items_by_name[app_name]
+                output.append(app_item)
+
+        except Exception:
+            logger.trace(
+                "Failed to collect available applications"
+                f" from applications addon '{addon.version}'."
+            )
+
         return output
+
+    async def _guess_tool_items(
+        self,
+        addon: BaseServerAddon | None,
+        project_name: str,
+        variant: str
+    ) -> list[ToolItem]:
+        if addon is None:
+            return []
+
+        settings = await self.get_project_settings(
+            project_name, variant=variant
+        )
+        settings_value = settings.dict()
+
+        try:
+            return get_tool_items(settings_value)
+        except Exception:
+            logger.trace(
+                "Failed to collect available tools"
+                f" from applications addon '{addon.version}'."
+            )
+        return []
