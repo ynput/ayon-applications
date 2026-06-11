@@ -141,10 +141,14 @@ class ApplicationsAddon(BaseServerAddon):
             self._get_applications_endpoint,
             method="GET",
         )
-
         self.add_endpoint(
             "apps/{project_name}/task/{task_id}",
             self._get_task_applications_endpoint,
+            method="GET",
+        )
+        self.add_endpoint(
+            "tools/{project_name}",
+            self._get_tools_endpoint,
             method="GET",
         )
 
@@ -714,4 +718,20 @@ class ApplicationsAddon(BaseServerAddon):
 
         return {
             "applications": [app_item for app_item in app_items]
+        }
+
+    async def _get_tools_endpoint(
+        self,
+        project_name: str,
+        variant: str | None = Query(None, title="Settings Variant"),
+        version: str | None = Query(None, title="Addon version"),
+    ):
+        if variant is None:
+            variant = "production"
+        tool_items = await self.get_tool_items(
+            project_name, variant=variant, version=version
+        )
+
+        return {
+            "tools": [tool_item for tool_item in tool_items]
         }
