@@ -230,7 +230,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         ])
 
     def get_application_items_for_task(
-        self, project_name: str, task_id: str
+        self,
+        project_name: str,
+        task_id: str,
+        *,
+        variant: str | None = None,
+        version: str | None = None,
     ) -> list[dict[str, Any]]:
         """Get application items for task.
 
@@ -241,6 +246,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         Args:
             project_name (str): Project name.
             task_id (str): Task name.
+            variant (str | None): Settings variant. Current settings variant
+                is used if not passed in.
+            version (str | None): Specific version of applications addon
+                to get items for. If None, it will use the version
+                resolved for current context (variant and project).
 
         Example application dict (may vary based on applications
             addon version):
@@ -258,10 +268,15 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             list[dict]: Application items for task.
 
         """
-        variant = get_settings_variant()
+        if variant is None:
+            variant = get_settings_variant()
+
+        query = f"?variant={variant}"
+        if version is not None:
+            query += f"&version={version}"
         response = ayon_api.get(
             f"addons/{self.name}/{self.version}/"
-            f"apps/{project_name}/task/{task_id}?variant={variant}"
+            f"apps/{project_name}/task/{task_id}{query}"
         )
         return response.data["applications"]
 
