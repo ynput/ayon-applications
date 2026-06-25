@@ -51,7 +51,10 @@ DEFAULT_APP_GROUPS = {
     "terminal",
     "premiere",
     "mochapro",
+    "marmoset",
     "loki",
+    "marvelousdesigner",
+    "clo",
 }
 
 
@@ -181,15 +184,38 @@ class MultiplatformStrList(BaseSettingsModel):
 
 class AppVariant(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
-    label: str = SettingsField("", title="Label")
+    label: str = SettingsField(
+        "",
+        section="UI Options",
+        title="Label",
+        placeholder="'Name' value is used",
+        description="Use variant name if empty",
+    )
+    group_label: str = SettingsField(
+        "",
+        title="Group label",
+        placeholder="Override group label for this variant",
+        description="Override group label used for UI purposes.",
+    )
+    show_grouped: bool = SettingsField(
+        default=True,
+        title="Group in UI",
+        description="Variant will be grouped by group label in UI.",
+    )
+
     executables: MultiplatformStrList = SettingsField(
-        default_factory=MultiplatformStrList, title="Executables"
+        default_factory=MultiplatformStrList,
+        section="Launch Options",
+        title="Executables",
     )
     arguments: MultiplatformStrList = SettingsField(
         default_factory=MultiplatformStrList, title="Arguments"
     )
     environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
+        default="{}",
+        title="Environment",
+        widget="textarea",
+        syntax="json",
     )
     redirect_output: bool = SettingsField(
         default=True, title="Redirect output to Process Monitor",
@@ -200,6 +226,17 @@ class AppVariant(BaseSettingsModel):
         )
     )
 
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application variant '{value}' can't contain '/'"
+            )
+        return value
+
     @validator("environment")
     def validate_json(cls, value):
         return validate_json_dict(value)
@@ -209,7 +246,10 @@ class AppGroup(BaseSettingsModel):
     enabled: bool = SettingsField(True)
     host_name: str = SettingsField("", title="Host name")
     environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
+        default="{}",
+        title="Environment",
+        widget="textarea",
+        syntax="json",
     )
 
     variants: list[AppVariant] = SettingsField(
@@ -236,7 +276,10 @@ class AdditionalAppGroup(BaseSettingsModel):
     host_name: str = SettingsField("", title="Host name")
     icon: str = SettingsField("", title="Icon")
     environment: str = SettingsField(
-        "{}", title="Environment", widget="textarea"
+        default="{}",
+        title="Environment",
+        widget="textarea",
+        syntax="json",
     )
 
     variants: list[AppVariant] = SettingsField(
@@ -245,6 +288,17 @@ class AdditionalAppGroup(BaseSettingsModel):
         description="Different variants of the applications",
         section="Variants",
     )
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Application group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Application group ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("variants")
     def validate_unique_name(cls, value):
@@ -267,8 +321,22 @@ class ToolVariantModel(BaseSettingsModel):
         enum_resolver=applications_enum,
     )
     environment: str = SettingsField(
-        "{}", title="Environments", widget="textarea"
+        default="{}",
+        title="Environments",
+        widget="textarea",
+        syntax="json",
     )
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool variant is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool variant ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
@@ -279,9 +347,23 @@ class ToolGroupModel(BaseSettingsModel):
     name: str = SettingsField("", title="Name")
     label: str = SettingsField("", title="Label")
     environment: str = SettingsField(
-        "{}", title="Environments", widget="textarea"
+        default="{}",
+        title="Environments",
+        widget="textarea",
+        syntax="json",
     )
     variants: list[ToolVariantModel] = SettingsField(default_factory=list)
+
+    @validator("name")
+    def validate_name(cls, value):
+        if not value:
+            raise BadRequestException("Tool group name is empty")
+
+        if "/" in value:
+            raise BadRequestException(
+                f"Tool group ({value}) can't contain '/'"
+            )
+        return value
 
     @validator("environment")
     def validate_json(cls, value):
@@ -346,6 +428,10 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Wrap")
     openrv: AppGroup = SettingsField(
         default_factory=AppGroup, title="OpenRV")
+    marvelousdesigner: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Marvelous Designer")
+    clo: AppGroup = SettingsField(
+        default_factory=AppGroup, title="CLO")
     zbrush: AppGroup = SettingsField(
         default_factory=AppGroup, title="Zbrush")
     equalizer: AppGroup = SettingsField(
@@ -358,6 +444,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="Mocha Pro")
     silhouette: AppGroup = SettingsField(
         default_factory=AppGroup, title="BorisFX Silhouette")
+    marmoset: AppGroup = SettingsField(
+        default_factory=AppGroup, title="Marmoset Toolbag")
     loki: AppGroup = SettingsField(
         default_factory=AppGroup, title="ShapeFX Loki")
     terminal: AppGroup = SettingsField(
@@ -401,6 +489,7 @@ class ProjectApplicationsProfile(BaseSettingsModel):
         default_factory=list,
         title="Applications",
         description="Applications available for filtered context",
+        widget="sortable_multiselect",
         enum_resolver=applications_enum,
     )
 
@@ -432,15 +521,6 @@ class ProjectToolsProfile(BaseSettingsModel):
 
 
 class ProjectApplicationsModel(BaseSettingsModel):
-    enabled: bool = SettingsField(
-        True,
-        title="Use Applications profiles instead of attribute",
-        description=(
-            "Use applications attribute on the project instead of these"
-            " profiles. Attribute based applications will"
-            " be deprecated in future versions of applications addon."
-        ),
-    )
     profiles: list[ProjectApplicationsProfile] = SettingsField(
         default_factory=list,
         title="Profiles",
@@ -448,15 +528,6 @@ class ProjectApplicationsModel(BaseSettingsModel):
 
 
 class ProjectToolsModel(BaseSettingsModel):
-    enabled: bool = SettingsField(
-        True,
-        title="Use Tools profiles instead of attribute",
-        description=(
-            "Use tools attribute on folders and tasks instead of these"
-            " profiles. Attribute based tools will"
-            " be deprecated in future versions of applications addon."
-        ),
-    )
     profiles: list[ProjectToolsProfile] = SettingsField(
         default_factory=list,
         title="Profiles",
@@ -467,12 +538,20 @@ class ApplicationsAddonSettings(BaseSettingsModel):
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Applications Definitions",
+        description=(
+            "Configure application executable paths, environments "
+            "and launch arguments."
+        ),
         scope=["studio"],
         section="Definitions"
     )
     tool_groups: list[ToolGroupModel] = SettingsField(
         default_factory=list,
         title="Tools Definitions",
+        description=(
+            "Configure tools and plugins that are added into the environment "
+            "of launched applications"
+        ),
         scope=["studio"]
     )
     project_applications: ProjectApplicationsModel = SettingsField(
@@ -514,7 +593,6 @@ def _get_tools_defaults():
 
 
 DEFAULT_VALUES = {
-    "only_available": True,
     "project_applications": {
         "profiles": [
             {
