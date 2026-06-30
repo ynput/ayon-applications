@@ -272,15 +272,17 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         if variant is None:
             variant = get_settings_variant()
 
-        query = f"?variant={variant}"
+        query_params = {"variant": variant}
         if version is not None:
-            query += f"&version={version}"
+            query_params["version"] = version
+
+        query = urllib.parse.urlencode(query_params)
         task_path = ""
         if task_id:
             task_path = f"/task/{task_id}"
         response = ayon_api.get(
             f"addons/{self.name}/{self.version}/"
-            f"apps/{project_name}{task_path}{query}"
+            f"apps/{project_name}{task_path}?{query}"
         )
         return response.data["applications"]
 
