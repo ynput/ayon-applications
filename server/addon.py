@@ -8,6 +8,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 import semver
+from fastapi import Query
 
 from ayon_server.lib.postgres import Postgres
 from ayon_server.logging import logger
@@ -15,6 +16,7 @@ from ayon_server.events import EventStream, EventModel
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.actions.config import set_action_config
 from ayon_server.actions.context import ActionContext
+from ayon_server.entities import TaskEntity
 from ayon_server.entities.user import UserEntity
 from ayon_server.helpers.project_list import get_project_list
 from ayon_server.bundles.project_bundles import (
@@ -51,6 +53,7 @@ from .utils import (
     ToolItem,
     get_application_items,
     get_tool_items,
+    get_app_names_by_task_type,
 )
 from .actions import (
     get_action_manifests,
@@ -131,6 +134,22 @@ class ApplicationsAddon(BaseServerAddon):
             "bundle.updated",
             self._on_bundle_updated,
             all_nodes=False,
+        )
+
+        self.add_endpoint(
+            "apps/{project_name}",
+            self._get_applications_endpoint,
+            method="GET",
+        )
+        self.add_endpoint(
+            "apps/{project_name}/task/{task_id}",
+            self._get_task_applications_endpoint,
+            method="GET",
+        )
+        self.add_endpoint(
+            "tools/{project_name}",
+            self._get_tools_endpoint,
+            method="GET",
         )
 
     async def get_simple_actions(
@@ -291,26 +310,178 @@ class ApplicationsAddon(BaseServerAddon):
             )
 
     async def get_application_items(
-        self, project_name: str | None, variant: str
+        self,
+        project_name: str | None,
+        variant: str,
+        *,
+        version: str | None = None,
     ) -> list[ApplicationItem]:
-        if project_name is None:
-            settings = await self.get_studio_settings(variant=variant)
+        """Get available applications for a project and variant.
+
+        Meant as api function for other addons that need access to tools for
+            a given project and variant. It can resolve which addon version
+            should be used and get the information for the context, or just
+            pass in specific version to get the information for.
+
+        In case the addon version does not support the functionality yet (or
+            anymore) it will try to guess it based on settings, or returns
+            empty list.
+
+        Args:
+            project_name (str): Project name.
+            variant (str): Variant name, e.g. "production" or "staging".
+            version (str | None): Addon version to get tools for. If not
+                provided, it will use the resolved addon version for the
+                context.
+
+        Returns:
+            list[ApplicationItem]: List of available applications
+                for the context.
+
+        """
+        if version is not None:
+            addon = self._get_addon_version(version)
         else:
-            settings = await self.get_project_settings(
+            addon = await self.get_addon_for_context(project_name, variant)
+
+        if addon is None:
+            return []
+
+        if addon is not self and hasattr(addon, "get_application_items"):
+            return await addon.get_application_items(
+                project_name, variant=variant, version=addon.version
+            )
+
+        if project_name is None:
+            settings = await addon.get_studio_settings(variant=variant)
+        else:
+            settings = await addon.get_project_settings(
                 project_name, variant=variant
             )
-        return get_application_items(settings.dict())
+        try:
+            return get_application_items(settings.dict())
+
+        except Exception:
+            logger.trace(
+                "Failed to collect available applications for a task"
+                f" from applications addon '{addon.version}'."
+            )
+        return []
 
     async def get_tool_items(
-        self, project_name: str | None, variant: str
+        self,
+        project_name: str | None,
+        variant: str,
+        *,
+        version: str | None = None,
     ) -> list[ToolItem]:
-        if project_name is None:
-            settings = await self.get_studio_settings(variant=variant)
+        """Get available tools for a project and variant.
+
+        Meant as api function for other addons that need access to tools for
+            a given project and variant. It can resolve which addon version
+            should be used and get the information for the context, or just
+            pass in specific version to get the information for.
+
+        In case the addon version does not support the functionality yet (or
+            anymore) it will try to guess it based on settings, or returns
+            empty list.
+
+        Args:
+            project_name (str): Project name.
+            variant (str): Variant name, e.g. "production" or "staging".
+            version (str | None): Addon version to get tools for. If not
+                provided, it will use the resolved addon version for the
+                context.
+
+        Returns:
+            list[ToolItem]: List of available tools for the context.
+
+        """
+        if version is not None:
+            addon = self._get_addon_version(version)
         else:
-            settings = await self.get_project_settings(
+            addon = await self.get_addon_for_context(project_name, variant)
+
+        if addon is None:
+            return []
+
+        if addon is not self and hasattr(addon, "get_tool_items"):
+            return await addon.get_tool_items(
+                project_name, variant=variant, version=addon.version
+            )
+
+        if project_name is None:
+            settings = await addon.get_studio_settings(variant=variant)
+        else:
+            settings = await addon.get_project_settings(
                 project_name, variant=variant
             )
-        return get_tool_items(settings.dict())
+
+        try:
+            return get_tool_items(settings.dict())
+        except Exception:
+            logger.trace(
+                "Failed to collect available tools"
+                f" from applications addon '{addon.version}'."
+            )
+        return []
+
+    async def get_application_items_for_task(
+        self,
+        project_name: str,
+        task_id: str,
+        variant: str,
+        *,
+        version: str | None = None,
+    ) -> list[ApplicationItem]:
+        if version is not None:
+            addon = self._get_addon_version(version)
+        else:
+            addon = await self.get_addon_for_context(project_name, variant)
+
+        if addon is None:
+            return []
+
+        if (
+            addon is not self
+            and hasattr(addon, "get_application_items_for_task")
+        ):
+            return await addon.get_application_items_for_task(
+                project_name,
+                task_id=task_id,
+                variant=variant,
+                version=addon.version,
+            )
+
+        settings = await addon.get_project_settings(
+            project_name, variant=variant
+        )
+        settings_value = settings.dict()
+        task_entity = await TaskEntity.load(project_name, task_id)
+
+        output = []
+        try:
+            app_items = get_application_items(settings_value)
+            app_items_by_name = {
+                app_item.full_name: app_item
+                for app_item in app_items
+            }
+
+            app_names_by_task_type = get_app_names_by_task_type(
+                settings_value,
+                {task_entity.task_type},
+                app_items=app_items,
+            )
+            for app_name in app_names_by_task_type[task_entity.task_type]:
+                app_item = app_items_by_name[app_name]
+                output.append(app_item)
+
+        except Exception:
+            logger.trace(
+                "Failed to collect available applications for a task"
+                f" from applications addon '{addon.version}'."
+            )
+        return output
 
     async def get_addon_for_context(
         self, project_name: str | None, variant: str
@@ -332,11 +503,7 @@ class ApplicationsAddon(BaseServerAddon):
 
         if version == "__inherit__":
             return await self._get_studio_bundle_addon(variant)
-
-        addon_library = AddonLibrary.getinstance()
-        if (addon_def := addon_library.data.get(self.name)) is None:
-            return None
-        return addon_def.get(version)
+        return self._get_addon_version(version)
 
     async def get_applications_settings_enum(
         self,
@@ -393,23 +560,25 @@ class ApplicationsAddon(BaseServerAddon):
     ) -> list[ApplicationItem]:
         """Get applications available for a given context.
 
-        This method can be used by other addons to get applciations available
-            for a given project and variant. It will return applciations based
+        DUPLICATE of 'get_application_items' method.
+
+        This method can be used by other addons to get applications available
+            for a given project and variant. It will return applications based
             on variant and project bundle if project has any.
 
         Will work only if the addon version is new enough to have
-            'get_tool_items' method, otherwise it will return empty list.
+            'get_application_items' method, otherwise it will return
+            empty list.
 
         """
-        addon = await self._get_addon_for_context(project_name, variant)
-        if hasattr(addon, "get_application_items"):
-            return await addon.get_application_items(project_name, variant)
-        return []
+        return await self.get_application_items(project_name, variant)
 
     async def get_tools_for_context(
         self, project_name: str | None, variant: str
     ) -> list[ToolItem]:
         """Get tools available for a given context.
+
+        DUPLICATE of 'get_tool_items' method.
 
         This method can be used by other addons to get tools available for
             a given project and variant. It will return tools based on variant
@@ -419,10 +588,7 @@ class ApplicationsAddon(BaseServerAddon):
             'get_tool_items' method, otherwise it will return empty list.
 
         """
-        addon = await self._get_addon_for_context(project_name, variant)
-        if hasattr(addon, "get_tool_items"):
-            return await addon.get_tool_items(project_name, variant)
-        return []
+        return await self.get_tool_items(project_name, variant)
 
     # --------------------------------------------
     # Auto-fill of host_name in workfiles entities
@@ -501,7 +667,17 @@ class ApplicationsAddon(BaseServerAddon):
             }
         )
 
-    async def _get_studio_bundle_addon(self, variant: str):
+    def _get_addon_version(self, version: str) -> BaseServerAddon | None:
+        if self.version == version:
+            return self
+        addon_library = AddonLibrary.getinstance()
+        if (addon_def := addon_library.data.get(self.name)) is None:
+            return None
+        return addon_def.get(version)
+
+    async def _get_studio_bundle_addon(
+        self, variant: str
+    ) -> BaseServerAddon | None:
         addon_library = AddonLibrary.getinstance()
         if (addon_def := addon_library.data.get(self.name)) is None:
             return None
@@ -510,3 +686,52 @@ class ApplicationsAddon(BaseServerAddon):
         )
         version = addon_versions_by_name.get(self.name)
         return addon_def.get(version)
+
+    async def _get_applications_endpoint(
+        self,
+        project_name: str,
+        variant: str | None = Query(None, title="Settings Variant"),
+        version: str | None = Query(None, title="Addon version"),
+    ):
+        if variant is None:
+            variant = "production"
+        app_items = await self.get_application_items(
+            project_name, variant=variant, version=version
+        )
+
+        return {
+            "applications": [app_item for app_item in app_items]
+        }
+
+    async def _get_task_applications_endpoint(
+        self,
+        project_name: str,
+        task_id: str,
+        variant: str | None = Query(None, title="Settings Variant"),
+        version: str | None = Query(None, title="Addon version"),
+    ):
+        if variant is None:
+            variant = "production"
+        app_items = await self.get_application_items_for_task(
+            project_name, task_id=task_id, variant=variant, version=version
+        )
+
+        return {
+            "applications": [app_item for app_item in app_items]
+        }
+
+    async def _get_tools_endpoint(
+        self,
+        project_name: str,
+        variant: str | None = Query(None, title="Settings Variant"),
+        version: str | None = Query(None, title="Addon version"),
+    ):
+        if variant is None:
+            variant = "production"
+        tool_items = await self.get_tool_items(
+            project_name, variant=variant, version=version
+        )
+
+        return {
+            "tools": [tool_item for tool_item in tool_items]
+        }

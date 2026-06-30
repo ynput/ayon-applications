@@ -124,3 +124,56 @@ def get_items_for_tool_groups(groups):
 
     items.sort(key=_sort_getter)
     return items
+
+
+def get_app_names_by_task_type(
+    addon_settings: dict[str, Any],
+    task_types: set[str],
+    *,
+    app_items: list[ApplicationItem] | None = None,
+) -> dict[str, list[str]]:
+    app_names_by_task_type = {
+        task_type: []
+        for task_type in task_types
+    }
+    if not task_types:
+        return app_names_by_task_type
+
+    if app_items is None:
+        app_items = get_application_items(addon_settings)
+
+    profiles = addon_settings["project_applications"]["profiles"]
+
+    app_names = {item.full_name for item in app_items}
+    default_profile = None
+    profiles_by_task_type = {}
+    for profile in profiles:
+        if not profile["task_types"]:
+            if default_profile is None:
+                default_profile = profile
+            continue
+
+        for task_type in profile["task_types"]:
+            profiles_by_task_type.setdefault(task_type, profile)
+
+    for task_type_name in app_names_by_task_type:
+        task_type_profile = profiles_by_task_type.get(task_type_name)
+        if task_type_profile is None:
+            task_type_profile = default_profile
+            if task_type_profile is None:
+                continue
+
+        if task_type_profile["allow_type"] == "all_applications":
+            profile_apps = list(app_names)
+            profile_apps.sort()
+        else:
+            profile_apps = [
+                app_name
+                for app_name in task_type_profile["applications"]
+                if app_name in app_names
+            ]
+
+        if profile_apps:
+            app_names_by_task_type[task_type_name] = profile_apps
+
+    return app_names_by_task_type
