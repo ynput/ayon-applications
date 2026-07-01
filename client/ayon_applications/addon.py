@@ -14,6 +14,7 @@ import ayon_api
 
 from ayon_core.lib import (
     run_ayon_launcher_process,
+    get_settings_variant,
     is_headless_mode_enabled,
     env_value_to_bool,
 )
@@ -232,6 +233,113 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         return "/".join([
             server_url, "addons", self.name, "icons", icon_name
         ])
+
+    def get_application_items(
+        self,
+        project_name: str,
+        task_id: str | None = None,
+        *,
+        variant: str | None = None,
+        version: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get application items.
+
+        This is meant as api for other addons to get application items for
+            a given context. Can also filter applications for a specific task.
+
+        It does handle project bundles and settings variant automatically.
+
+        Args:
+            project_name (str): Project name.
+            task_id (str | None): Task id for which applications are fitlered.
+            variant (str | None): Settings variant. Current settings variant
+                is used if not passed in.
+            version (str | None): Specific version of applications addon
+                to get items for. If None, it will use the version
+                resolved for current context (variant and project).
+
+        Example application dict (may vary based on applications
+            addon version):
+            {
+                "host_name": str
+                "full_name": str
+                "full_label": str
+                "group_label": str
+                "variant_label": str
+                "icon": dict[str, str] | None
+                "show_grouped": bool
+            }
+
+        Returns:
+            list[dict]: Application items.
+
+        """
+        if variant is None:
+            variant = get_settings_variant()
+
+        query_params = {"variant": variant}
+        if version is not None:
+            query_params["version"] = version
+
+        query = urllib.parse.urlencode(query_params)
+        task_path = ""
+        if task_id:
+            task_path = f"/task/{task_id}"
+        response = ayon_api.get(
+            f"addons/{self.name}/{self.version}/"
+            f"apps/{project_name}{task_path}?{query}"
+        )
+        return response.data["applications"]
+
+    def get_tool_items(
+        self,
+        project_name: str,
+        *,
+        variant: str | None = None,
+        version: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get tool items.
+
+        This is meant as api for other addons to get tools items for a given
+            context.
+
+        It does handle project bundles and settings variant automatically.
+
+        Args:
+            project_name (str): Project name.
+            variant (str | None): Settings variant. Current settings variant
+                is used if not passed in.
+            version (str | None): Specific version of applications addon
+                to get items for. If None, it will use the version
+                resolved for current context (variant and project).
+
+        Example tool dict (may vary based on applications addon version):
+            {
+                "full_name": str,
+                "full_label": str,
+                "group_label": str,
+                "variant_label": str,
+                "host_names": list[str],
+                "app_variants": list[str],
+            }
+
+        Returns:
+            list[dict]: Tool items.
+
+        """
+        if variant is None:
+            variant = get_settings_variant()
+
+        query_params = {"variant": variant}
+        if version is not None:
+            query_params["version"] = version
+
+        query = urllib.parse.urlencode(query_params)
+        response = ayon_api.get(
+            f"addons/{self.name}/{self.version}/"
+            f"tools/{project_name}?{query}"
+        )
+        return response.data["applications"]
 
     def launch_application(
         self,
