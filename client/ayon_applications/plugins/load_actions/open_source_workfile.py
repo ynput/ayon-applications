@@ -4,7 +4,7 @@ import os
 from typing import Optional, Any
 
 import ayon_api
-from ayon_core.addon import IHostAddon
+from ayon_core.addon import IHostAddon, AddonsManager
 from ayon_core.pipeline.actions import (
     LoaderSimpleActionPlugin,
     LoaderActionSelection,
@@ -85,11 +85,15 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             )
 
         # Get compatible applications
-        addons_manager = self._context.get_addons_manager()
+        task_id = version.get("taskId")
+        project_name = selection.project_name
+        addons_manager = AddonsManager()
         compatible_apps = self._get_compatible_apps(
-            addons_manager, file_ext
+            addons_manager,
+            file_ext=file_ext,
+            project_name=project_name,
+            task_id=task_id
         )
-
         if not compatible_apps:
             return LoaderActionResult(
                 f"No compatible applications found for {file_ext}",
@@ -117,8 +121,6 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         # Launch application
         try:
             product_id = version["productId"]
-            task_id = version.get("taskId")
-            project_name = selection.project_name
             product = ayon_api.get_product_by_id(project_name, product_id)
             folder = ayon_api.get_folder_by_id(
                 project_name, product["folderId"]
@@ -148,23 +150,28 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 success=False,
             )
 
-    def _get_compatible_apps(self, addons_manager, file_ext):
+    def _get_compatible_apps(
+        self,
+        addons_manager,
+        file_ext,
+        project_name,
+        task_id,
+    ) -> list[Any]:
         """Get compatible applications for file extension."""
 
-        # For each host addon find the relevant supported extensions
+        # 1) host names that can open this extension
         host_names: set[str] = set()
         for addon in addons_manager.addons:
             if not isinstance(addon, IHostAddon):
                 continue
 
             try:
-                # Ignore issues if an addon happens to have a
-                # broken implementation
+
                 extensions = addon.get_workfile_extensions()
             except Exception:
                 self.log.error(
                     f"Failed to get workfile extensions for addon: {addon}",
-                    exc_info=True
+                    exc_info=True,
                 )
                 continue
 
@@ -180,15 +187,26 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         if not apps_addon:
             return []
 
+        app_items = apps_addon.get_application_items(
+            project_name,
+            task_id=task_id,
+            version=apps_addon.version
+        )
+
+        allowed_names = {
+            item["full_name"]
+            for item in app_items
+            if item.get("host_name") in host_names
+        }
+        if not allowed_names:
+            return []
+
+        # 3) map back to Application objects for choose_app and launch flow
         app_manager = apps_addon.get_applications_manager()
         compatible = []
-        for app_name, app in app_manager.applications.items():
-            if app.host_name not in host_names:
+        for app in app_manager.applications.values():
+            if app.full_name not in allowed_names:
                 continue
-
-            # TODO: Filter to applications that are available in the given
-            #  source context instead of listing all Studio Settings
-            #  applications.
 
             try:
                 exe = app.find_executable()
