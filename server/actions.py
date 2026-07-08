@@ -35,53 +35,6 @@ if typing.TYPE_CHECKING:
     from .addon import ApplicationsAddon
 
 
-def _sort_getter(item):
-    return item["group_label"], item["variant_label"]
-
-
-def get_items_for_app_groups(groups):
-    items = []
-    for group in groups:
-        group_name = group["name"]
-        group_label = group.get(
-            "label", LABELS_BY_GROUP_NAME.get(group_name)
-        ) or group_name
-        icon_name = ICONS_BY_GROUP_NAME.get(group_name)
-        if not icon_name:
-            icon_name = group.get("icon")
-
-        if icon_name:
-            icon_name = os.path.basename(icon_name)
-
-        icon = None
-        if icon_name:
-            icon = {
-                "type": "url",
-                "url": f"/api{{addon_url}}/icons/{icon_name}",
-            }
-
-        for variant in group["variants"]:
-            variant_name = variant["name"]
-            if not variant_name:
-                continue
-            variant_group_label = variant["group_label"]
-            if not variant_group_label:
-                variant_group_label = group_label
-            variant_label = variant["label"] or variant_name
-            full_name = f"{group_name}/{variant_name}"
-            items.append({
-                "host_name": group["host_name"],
-                "value": full_name,
-                "group_label": variant_group_label,
-                "variant_label": variant_label,
-                "icon": icon,
-                "show_grouped": variant["show_grouped"],
-            })
-
-    items.sort(key=_sort_getter)
-    return items
-
-
 def _prepare_label_kwargs(item: ApplicationItem) -> dict[str, str]:
     if _GROUP_LABEL_AVAILABLE and item.show_grouped:
         return {
