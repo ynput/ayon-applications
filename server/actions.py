@@ -1,4 +1,3 @@
-import os
 import typing
 
 from ayon_server.actions import (
@@ -14,7 +13,6 @@ try:
 except ImportError:
     SimpleForm = None
 
-from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 from .utils import (
     get_app_names_by_task_type,
     get_application_items,

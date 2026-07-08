@@ -17,7 +17,6 @@ from ayon_core.lib import (
     get_settings_variant,
     is_headless_mode_enabled,
     env_value_to_bool,
-    CacheItem,
 )
 from ayon_core.addon import (
     AYONAddon,
