@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import dataclass
 import inspect
 import json
 import os
@@ -42,6 +43,13 @@ if TYPE_CHECKING:
     import logging
 
 
+@dataclass
+class GroupAppInfo:
+    name: str
+    label: str
+    icon: Optional[str] = None
+
+
 class ApplicationManager:
     """Load applications and tools and store them by their full name.
 
@@ -59,12 +67,13 @@ class ApplicationManager:
         self.tool_groups: dict[str, EnvironmentToolGroup] = {}
         self.tools: dict[str, EnvironmentTool] = {}
 
+        self._app_group_info: dict[str, GroupAppInfo] = {}
+
         self._studio_settings = studio_settings
 
         self.refresh()
 
-    @classmethod
-    def get_app_label(cls, group_name: str) -> str:
+    def get_app_label(self, group_name: str) -> str:
         """Get label for application group by name.
 
         Args:
@@ -74,12 +83,12 @@ class ApplicationManager:
             str: Application label.
 
         """
-        from .addon import ApplicationsAddon
+        group_info = self._app_group_info.get(group_name)
+        if group_info is not None and group_info.label:
+            return group_info.label
+        return group_name
 
-        return ApplicationsAddon.get_app_label(group_name)
-
-    @classmethod
-    def get_app_icon(cls, group_name: str) -> Optional[str]:
+    def get_app_icon(self, group_name: str) -> Optional[str]:
         """Get icon for application group by name.
 
         Args:
@@ -89,9 +98,10 @@ class ApplicationManager:
             Optional[str]: Application icon filename.
 
         """
-        from .addon import ApplicationsAddon
-
-        return ApplicationsAddon.get_app_icon(group_name)
+        group_info = self._app_group_info.get(group_name)
+        if group_info is None:
+            return None
+        return group_info.icon
 
     def set_studio_settings(self, studio_settings: dict[str, Any]) -> None:
         """Ability to change init system settings.
@@ -104,10 +114,26 @@ class ApplicationManager:
 
     def refresh(self) -> None:
         """Refresh applications from settings."""
+        from ayon_applications import ApplicationsAddon
+
         self.app_groups.clear()
         self.applications.clear()
         self.tool_groups.clear()
         self.tools.clear()
+        self._app_group_info.clear()
+
+        app_group_info = {}
+        app_items = ApplicationsAddon.get_application_items()
+        for app_item in app_items:
+            group_name = app_item["full_name"].split("/")[0]
+            if group_name in app_group_info:
+                continue
+
+            app_group_info[group_name] = GroupAppInfo(
+                group_name,
+                label=app_item["group_label"],
+                icon=app_item["icon"],
+            )
 
         if self._studio_settings is not None:
             settings = copy.deepcopy(self._studio_settings)

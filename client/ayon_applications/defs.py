@@ -15,13 +15,6 @@ if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
 
 
-@dataclass
-class GroupAppInfo:
-    name: str
-    label: str
-    icon: Optional[str] = None
-
-
 class LaunchTypes:
     """Launch types are filters for pre/post-launch hooks.
 

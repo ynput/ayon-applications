@@ -7,14 +7,17 @@ import traceback
 import tempfile
 import warnings
 import typing
+import urllib.parse
 from typing import Optional, Any
 
 import ayon_api
 
 from ayon_core.lib import (
     run_ayon_launcher_process,
+    get_settings_variant,
     is_headless_mode_enabled,
     env_value_to_bool,
+    CacheItem,
 )
 from ayon_core.addon import (
     AYONAddon,
@@ -26,7 +29,7 @@ from ayon_core.addon import (
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
-from .defs import LaunchTypes, GroupAppInfo
+from .defs import LaunchTypes
 from .manager import ApplicationManager
 from .exceptions import (
     ApplicationLaunchFailed,
@@ -52,57 +55,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     label = "Process Monitor"
     admin_action = True
 
-    _icons_cache: dict[str, GroupAppInfo] = {}
-    _app_groups_info_cache = None
-
-    @classmethod
-    def get_app_group_info(cls, group_name: str) -> Optional[GroupAppInfo]:
-        """Get info about application group.
-
-        Output contains only constant group information from server. Does not
-            respect settings.
-
-        Args:
-            group_name (str): Application name.
-
-        Returns:
-            Optional[GroupAppInfo]: Application group info.
-
-        """
-        app_groups_info = cls._get_app_groups_info()
-        return app_groups_info.get(group_name)
-
-    @classmethod
-    def get_app_label(cls, group_name: str) -> str:
-        """Get label for application group by name.
-
-        Args:
-            group_name (str): Application name.
-
-        Returns:
-            str: Application label.
-
-        """
-        app_group_info = cls.get_app_group_info(group_name)
-        if app_group_info is None:
-            return group_name
-        return app_group_info.label
-
-    @classmethod
-    def get_app_icon(cls, group_name: str) -> Optional[str]:
-        """Get icon for application group by name.
-
-        Args:
-            group_name (str): Application name.
-
-        Returns:
-            Optional[str]: Application icon filename.
-
-        """
-        app_group_info = cls.get_app_group_info(group_name)
-        if app_group_info is None:
-            return None
-        return app_group_info.icon
+    _icons_cache: dict[str, bytes] = {}
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
@@ -235,20 +188,22 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """
         return get_app_icon_path(icon_filename)
 
-    def get_custom_icons_info(self) -> list[dict[str, str]]:
+    @classmethod
+    def get_custom_icons_info(cls) -> list[dict[str, str]]:
         """List custom icons available on the server.
 
         Returns:
             list[dict[str, str]]: List of custom icons.
 
         """
-        endpoint = f"addons/{self.name}/{self.version}/customIcons"
+        endpoint = f"addons/{cls.name}/{cls.version}/customIcons"
         response = ayon_api.get(endpoint)
         response.raise_for_status()
         return response.data["icons"]
 
+    @classmethod
     def upload_custom_icon(
-        self, path: str, filename: Optional[str] = None
+        cls, path: str, filename: Optional[str] = None
     ) -> None:
         """Upload custom icon to AYON server.
 
@@ -261,14 +216,15 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """
         if filename is None:
             filename = os.path.basename(path)
-        endpoint = f"addons/{self.name}/{self.version}/customIcons/{filename}"
+        endpoint = f"addons/{cls.name}/{cls.version}/customIcons/{filename}"
         response = ayon_api.upload_file(
             endpoint, path
         )
         response.raise_for_status()
 
+    @classmethod
     def delete_custom_icon(
-        self, filename: Optional[str] = None
+        cls, filename: Optional[str] = None
     ) -> None:
         """Delete custom icon to AYON server.
 
@@ -278,14 +234,19 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 settings.
 
         """
-        endpoint = f"addons/{self.name}/{self.version}/customIcons/{filename}"
+        endpoint = f"addons/{cls.name}/{cls.version}/customIcons/{filename}"
         response = ayon_api.delete(endpoint)
         response.raise_for_status()
 
+    @classmethod
     def get_app_icon_url(
-        self, icon_filename: str, server: bool = False
+        cls, icon_filename: str, server: bool = False
     ) -> Optional[str]:
         """Get icon path.
+
+        icon filename can be either a full URL (http/https/file/...)
+        or a bare filename. Full URLs are used as is while bare filenames
+        resolve to the addons icons folder.
 
         Method does not validate if icon filename exist on server.
 
@@ -300,19 +261,142 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """
         if not icon_filename:
             return None
+
+        # check if its a full URL
+        url = urllib.parse.urlparse(icon_filename)
+        if url.scheme:
+            return icon_filename
+
         icon_name = os.path.basename(icon_filename)
         if server:
             base_url = ayon_api.get_base_url()
             return (
-                f"{base_url}/api/addons/{self.name}/{self.version}"
+                f"{base_url}/api/addons/{cls.name}/{cls.version}"
                 f"/icons/{icon_name}"
             )
         server_url = os.getenv("AYON_WEBSERVER_URL")
         if not server_url:
             return None
         return "/".join([
-            server_url, "addons", self.name, "icons", icon_name
+            server_url, "addons", cls.name, "icons", icon_name
         ])
+
+    @classmethod
+    def get_application_items(
+        cls,
+        project_name: str | None = None,
+        task_id: str | None = None,
+        *,
+        variant: str | None = None,
+        version: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get application items.
+
+        This is meant as api for other addons to get application items for
+            a given context. Can also filter applications for a specific task.
+
+        It does handle project bundles and settings variant automatically.
+
+        Args:
+            project_name (str | None): Project name.
+            task_id (str | None): Task id for which applications are fitlered.
+            variant (str | None): Settings variant. Current settings variant
+                is used if not passed in.
+            version (str | None): Specific version of applications addon
+                to get items for. If None, it will use the version
+                resolved for current context (variant and project).
+
+        Example application dict (may vary based on applications
+            addon version):
+            {
+                "host_name": str
+                "full_name": str
+                "full_label": str
+                "group_label": str
+                "variant_label": str
+                "icon": dict[str, str] | None
+                "show_grouped": bool
+            }
+
+        Returns:
+            list[dict]: Application items.
+
+        """
+        if variant is None:
+            variant = get_settings_variant()
+
+        query_params = {"variant": variant}
+        if version is not None:
+            query_params["version"] = version
+
+        query = urllib.parse.urlencode(query_params)
+        context_path = ""
+        if project_name:
+            context_path = f"/{project_name}"
+            if task_id:
+                context_path = f"{context_path}/task/{task_id}"
+
+        response = ayon_api.get(
+            f"addons/{cls.name}/{cls.version}/"
+            f"apps{context_path}?{query}"
+        )
+        return response.data["applications"]
+
+    @classmethod
+    def get_tool_items(
+        cls,
+        project_name: str | None = None,
+        *,
+        variant: str | None = None,
+        version: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get tool items.
+
+        This is meant as api for other addons to get tools items for a given
+            context.
+
+        It does handle project bundles and settings variant automatically.
+
+        Args:
+            project_name (str | None): Project name.
+            variant (str | None): Settings variant. Current settings variant
+                is used if not passed in.
+            version (str | None): Specific version of applications addon
+                to get items for. If None, it will use the version
+                resolved for current context (variant and project).
+
+        Example tool dict (may vary based on applications addon version):
+            {
+                "full_name": str,
+                "full_label": str,
+                "group_label": str,
+                "variant_label": str,
+                "host_names": list[str],
+                "app_variants": list[str],
+            }
+
+        Returns:
+            list[dict]: Tool items.
+
+        """
+        if variant is None:
+            variant = get_settings_variant()
+
+        query_params = {"variant": variant}
+        if version is not None:
+            query_params["version"] = version
+
+        query = urllib.parse.urlencode(query_params)
+
+        context_path = ""
+        if project_name:
+            context_path = f"/{project_name}"
+
+        response = ayon_api.get(
+            f"addons/{cls.name}/{cls.version}/"
+            f"tools{context_path}?{query}"
+        )
+        return response.data["applications"]
 
     def launch_application(
         self,
@@ -471,6 +555,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             .option("--folder", required=True, help="Folder path")
             .option("--task", required=True, help="Task name")
             .option(
+                "--workfile-path",
+                required=False,
+                help="Workfile path",
+                default=None,
+            )
+            .option(
                 "--use-last-workfile",
                 help="Use last workfile",
                 default=None,
@@ -485,6 +575,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             .option("--app", required=True, help="Full application name")
             .option("--project", required=True, help="Project name")
             .option("--task-id", required=True, help="Task id")
+            .option(
+                "--workfile-path",
+                required=False,
+                help="Workfile path",
+                default=None,
+            )
             .option(
                 "--use-last-workfile",
                 help="Use last workfile",
@@ -565,7 +661,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         folder: str,
         task: str,
         app: str,
-        use_last_workfile: Optional["BoolArg"],
+        workfile_path: Optional[str] = None,
+        use_last_workfile: Optional["BoolArg"] = None,
     ) -> None:
         """Launch application.
 
@@ -574,16 +671,26 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             folder (str): Folder path.
             task (str): Task name.
             app (str): Full application name e.g. 'maya/2024'.
-            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+            workfile_path (str | None): Workfile path to use.
+            use_last_workfile (Literal["1", "0"] | None): Explicitly tell
                 to use last workfile.
 
         """
-        if use_last_workfile is not None:
+        if workfile_path:
+            use_last_workfile = False
+
+        elif use_last_workfile is not None:
             use_last_workfile = env_value_to_bool(
                 use_last_workfile, default=None
             )
+
         self.launch_application(
-            app, project, folder, task, use_last_workfile=use_last_workfile,
+            app,
+            project,
+            folder,
+            task,
+            workfile_path=workfile_path,
+            use_last_workfile=use_last_workfile,
         )
 
     def _cli_launch_with_task_id(
@@ -591,7 +698,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         project: str,
         task_id: str,
         app: str,
-        use_last_workfile: Optional["BoolArg"],
+        workfile_path: Optional[str] = None,
+        use_last_workfile: Optional["BoolArg"] = None,
     ) -> None:
         """Launch application using project name, task id and full app name.
 
@@ -599,11 +707,15 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             project (str): Project name.
             task_id (str): Task id.
             app (str): Full application name e.g. 'maya/2024'.
-            use_last_workfile (Optional[Literal["1", "0"]): Explicitly tell
+            workfile_path (str | None): Workfile path to use.
+            use_last_workfile (Literal["1", "0"] | None): Explicitly tell
                 to use last workfile.
 
         """
-        if use_last_workfile is not None:
+        if workfile_path:
+            use_last_workfile = False
+
+        elif use_last_workfile is not None:
             use_last_workfile = env_value_to_bool(
                 value=use_last_workfile, default=None
             )
@@ -619,6 +731,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             project,
             folder_entity["path"],
             task_entity["name"],
+            workfile_path=workfile_path,
             use_last_workfile=use_last_workfile,
         )
 
@@ -682,20 +795,3 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
         finally:
             os.remove(tmp_path)
-
-    @classmethod
-    def _get_app_groups_info(cls) -> dict[str, GroupAppInfo]:
-        if cls._app_groups_info_cache is None:
-            response = ayon_api.get(
-                f"addons/{cls.name}/{cls.version}/appGroupsInfo"
-            )
-            response.raise_for_status()
-            cls._app_groups_info_cache = {
-                key: GroupAppInfo(
-                    name=key,
-                    label=value["label"],
-                    icon=value["icon"],
-                )
-                for key, value in response.data.items()
-            }
-        return cls._app_groups_info_cache

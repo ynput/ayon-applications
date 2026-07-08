@@ -227,6 +227,50 @@
             "environment": "{}",
             "variants": [
                 {
+                    "name": "17.0",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Nuke17.0v1\\Nuke17.0.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Nuke17.0v1/Nuke17.0v1.app"
+                        ],
+                        "linux": [
+                            "/usr/local/Nuke17.0v1/Nuke17.0"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "16.0",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Nuke16.0v4\\Nuke16.0.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Nuke16.0v4/Nuke16.0v4.app"
+                        ],
+                        "linux": [
+                            "/usr/local/Nuke16.0v4/Nuke16.0"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
                     "name": "15-0",
                     "label": "15.0",
                     "show_grouped": true,
@@ -1149,6 +1193,26 @@
                         ],
                         "darwin": [
                             "/Applications/Adobe After Effects 2025/Adobe After Effects 2025.app"
+                        ],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "2026",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Adobe\\Adobe After Effects 2026\\Support Files\\AfterFX.exe"
+                        ],
+                        "darwin": [
+                            "/Applications/Adobe After Effects 2026/Adobe After Effects 2026.app"
                         ],
                         "linux": []
                     },
