@@ -202,13 +202,13 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
     @classmethod
     def upload_custom_icon(
-        cls, path: str, filename: Optional[str] = None
+        cls, path: str, filename: str | None = None
     ) -> None:
         """Upload custom icon to AYON server.
 
         Args:
             path (str): Path to icon file.
-            filename (Optional[str]): Icon filename which will be used
+            filename (str | None): Icon filename which will be used
                 to store the icon on the server. This value is then used in
                 settings.
 
@@ -222,15 +222,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         response.raise_for_status()
 
     @classmethod
-    def delete_custom_icon(
-        cls, filename: Optional[str] = None
-    ) -> None:
-        """Delete custom icon to AYON server.
+    def delete_custom_icon(cls, filename: str) -> None:
+        """Delete custom icon from AYON server.
 
         Args:
-            filename (Optional[str]): Icon filename which will be used
-                to store the icon on the server. This value is then used in
-                settings.
+            filename (str): Icon filename which will be deleted
+                from the server.
 
         """
         endpoint = f"addons/{cls.name}/{cls.version}/customIcons/{filename}"
