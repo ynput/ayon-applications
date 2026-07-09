@@ -271,7 +271,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         else:
             return None
 
-
         # check if its a full URL
         try:
             url = urllib.parse.urlparse(icon_filename)
