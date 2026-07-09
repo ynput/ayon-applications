@@ -838,8 +838,8 @@ class ApplicationsAddon(BaseServerAddon):
     def _get_custom_icon(self, filename: str) -> FileResponse:
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
-        filepath = os.path.join(custom_icons_dir, filename)
-        if not os.path.exists(filepath):
+        filepath = custom_icons_dir / filename
+        if not filepath.is_file():
             raise HTTPException(
                 status_code=404,
                 detail=f"File '{filename}' not found"
@@ -849,8 +849,8 @@ class ApplicationsAddon(BaseServerAddon):
     def _delete_custom_icon(self, filename: str) -> dict[str, bool]:
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
-        filepath = os.path.join(custom_icons_dir, filename)
-        if not os.path.exists(filepath):
+        filepath = custom_icons_dir / filename
+        if not filepath.is_file():
             raise HTTPException(
                 status_code=404,
                 detail={
@@ -858,5 +858,5 @@ class ApplicationsAddon(BaseServerAddon):
                     "message": f"File '{filename}' not found",
                 }
             )
-        os.remove(filepath)
+        filepath.unlink()
         return {"success": True}
