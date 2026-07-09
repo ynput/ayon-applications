@@ -236,8 +236,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
     @classmethod
     def get_app_icon_url(
-        cls, icon_filename: str, server: bool = False
-    ) -> Optional[str]:
+        cls, icon: dict[str, Any] | str, server: bool = False
+    ) -> str | None:
         """Get icon path.
 
         icon filename can be either a full URL (http/https/file/...)
@@ -247,21 +247,38 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         Method does not validate if icon filename exist on server.
 
         Args:
-            icon_filename (str): Icon name.
-            server (Optional[bool]): Return url to AYON server.
+            icon (dict[str, Any] | str): Icon name.
+            server (bool): Return url to AYON server.
 
         Returns:
-            Union[str, None]: Icon path or None is server url is not
+            str | None: Icon path or None is server url is not
                 available.
 
         """
-        if not icon_filename:
+        if not icon:
             return None
 
+        if isinstance(icon, str):
+            icon_filename = icon
+        elif isinstance(icon, dict):
+            # NOTE At this moment the url always leads to addon's icons
+            #   endpoint and last part of path is filename
+            url = icon.get("url")
+            if not isinstance(url, str):
+                return None
+            icon_filename = os.path.basename(url)
+
+        else:
+            return None
+
+
         # check if its a full URL
-        url = urllib.parse.urlparse(icon_filename)
-        if url.scheme:
-            return icon_filename
+        try:
+            url = urllib.parse.urlparse(icon_filename)
+            if url.scheme:
+                return icon_filename
+        except Exception:
+            pass
 
         icon_name = os.path.basename(icon_filename)
         if server:
