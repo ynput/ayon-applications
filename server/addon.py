@@ -176,12 +176,17 @@ class ApplicationsAddon(BaseServerAddon):
         )
         self.add_endpoint(
             "apps/{project_name}",
-            self._get_project_applications_endpoint,
+            self._get_applications_endpoint,
             method="GET",
         )
         self.add_endpoint(
             "apps/{project_name}/task/{task_id}",
             self._get_task_applications_endpoint,
+            method="GET",
+        )
+        self.add_endpoint(
+            "tools",
+            self._get_tools_endpoint,
             method="GET",
         )
         self.add_endpoint(
@@ -727,29 +732,14 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _get_applications_endpoint(
         self,
+        project_name: str | None = None,
         variant: str | None = Query(None, title="Settings Variant"),
         version: str | None = Query(None, title="Addon version"),
     ):
         if variant is None:
             variant = "production"
         app_items = await self.get_application_items(
-            project_name=None, variant=variant, version=version
-        )
-
-        return {
-            "applications": [app_item for app_item in app_items]
-        }
-
-    async def _get_project_applications_endpoint(
-        self,
-        project_name: str,
-        variant: str | None = Query(None, title="Settings Variant"),
-        version: str | None = Query(None, title="Addon version"),
-    ):
-        if variant is None:
-            variant = "production"
-        app_items = await self.get_application_items(
-            project_name, variant=variant, version=version
+            project_name=project_name, variant=variant, version=version
         )
 
         return {
@@ -775,7 +765,7 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _get_tools_endpoint(
         self,
-        project_name: str,
+        project_name: str | None = None,
         variant: str | None = Query(None, title="Settings Variant"),
         version: str | None = Query(None, title="Addon version"),
     ):
