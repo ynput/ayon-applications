@@ -135,6 +135,8 @@ class ApplicationManager:
                 icon=app_item["icon"],
             )
 
+        self._app_group_info = app_group_info
+
         if self._studio_settings is not None:
             settings = copy.deepcopy(self._studio_settings)
         else:
