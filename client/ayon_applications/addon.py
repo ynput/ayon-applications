@@ -54,7 +54,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     label = "Process Monitor"
     admin_action = True
 
-    _icons_cache: dict[str, bytes] = {}
+    _icons_cache: dict[str, bytes | None] = {}
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
@@ -510,21 +510,36 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             manager (WebServerManager): Webserver manager.
 
         """
+        def _cache_icon(filename: str, data: bytes | None) -> None:
+            self.__class__._icons_cache[filename] = data
+            if len(self.__class__._icons_cache) > 256:
+                self.__class__._icons_cache.pop(
+                    next(iter(self.__class__._icons_cache))
+                )
 
         async def _get_web_icon(request):
             from aiohttp import web, ClientSession
 
-            filename = request.match_info["filename"]
+            filename: str = os.path.basename(request.match_info["filename"])
             # TODO find better way how to cache
             if filename not in self.__class__._icons_cache:
                 url = self.get_app_icon_url(filename, server=True)
+                if not url:
+                    _cache_icon(filename, None)
+                    raise web.HTTPNotFound()
+
+                data = None
                 async with ClientSession() as session:
                     async with session.get(url) as resp:
-                        assert resp.status == 200
-                        data = await resp.read()
+                        if resp.status != 200:
+                            data = await resp.read()
 
-                self.__class__._icons_cache[filename] = data
-            return web.Response(body=self.__class__._icons_cache[filename])
+                _cache_icon(filename, data)
+
+            body = self.__class__._icons_cache[filename]
+            if body is None:
+                raise web.HTTPNotFound()
+            return web.Response(body=body)
 
         manager.add_addon_route(
             self.name,
