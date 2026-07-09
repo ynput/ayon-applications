@@ -811,14 +811,14 @@ class ApplicationsAddon(BaseServerAddon):
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         custom_icons_dir.mkdir(parents=True, exist_ok=True)
-        filepath = os.path.join(custom_icons_dir, filename)
+        filepath = custom_icons_dir / filename
         try:
-            async with aiofiles.open(filepath, "wb") as stream:
+            async with aiofiles.open(str(filepath), "wb") as stream:
                 async for chunk in request.stream():
                     await stream.write(chunk)
         except Exception:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            if filepath.exists():
+                filepath.unlink()
             raise HTTPException(
                 status_code=500,
                 detail={"success": False},
