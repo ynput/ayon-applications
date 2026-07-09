@@ -783,8 +783,7 @@ class ApplicationsAddon(BaseServerAddon):
         current_dir = Path(os.path.abspath(__file__)).parent
         return current_dir.parent.parent / "custom_icons"
 
-    # --- Endpoints handlers ---
-    async def _get_icon(self, filename: str):
+    async def _get_icon(self, filename: str) -> FileResponse:
         filename = os.path.basename(filename)
 
         custom_icons_dir = self._get_custom_icons_dir()
@@ -808,7 +807,7 @@ class ApplicationsAddon(BaseServerAddon):
         request: Request,
         user: CurrentUser,
         filename: str,
-    ):
+    ) -> dict[str, bool]:
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         custom_icons_dir.mkdir(parents=True, exist_ok=True)
@@ -827,7 +826,7 @@ class ApplicationsAddon(BaseServerAddon):
 
         return {"success": True}
 
-    def _get_custom_icons(self):
+    def _get_custom_icons(self) -> dict[str, list[dict[str, str]]]:
         custom_icons_dir = self._get_custom_icons_dir()
         filenames = []
         if custom_icons_dir.exists():
@@ -836,7 +835,7 @@ class ApplicationsAddon(BaseServerAddon):
                     filenames.append({"filename": item.name})
         return {"icons": filenames}
 
-    def _get_custom_icon(self, filename: str):
+    def _get_custom_icon(self, filename: str) -> FileResponse:
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         filepath = os.path.join(custom_icons_dir, filename)
@@ -847,7 +846,7 @@ class ApplicationsAddon(BaseServerAddon):
             )
         return FileResponse(filepath)
 
-    def _delete_custom_icon(self, filename: str):
+    def _delete_custom_icon(self, filename: str) -> dict[str, bool]:
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         filepath = os.path.join(custom_icons_dir, filename)
