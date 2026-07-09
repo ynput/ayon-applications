@@ -809,6 +809,7 @@ class ApplicationsAddon(BaseServerAddon):
         user: CurrentUser,
         filename: str,
     ):
+        filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         custom_icons_dir.mkdir(parents=True, exist_ok=True)
         filepath = os.path.join(custom_icons_dir, filename)
@@ -836,6 +837,7 @@ class ApplicationsAddon(BaseServerAddon):
         return {"icons": filenames}
 
     def _get_custom_icon(self, filename: str):
+        filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         filepath = os.path.join(custom_icons_dir, filename)
         if not os.path.exists(filepath):
@@ -846,6 +848,7 @@ class ApplicationsAddon(BaseServerAddon):
         return FileResponse(filepath)
 
     def _delete_custom_icon(self, filename: str):
+        filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         filepath = os.path.join(custom_icons_dir, filename)
         if not os.path.exists(filepath):
