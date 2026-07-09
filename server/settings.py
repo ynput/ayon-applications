@@ -272,7 +272,7 @@ def custom_icons_enum():
     icons = []
     if CUSTOM_ICONS_DIR.exists():
         icons = [
-            child.name
+            {"value": child.name, "label": child.name}
             for child in CUSTOM_ICONS_DIR.iterdir()
             if child.is_file()
         ]
