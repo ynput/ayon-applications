@@ -785,15 +785,17 @@ class ApplicationsAddon(BaseServerAddon):
 
     # --- Endpoints handlers ---
     async def _get_icon(self, filename: str):
+        filename = os.path.basename(filename)
+
         custom_icons_dir = self._get_custom_icons_dir()
         if custom_icons_dir.exists():
             path = custom_icons_dir / filename
-            if path.exists():
+            if path.is_file():
                 return FileResponse(path)
 
         current_dir = Path(os.path.abspath(__file__)).parent
         path = current_dir.parent / "public" / "icons" / filename
-        if not path.exists():
+        if not path.is_file():
             raise HTTPException(
                 status_code=404,
                 detail=f"Icon '{filename}' not found"
