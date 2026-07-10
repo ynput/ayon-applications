@@ -9,9 +9,10 @@ import platform
 import sqlite3
 import threading
 from dataclasses import dataclass
+from enum import Enum
 from hashlib import sha256
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple
 
 from ayon_core.lib import get_launcher_local_dir
 
@@ -23,7 +24,14 @@ class ProcessIdTriplet(NamedTuple):
     """Triplet of process identification values."""
     pid: int
     executable: str
-    start_time: Optional[float]  # the same goes for start time
+    start_time: float | None  # the same goes for start time
+
+
+class ProcessState(Enum):
+    """State of the process."""
+    ACTIVE = 1
+    INACTIVE = 2
+    UNKNOWN = 3
 
 
 @dataclass
@@ -40,6 +48,9 @@ class ProcessInfo:
         pid (int): Process ID of the launched process.
         active (bool): Whether the process is currently active.
         output (Path): Output of the process.
+        start_time (float): Start time of the process in
+            seconds since the epoch.
+        created_at (str): Timestamp of when the process info was created in
 
     """
 
@@ -48,12 +59,13 @@ class ProcessInfo:
     args: list[str]
     env: dict[str, str]
     cwd: str
-    hash: Optional[str] = None
-    pid: Optional[int] = None
+    hash: str | None = None
+    pid: int | None = None
     active: bool = False
-    output: Optional[Path] = None
-    start_time: Optional[float] = None
-    created_at: Optional[str] = None
+    output: Path | None = None
+    start_time: float | None = None
+    created_at: str | None = None
+    state: ProcessState = ProcessState.UNKNOWN
 
     def __post_init__(self) -> None:
         """Post-initialization to compute the hash if not provided."""
@@ -141,8 +153,8 @@ class ProcessManager:
     def get_process_info_hash_by_values(
         executable: Path,
         name: str,
-        pid: Optional[int] = None,
-        start_time: Optional[float] = None,
+        pid: int | None = None,
+        start_time: float | None = None,
     ) -> str:
         """Get hash of the process information by values.
 
@@ -204,7 +216,7 @@ class ProcessManager:
         )
         cnx.commit()
 
-    def get_process_info(self, process_hash: str) -> Optional[ProcessInfo]:
+    def get_process_info(self, process_hash: str) -> ProcessInfo | None:
         """Get process information by hash.
 
         Args:
@@ -237,7 +249,7 @@ class ProcessManager:
         )
 
     def get_process_info_by_name(
-        self, name: str) -> Optional[ProcessInfo]:
+        self, name: str) -> ProcessInfo | None:
         """Get process information by name.
 
         Args:
@@ -268,7 +280,7 @@ class ProcessManager:
             created_at=row[9],
         )
 
-    def get_process_info_by_pid(self, pid: int) -> Optional[ProcessInfo]:
+    def get_process_info_by_pid(self, pid: int) -> ProcessInfo | None:
         """Get process information by process id.
 
         Args:
@@ -299,7 +311,7 @@ class ProcessManager:
             created_at=row[9],
         )
 
-    def get_current_process_info(self) -> Optional[ProcessInfo]:
+    def get_current_process_info(self) -> ProcessInfo | None:
         """Get information for the current process.
 
         Returns:
@@ -307,7 +319,11 @@ class ProcessManager:
         """
         return self.get_process_info_by_pid(os.getpid())
 
-    def get_all_process_info(self) -> list[ProcessInfo]:
+    def get_all_process_info(
+        self,
+        top_count: int | None = None,
+        newer_than: float | None = None
+    ) -> list[ProcessInfo]:
         """Get all process information from the database.
 
         Returns:
@@ -315,7 +331,8 @@ class ProcessManager:
         """
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
-        cursor.execute("SELECT * FROM process_info ORDER BY created_at DESC")
+        sql = "SELECT * FROM process_info ORDER BY created_at DESC"
+        cursor.execute(sql)
         rows = cursor.fetchall()
 
         processes: list[ProcessInfo] = [
@@ -343,9 +360,29 @@ class ProcessManager:
         # (stronger protection against PID reuse).
         pid_triplets: list[ProcessIdTriplet] = []
         processes_with_pid = []
-        for proc in processes:
-            if proc.pid is None:
+        for idx, proc in enumerate(processes):
+            # Time filter takes precedence. If requested and process is not
+            # newer, skip it regardless of `top_count`.
+            if (
+                newer_than is not None
+                and (
+                    proc.start_time is None
+                    or proc.start_time <= newer_than
+                )
+            ):
+                # Keep state as UNKNOWN and active as False
                 continue
+
+            # If top_count is set, only check processes within that window.
+            if top_count is not None and idx >= top_count:
+                # Keep state as UNKNOWN and active as False
+                continue
+
+            if proc.pid is None:
+                proc.state = ProcessState.INACTIVE
+                proc.active = False
+                continue
+
             exe = proc.executable.as_posix()
             pid_triplets.append(
                 ProcessIdTriplet(proc.pid, exe, proc.start_time))
@@ -353,9 +390,14 @@ class ProcessManager:
 
         if pid_triplets:
             running_status = self._are_processes_running(pid_triplets)
-            for proc, (_, is_running) in zip(  # noqa: B905
+            for proc, (_, is_running) in zip(
                     processes_with_pid, running_status):
                 proc.active = is_running
+                proc.state = (
+                    ProcessState.ACTIVE
+                    if is_running
+                    else ProcessState.INACTIVE
+                )
 
         return processes
 
@@ -438,7 +480,7 @@ class ProcessManager:
     def _is_process_running(
             pid: int,
             executable: str,
-            start_time: Optional[float] = None) -> bool:
+            start_time: float | None = None) -> bool:
         """Check if a process is running using psutil.
 
         Args:
@@ -549,7 +591,7 @@ class ProcessManager:
         return result
 
     @staticmethod
-    def get_executable_path_by_pid(pid: int) -> Optional[Path]:
+    def get_executable_path_by_pid(pid: int) -> Path | None:
         """Get the executable path of a process by its PID using psutil.
 
         Args:
@@ -577,7 +619,7 @@ class ProcessManager:
 
     @staticmethod
     def get_process_start_time(
-            process: subprocess.Popen) -> Optional[float]:
+            process: subprocess.Popen) -> float | None:
         """Get the start time of a process using psutil.
 
         Returns:
@@ -599,7 +641,7 @@ class ProcessManager:
         return start_time
 
     @staticmethod
-    def get_process_start_time_by_pid(pid: int) -> Optional[float]:
+    def get_process_start_time_by_pid(pid: int) -> float | None:
         """Get the start time of a process by PID using psutil.
 
         Args:
@@ -656,6 +698,7 @@ class ProcessManager:
                 )
                 # If psutil returned the process, it's currently running
                 proc_info.active = True
+                proc_info.state = ProcessState.ACTIVE
                 descendants.append(proc_info)
         return descendants
 

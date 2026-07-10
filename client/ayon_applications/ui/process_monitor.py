@@ -6,10 +6,11 @@ import enum
 from datetime import datetime, timezone
 from logging import getLogger
 from pathlib import Path
+import time
 from time import perf_counter
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
-from ayon_applications.process import ProcessInfo, ProcessManager
+from ayon_applications.process import ProcessInfo, ProcessManager, ProcessState
 from ayon_core.style import load_stylesheet
 from ayon_core.tools.utils import get_ayon_qt_app
 from qtpy import QtCore, QtGui, QtWidgets
@@ -28,17 +29,28 @@ DEFAULT_RELOAD_INTERVAL = 2000
 if TYPE_CHECKING:
     from types import TracebackType
 
-ModelIndex = Union[QModelIndex, QPersistentModelIndex]
+ModelIndex = QModelIndex | QPersistentModelIndex
 
 
 class FileChangeWatcher(QtCore.QObject):
     """Qt-based file watcher with rotation handling and debounce."""
     changed = QtCore.Signal(object)  # emits Path (as object)
 
-    def __init__(self, parent=None, debounce_ms: int = 150) -> None:
+    def __init__(
+            self,
+            parent: QtCore.QObject | None = None,
+            debounce_ms: int = 150) -> None:
+        """Initialize the file watcher.
+
+        Args:
+            parent: Optional parent QObject.
+            debounce_ms: Milliseconds to debounce rapid events
+                (default: 150ms).
+
+        """
         super().__init__(parent)
         self._watcher = QtCore.QFileSystemWatcher(self)
-        self._target: Optional[Path] = None
+        self._target: Path | None = None
 
         # debounce timer to coalesce bursts of events
         # QFileSystemWatcher can emit multiple events for a single change
@@ -50,7 +62,7 @@ class FileChangeWatcher(QtCore.QObject):
         self._watcher.fileChanged.connect(self._on_any_change)
         self._watcher.directoryChanged.connect(self._on_any_change)
 
-    def set_target(self, file_path: Optional[Path]) -> None:
+    def set_target(self, file_path: Path | None) -> None:
         """Start watching given file and its parent directory."""
         self.stop()
         self._target = file_path
@@ -104,10 +116,10 @@ class CatchTime:
 
     def __exit__(
             self,
-            type_: Optional[type[BaseException]],
-            value: Optional[BaseException],
-            traceback: Optional[TracebackType],
-    ) -> Optional[bool]:
+            type_: type[BaseException] | None,
+            value: BaseException | None,
+            traceback: TracebackType | None,
+    ) -> bool | None:
         """Stop timing and store elapsed time.
 
         Returns:
@@ -172,12 +184,19 @@ class ProcessRefreshWorkerSignals(QtCore.QObject):
 class ProcessRefreshWorker(QRunnable):
     """Worker thread for refreshing process data from the database."""
 
-    def __init__(self, manager: ProcessManager):
+    def __init__(
+        self,
+        manager: ProcessManager,
+        top_count: int | None = None,
+        newer_than: float | None = None
+    ):
         """Initialize the worker."""
         super().__init__()
         self.signals = ProcessRefreshWorkerSignals()
         self.signature = self.__class__.__name__
         self._manager = manager
+        self._top_count = top_count
+        self._newer_than = newer_than
         self._log = getLogger(self.signature)
 
     @Slot()
@@ -185,12 +204,16 @@ class ProcessRefreshWorker(QRunnable):
         """Refresh process data in background thread."""
         with CatchTime() as timer:
             try:
-                processes = self._manager.get_all_process_info()
+                processes = self._manager.get_all_process_info(
+                    self._top_count, self._newer_than
+                )
                 self.signals.finished.emit(processes)
             except Exception as e:  # noqa: BLE001
                 self.signals.error.emit(str(e))
         self._log.debug(
-            "Refresh from db completed in %s", timer.readout)
+            "Refresh from db for %s completed in %s",
+            self._top_count,
+            timer.readout)
 
 
 class FileContentWorkerSignals(QtCore.QObject):
@@ -250,7 +273,7 @@ class CleanupWorker(QRunnable):
     def __init__(self,
                  manager: ProcessManager,
                  cleanup_type: str,
-                 process_hash: Optional[str] = None) -> None:
+                 process_hash: str | None = None) -> None:
         """Initialize the worker.
 
         Args:
@@ -312,7 +335,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def __init__(
             self,
             manager: ProcessManager,
-            parent: Optional[QtCore.QObject] = None,
+            parent: QtCore.QObject | None = None,
             ) -> None:
         """Initialize the model.
 
@@ -360,13 +383,20 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                     child = parent_item.child(i, self.columns.NAME)
                     if child is None:
                         continue
-                    cproc: Optional[ProcessInfo] = child.data(
+                    cproc: ProcessInfo | None = child.data(
                         QtCore.Qt.ItemDataRole.UserRole)
-                    if cproc and cproc.pid and cproc.active:
+                    if (
+                        cproc
+                        and cproc.pid
+                        and cproc.state == ProcessState.ACTIVE
+                    ):
                         return self._child_running_icon
 
-        if process.pid:
-            return self._running_icon if process.active else self._stopped_icon
+        if process.state == ProcessState.ACTIVE:
+            return self._running_icon
+        if process.state == ProcessState.INACTIVE:
+            return self._stopped_icon
+        # UNKNOWN or checking
         return self._unknown_icon
 
     @classmethod
@@ -487,13 +517,13 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         # After updating children, refresh parent's icon
         # (parent ProcessInfo stored in UserRole)
         with contextlib.suppress(Exception):
-            parent_proc: Optional[ProcessInfo] = parent_item.data(
+            parent_proc: ProcessInfo | None = parent_item.data(
                 QtCore.Qt.ItemDataRole.UserRole
             )
             if parent_proc is not None:
                 parent_item.setIcon(self._status_icon(parent_proc))
 
-    def get_process_at_row(self, row: int) -> Optional[ProcessInfo]:
+    def get_process_at_row(self, row: int) -> ProcessInfo | None:
         """Get the ProcessInfo stored at the given row.
 
         Args:
@@ -512,7 +542,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     def get_process_at_index(
         self, index: QtCore.QModelIndex
-    ) -> Optional[ProcessInfo]:
+    ) -> ProcessInfo | None:
         """Get the ProcessInfo stored at the given index.
 
         Args:
@@ -547,7 +577,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             top_item = root.child(r, self.columns.NAME)
             if top_item is None:
                 continue
-            proc: Optional[ProcessInfo] = top_item.data(
+            proc: ProcessInfo | None = top_item.data(
                 QtCore.Qt.ItemDataRole.UserRole
             )
             if proc and proc.hash and proc.hash in hashes:
@@ -557,14 +587,14 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 child = top_item.child(cr, self.columns.NAME)
                 if child is None:
                     continue
-                cproc: Optional[ProcessInfo] = child.data(
+                cproc: ProcessInfo | None = child.data(
                     QtCore.Qt.ItemDataRole.UserRole
                 )
                 if cproc and cproc.hash and cproc.hash in hashes:
                     results.append(self.indexFromItem(child))
         return results
 
-    def get_index_by_hash(self, hash_: str) -> Optional[QtCore.QModelIndex]:
+    def get_index_by_hash(self, hash_: str) -> QtCore.QModelIndex | None:
         """Get model index for process matching given hash.
 
         Args:
@@ -580,7 +610,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     def _data_display_role(  # noqa: C901, PLR0911, PLR0912
         self, column: int, process: ProcessInfo
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get display text for a given column and process.
 
         Args:
@@ -598,8 +628,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         if column == self.columns.PID:
             return str(process.pid) if process.pid else "N/A"
         if column == self.columns.STATUS:
-            if process.pid:
-                return "Running" if process.active else "Stopped"
+            if process.state == ProcessState.ACTIVE:
+                return "Running"
+            if process.state == ProcessState.INACTIVE:
+                return "Stopped"
             return "Unknown"
         if column == self.columns.CREATED:
             if process.created_at:
@@ -640,11 +672,9 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     @staticmethod
     def _data_background_role(process: ProcessInfo) -> QtGui.QColor:
-        if process.pid:
-            is_running = process.active
-            if is_running:
-                return QtGui.QColor(200, 255, 200)  # Light green
-
+        if process.state == ProcessState.ACTIVE:
+            return QtGui.QColor(200, 255, 200)  # Light green
+        if process.state == ProcessState.INACTIVE:
             return QtGui.QColor(255, 200, 200)  # Light red
         return QtGui.QColor(240, 240, 240)  # Light gray
 
@@ -666,7 +696,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         def key_func(  # noqa: PLR0911
             process: ProcessInfo,
-        ) -> Union[str, int, float]:
+        ) -> str | int | float:
             """Key function for sorting based on column.
 
             Returns:
@@ -712,13 +742,17 @@ class ProcessMonitorController(QtCore.QObject):
     # New: descendants refreshed signal (parent_hash, descendants)
     descendants_refreshed = QtCore.Signal(object, list)
 
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    def __init__(self, parent: QtCore.QObject | None = None):
         """Initialize the controller."""
         super().__init__(parent)
         self.manager = ProcessManager()
         self._thread_pool = QThreadPool()
         self._file_watcher = FileChangeWatcher(self)
         self._file_watcher.changed.connect(self._on_file_changed)
+
+        # Filters
+        self.filter_top_count: int = 10
+        self.filter_newer_than_hours: int | None = 8
 
         # Timers (created once)
         self._refresh_timer = QtCore.QTimer(self)
@@ -729,7 +763,7 @@ class ProcessMonitorController(QtCore.QObject):
         self._file_reload_timer.timeout.connect(self._on_file_reload_timeout)
         self._file_reload_timer.setSingleShot(False)
         self._file_reload_interval = 2000
-        self._file_reload_target: Optional[Path] = None
+        self._file_reload_target: Path | None = None
 
     # Timer control
     def start_timers(self) -> None:
@@ -747,8 +781,15 @@ class ProcessMonitorController(QtCore.QObject):
     # Refresh
     def refresh(self) -> None:
         """Refresh process data in background thread."""
+        newer_than_ts = None
+        if self.filter_newer_than_hours is not None:
+
+            newer_than_ts = time.time() - (self.filter_newer_than_hours * 3600)
+
         try:
-            worker = ProcessRefreshWorker(self.manager)
+            worker = ProcessRefreshWorker(
+                self.manager, self.filter_top_count, newer_than_ts
+            )
             worker.signals.finished.connect(self._on_refresh_finished)
             worker.signals.error.connect(self._on_error)
             self._thread_pool.start(worker)
@@ -800,7 +841,7 @@ class ProcessMonitorController(QtCore.QObject):
         except Exception as exc:  # noqa: BLE001
             self.error.emit(str(exc))
 
-    def load_file_content(self, file_path: Optional[Path]) -> None:
+    def load_file_content(self, file_path: Path | None) -> None:
         """Load file content in background thread.
 
         Args:
@@ -928,7 +969,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             self._on_processes_refreshed
         )
         self._controller.file_content.connect(self._on_file_content)
-        self._controller.cleanup_finished.connect(self._on_cleanup_finished)
         self._controller.error.connect(self._on_error)
         # New: descendants
         self._controller.descendants_refreshed.connect(
@@ -1045,7 +1085,8 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         """
         toolbar_layout = QtWidgets.QHBoxLayout()
 
-        self._refresh_btn = QtWidgets.QPushButton("Refresh Process List")
+        self._refresh_btn = QtWidgets.QPushButton("Refresh")
+        self._refresh_btn.setToolTip("Refresh Process List")
         self._refresh_btn.clicked.connect(self._refresh_data)
 
         self._clean_inactive_btn = QtWidgets.QPushButton("Clean Inactive")
@@ -1060,6 +1101,30 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._clean_selected_btn.clicked.connect(
             self._delete_selected_process)
 
+        # Filters
+        self._top_count_spin = QtWidgets.QSpinBox()
+        self._top_count_spin.setRange(1, 256)
+        self._top_count_spin.setValue(
+            self._controller.filter_top_count or 10
+        )
+        self._top_count_spin.setPrefix("Top: ")
+        self._top_count_spin.setToolTip(
+            "Check status for only last X processes"
+        )
+        self._top_count_spin.valueChanged.connect(self._on_filter_changed)
+
+        self._hours_spin = QtWidgets.QSpinBox()
+        self._hours_spin.setRange(0, 720)  # Up to 30 days
+        self._hours_spin.setValue(
+            self._controller.filter_newer_than_hours or 8
+        )
+        self._hours_spin.setPrefix("Hours: ")
+        self._hours_spin.setToolTip(
+            "Check status for processes newer than X hours (0 to disable)"
+        )
+        self._hours_spin.setSpecialValueText("Hours: All")
+        self._hours_spin.valueChanged.connect(self._on_filter_changed)
+
         # Loading indicator
         self._loading_label = QtWidgets.QLabel("Loading...")
         self._loading_label.setVisible(False)
@@ -1067,9 +1132,25 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         toolbar_layout.addWidget(self._refresh_btn, 0)
         toolbar_layout.addWidget(self._clean_inactive_btn, 0)
         toolbar_layout.addWidget(self._clean_selected_btn, 0)
+        # Add separator
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.Shape.VLine)
+        line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        toolbar_layout.addWidget(line, 0)
+        toolbar_layout.addWidget(QtWidgets.QLabel("Check Status:"), 0)
+        toolbar_layout.addWidget(self._top_count_spin, 0)
+        toolbar_layout.addWidget(self._hours_spin, 0)
+
         toolbar_layout.addStretch(1)
         toolbar_layout.addWidget(self._loading_label, 0)
         return toolbar_layout
+
+    def _on_filter_changed(self) -> None:
+        """Update controller filters and refresh."""
+        self._controller.filter_top_count = self._top_count_spin.value()
+        val = self._hours_spin.value()
+        self._controller.filter_newer_than_hours = val if val > 0 else None
+        self._refresh_data()
 
     def _set_loading_state(self, *, loading: bool) -> None:
         """Set the loading state of the UI.
@@ -1082,13 +1163,15 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._loading_label.setVisible(loading)
 
         # Disable buttons during loading
-        buttons = [
+        controls = [
             self._refresh_btn,
             self._clean_inactive_btn,
             self._clean_selected_btn,
+            self._top_count_spin,
+            self._hours_spin,
         ]
-        for btn in buttons:
-            btn.setEnabled(not loading)
+        for ctrl in controls:
+            ctrl.setEnabled(not loading)
 
     def _refresh_data(self) -> None:
         """Refresh the process table data in background thread."""
@@ -1123,6 +1206,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         # Fetch descendants for each process with PID
         for proc in processes:
+            if not proc.active:
+                continue
+            if proc.state != ProcessState.ACTIVE:
+                continue
             if proc.pid:
                 self._controller.fetch_descendants(proc)
 
@@ -1190,7 +1277,8 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             and process.active
         ):
             self._controller.stop_file_reload()
-            self._controller.start_file_watch(process.output)
+            if process.output:
+                self._controller.start_file_watch(process.output)
         else:
             self._controller.stop_file_watch()
             self._controller.stop_file_reload()
@@ -1325,14 +1413,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             self._status_bar.showMessage(
                 "Cannot delete a descendant process from DB")
             self._set_loading_state(loading=False)
-
-    def _on_cleanup_finished(
-            self,
-            deleted_proc: int) -> None:
-        """Handle completion of cleanup operation."""
-        self._refresh_data()
-        self._status_bar.showMessage(
-            f"Deleted {deleted_proc} inactive processes.")
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa: N802
         """Apply stylesheet when the window is shown."""
