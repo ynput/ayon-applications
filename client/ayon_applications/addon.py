@@ -47,18 +47,18 @@ if typing.TYPE_CHECKING:
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
-
     name = "applications"
     version = __version__
+
+    # Tray action attributes
+    label = "Process Monitor"
     admin_action = True
+
+    _icons_cache: dict[str, bytes | None] = {}
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
         self._process_monitor_window: Optional[ProcessMonitorWindow] = None
-
-    @property
-    def label(self) -> str:
-        return "Process Monitor"
 
     def on_action_trigger(self) -> None:
         """Action triggered when the tray icon is clicked."""
@@ -176,7 +176,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         ]
 
     def get_app_icon_path(self, icon_filename: str) -> str:
-        """Get icon path.
+        """DEPRECATED Get icon path.
 
         Args:
             icon_filename (str): Icon filename.
@@ -187,9 +187,57 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """
         return get_app_icon_path(icon_filename)
 
+    @classmethod
+    def get_custom_icons_info(cls) -> list[dict[str, str]]:
+        """List custom icons available on the server.
+
+        Returns:
+            list[dict[str, str]]: List of custom icons.
+
+        """
+        endpoint = f"addons/{cls.name}/{cls.version}/customIcons"
+        response = ayon_api.get(endpoint)
+        response.raise_for_status()
+        return response.data["icons"]
+
+    @classmethod
+    def upload_custom_icon(
+        cls, path: str, filename: str | None = None
+    ) -> None:
+        """Upload custom icon to AYON server.
+
+        Args:
+            path (str): Path to icon file.
+            filename (str | None): Icon filename which will be used
+                to store the icon on the server. This value is then used in
+                settings.
+
+        """
+        if filename is None:
+            filename = os.path.basename(path)
+        endpoint = f"addons/{cls.name}/{cls.version}/customIcons/{filename}"
+        response = ayon_api.upload_file(
+            endpoint, path
+        )
+        response.raise_for_status()
+
+    @classmethod
+    def delete_custom_icon(cls, filename: str) -> None:
+        """Delete custom icon from AYON server.
+
+        Args:
+            filename (str): Icon filename which will be deleted
+                from the server.
+
+        """
+        endpoint = f"addons/{cls.name}/{cls.version}/customIcons/{filename}"
+        response = ayon_api.delete(endpoint)
+        response.raise_for_status()
+
+    @classmethod
     def get_app_icon_url(
-        self, icon_filename: str, server: bool = False
-    ) -> Optional[str]:
+        cls, icon: dict[str, Any] | str, server: bool = False
+    ) -> str | None:
         """Get icon path.
 
         icon filename can be either a full URL (http/https/file/...)
@@ -199,39 +247,56 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         Method does not validate if icon filename exist on server.
 
         Args:
-            icon_filename (str): Icon name.
-            server (Optional[bool]): Return url to AYON server.
+            icon (dict[str, Any] | str): Icon name.
+            server (bool): Return url to AYON server.
 
         Returns:
-            Union[str, None]: Icon path or None is server url is not
+            str | None: Icon path or None is server url is not
                 available.
 
         """
-        if not icon_filename:
+        if not icon:
+            return None
+
+        if isinstance(icon, str):
+            icon_filename = icon
+        elif isinstance(icon, dict):
+            # NOTE At this moment the url always leads to addon's icons
+            #   endpoint and last part of path is filename
+            url = icon.get("url")
+            if not isinstance(url, str):
+                return None
+            icon_filename = os.path.basename(url)
+
+        else:
             return None
 
         # check if its a full URL
-        url = urllib.parse.urlparse(icon_filename)
-        if url.scheme:
-            return icon_filename
+        try:
+            url = urllib.parse.urlparse(icon_filename)
+            if url.scheme:
+                return icon_filename
+        except Exception:
+            pass
 
         icon_name = os.path.basename(icon_filename)
         if server:
             base_url = ayon_api.get_base_url()
             return (
-                f"{base_url}/addons/{self.name}/{self.version}"
-                f"/public/icons/{icon_name}"
+                f"{base_url}/api/addons/{cls.name}/{cls.version}"
+                f"/icons/{icon_name}"
             )
         server_url = os.getenv("AYON_WEBSERVER_URL")
         if not server_url:
             return None
         return "/".join([
-            server_url, "addons", self.name, "icons", icon_name
+            server_url, "addons", cls.name, "icons", icon_name
         ])
 
+    @classmethod
     def get_application_items(
-        self,
-        project_name: str,
+        cls,
+        project_name: str | None = None,
         task_id: str | None = None,
         *,
         variant: str | None = None,
@@ -245,7 +310,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         It does handle project bundles and settings variant automatically.
 
         Args:
-            project_name (str): Project name.
+            project_name (str | None): Project name.
             task_id (str | None): Task id for which applications are fitlered.
             variant (str | None): Settings variant. Current settings variant
                 is used if not passed in.
@@ -277,18 +342,22 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             query_params["version"] = version
 
         query = urllib.parse.urlencode(query_params)
-        task_path = ""
-        if task_id:
-            task_path = f"/task/{task_id}"
+        context_path = ""
+        if project_name:
+            context_path = f"/{project_name}"
+            if task_id:
+                context_path = f"{context_path}/task/{task_id}"
+
         response = ayon_api.get(
-            f"addons/{self.name}/{self.version}/"
-            f"apps/{project_name}{task_path}?{query}"
+            f"addons/{cls.name}/{cls.version}/"
+            f"apps{context_path}?{query}"
         )
         return response.data["applications"]
 
+    @classmethod
     def get_tool_items(
-        self,
-        project_name: str,
+        cls,
+        project_name: str | None = None,
         *,
         variant: str | None = None,
         version: str | None = None,
@@ -301,7 +370,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         It does handle project bundles and settings variant automatically.
 
         Args:
-            project_name (str): Project name.
+            project_name (str | None): Project name.
             variant (str | None): Settings variant. Current settings variant
                 is used if not passed in.
             version (str | None): Specific version of applications addon
@@ -330,9 +399,14 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             query_params["version"] = version
 
         query = urllib.parse.urlencode(query_params)
+
+        context_path = ""
+        if project_name:
+            context_path = f"/{project_name}"
+
         response = ayon_api.get(
-            f"addons/{self.name}/{self.version}/"
-            f"tools/{project_name}?{query}"
+            f"addons/{cls.name}/{cls.version}/"
+            f"tools{context_path}?{query}"
         )
         return response.data["applications"]
 
@@ -427,13 +501,50 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     def webserver_initialization(self, manager: "WebServerManager") -> None:
         """Initialize webserver.
 
+        Add localhost handler for icons requests.
+
+        This was added for ftrack which is showing icons
+
         Args:
             manager (WebServerManager): Webserver manager.
 
         """
-        static_prefix = f"/addons/{self.name}/icons"
-        manager.add_static(
-            static_prefix, os.path.join(APPLICATIONS_ADDON_ROOT, "icons")
+        def _cache_icon(filename: str, data: bytes | None) -> None:
+            self.__class__._icons_cache[filename] = data
+            if len(self.__class__._icons_cache) > 256:
+                self.__class__._icons_cache.pop(
+                    next(iter(self.__class__._icons_cache))
+                )
+
+        async def _get_web_icon(request):
+            from aiohttp import web, ClientSession
+
+            filename: str = os.path.basename(request.match_info["filename"])
+            # TODO find better way how to cache
+            if filename not in self.__class__._icons_cache:
+                url = self.get_app_icon_url(filename, server=True)
+                if not url:
+                    _cache_icon(filename, None)
+                    raise web.HTTPNotFound()
+
+                data = None
+                async with ClientSession() as session:
+                    async with session.get(url) as resp:
+                        if resp.status != 200:
+                            data = await resp.read()
+
+                _cache_icon(filename, data)
+
+            body = self.__class__._icons_cache[filename]
+            if body is None:
+                raise web.HTTPNotFound()
+            return web.Response(body=body)
+
+        manager.add_addon_route(
+            self.name,
+            "/icons/{filename}",
+            "GET",
+            _get_web_icon,
         )
 
     # --- CLI ---
