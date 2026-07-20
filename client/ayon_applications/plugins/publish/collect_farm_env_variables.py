@@ -2,11 +2,7 @@ import os
 
 import pyblish.api
 
-try:
-    from ayon_core.pipeline.publish import FARM_JOB_ENV_DATA_KEY
-except ImportError:
-    # NOTE Can be removed when ayon-core >= 1.0.10 is required in package.py
-    FARM_JOB_ENV_DATA_KEY = "farmJobEnv"
+from ayon_core.pipeline.publish import FARM_JOB_ENV_DATA_KEY
 
 
 class CollectApplicationsJobEnvVars(pyblish.api.ContextPlugin):
