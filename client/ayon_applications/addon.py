@@ -46,6 +46,7 @@ if typing.TYPE_CHECKING:
     from ayon_applications.ui.process_monitor import ProcessMonitorWindow
 
 try:
+    # TODO remove when package.py requires ayon-core >=1.9.5
     from ayon_core.lib import AYONUrlIcon
 except ImportError:
     AYONUrlIcon = None
@@ -306,9 +307,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         version: str | None = None,
     ) -> AYONUrlIcon | dict[str, str] | None:
         """Prepare icon definition based on a group icon.
-
-        Todos:
-            Use icon definition classes from ayon core (added in core 1.9.5).
 
         Args:
             icon (dict[str, Any] | None): Icon definition or filename.
