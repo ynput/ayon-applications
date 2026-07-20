@@ -359,15 +359,18 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"apps{context_path}?{query}"
         )
         app_items = response.data["applications"]
+
         # Fill icon urls with 'addon_url' and prepare icon definitions
+        if not version:
+            version = cls.version
+        addon_url = f"/addons/{cls.name}/{version}"
+
         for app_item in app_items:
             icon = app_item["icon"]
             if not icon:
                 continue
             try:
-                url = icon["url"].format(
-                    addon_url=f"/addons/{cls.name}/{cls.version}"
-                )
+                url = icon["url"].format(addon_url=addon_url)
             except Exception:
                 continue
             app_item["icon"] = {
