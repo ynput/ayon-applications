@@ -81,7 +81,7 @@ def get_items_for_app_groups(
                 # it's a bare filename served from this addons public folder
                 icon_name = os.path.basename(icon_name)
                 icon_name = f"/api{{addon_url}}/icons/{icon_name}"
-                if fill_icon_url:
+                if fill_icon_url and version:
                     icon_name = icon_name.format(
                         addon_url=f"/addons/applications/{version}"
                     )

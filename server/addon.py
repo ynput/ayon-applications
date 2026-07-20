@@ -133,10 +133,6 @@ class ApplicationsAddon(BaseServerAddon):
     has_attributes = True
 
     def initialize(self):
-        # Mark getter functions with version of their signature
-        setattr(self.get_application_items, "version", 2)
-        setattr(self.get_application_items_for_task, "version", 2)
-
         EventStream.subscribe(
             "bundle.updated",
             self._on_bundle_updated,
@@ -362,7 +358,6 @@ class ApplicationsAddon(BaseServerAddon):
         variant: str,
         *,
         version: str | None = None,
-        fill_icon_url: bool = True,
     ) -> list[ApplicationItem]:
         """Get available applications for a project and variant.
 
@@ -399,11 +394,7 @@ class ApplicationsAddon(BaseServerAddon):
             kwargs = dict(
                 variant=variant,
                 version=addon.version,
-                fill_icon_url=fill_icon_url,
             )
-            func_version = getattr(addon.get_application_items, "version", 1)
-            if func_version < 2:
-                kwargs.pop("fill_icon_url")
 
             return await addon.get_application_items(project_name, **kwargs)
 
@@ -417,7 +408,7 @@ class ApplicationsAddon(BaseServerAddon):
             return get_application_items(
                 settings.dict(),
                 version=addon.version,
-                fill_icon_url=fill_icon_url,
+                fill_icon_url=True,
             )
 
         except Exception:
@@ -492,7 +483,6 @@ class ApplicationsAddon(BaseServerAddon):
         variant: str,
         *,
         version: str | None = None,
-        fill_icon_url: bool = True,
     ) -> list[ApplicationItem]:
         if version is not None:
             addon = self._get_addon_version(version)
@@ -506,20 +496,11 @@ class ApplicationsAddon(BaseServerAddon):
             addon is not self
             and hasattr(addon, "get_application_items_for_task")
         ):
-            kwargs = dict(
+            return await addon.get_application_items_for_task(
+                project_name,
                 task_id=task_id,
                 variant=variant,
                 version=addon.version,
-                fill_icon_url=fill_icon_url,
-            )
-            func_version = getattr(
-                addon.get_application_items_for_task, "version", 1
-            )
-            if func_version < 2:
-                kwargs.pop("fill_icon_url")
-
-            return await addon.get_application_items_for_task(
-                project_name, **kwargs
             )
 
         settings = await addon.get_project_settings(
@@ -533,7 +514,7 @@ class ApplicationsAddon(BaseServerAddon):
             app_items = get_application_items(
                 settings_value,
                 version=addon.version,
-                fill_icon_url=fill_icon_url,
+                fill_icon_url=True,
             )
             app_items_by_name = {
                 app_item.full_name: app_item
@@ -632,8 +613,6 @@ class ApplicationsAddon(BaseServerAddon):
         self,
         project_name: str | None,
         variant: str,
-        *,
-        fill_icon_url: bool = True,
     ) -> list[ApplicationItem]:
         """Get applications available for a given context.
 
@@ -651,7 +630,6 @@ class ApplicationsAddon(BaseServerAddon):
         return await self.get_application_items(
             project_name,
             variant,
-            fill_icon_url=fill_icon_url,
         )
 
     async def get_tools_for_context(
@@ -780,7 +758,6 @@ class ApplicationsAddon(BaseServerAddon):
             project_name=project_name,
             variant=variant,
             version=version,
-            fill_icon_url=True,
         )
 
         return {
