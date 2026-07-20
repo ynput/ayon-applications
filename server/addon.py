@@ -5,6 +5,7 @@ It is responsible for managing settings and initial setup of addon.
 """
 import os
 import aiofiles
+import inspect
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
@@ -95,6 +96,16 @@ EXT_TO_HOST_MAPPING = {}
 for host_name, extensions in HOST_TO_EXT_MAPPING.items():
     for extension in extensions:
         EXT_TO_HOST_MAPPING[extension] = host_name
+
+
+def is_func_signature_supported(func, *args, **kwargs):
+    sig = inspect.signature(func)
+    try:
+        sig.bind(*args, **kwargs)
+        return True
+    except TypeError:
+        pass
+    return False
 
 
 def create_chunks(values: list, chunk_size=100):
@@ -358,6 +369,7 @@ class ApplicationsAddon(BaseServerAddon):
         variant: str,
         *,
         version: str | None = None,
+        fill_icon_url: bool = True,
     ) -> list[ApplicationItem]:
         """Get available applications for a project and variant.
 
@@ -391,9 +403,19 @@ class ApplicationsAddon(BaseServerAddon):
             return []
 
         if addon is not self and hasattr(addon, "get_application_items"):
-            return await addon.get_application_items(
-                project_name, variant=variant, version=addon.version
+            kwargs = dict(
+                variant=variant,
+                version=addon.version,
+                fill_icon_url=fill_icon_url,
             )
+            # Key 'fill_icon_url' was added in version 1.4.4
+            if not is_func_signature_supported(
+                addon.get_application_items,
+                project_name,
+                **kwargs
+            ):
+                kwargs.pop("fill_icon_url")
+            return await addon.get_application_items(project_name, **kwargs)
 
         if project_name is None:
             settings = await addon.get_studio_settings(variant=variant)
@@ -402,7 +424,11 @@ class ApplicationsAddon(BaseServerAddon):
                 project_name, variant=variant
             )
         try:
-            return get_application_items(settings.dict())
+            return get_application_items(
+                settings.dict(),
+                version=addon.version,
+                fill_icon_url=fill_icon_url,
+            )
 
         except Exception:
             logger.trace(
@@ -476,6 +502,7 @@ class ApplicationsAddon(BaseServerAddon):
         variant: str,
         *,
         version: str | None = None,
+        fill_icon_url: bool = True,
     ) -> list[ApplicationItem]:
         if version is not None:
             addon = self._get_addon_version(version)
@@ -489,11 +516,21 @@ class ApplicationsAddon(BaseServerAddon):
             addon is not self
             and hasattr(addon, "get_application_items_for_task")
         ):
-            return await addon.get_application_items_for_task(
-                project_name,
+            kwargs = dict(
                 task_id=task_id,
                 variant=variant,
                 version=addon.version,
+                fill_icon_url=fill_icon_url,
+            )
+            # Key 'fill_icon_url' was added in version 1.4.4
+            if not is_func_signature_supported(
+                addon.get_application_items,
+                project_name,
+                **kwargs
+            ):
+                kwargs.pop("fill_icon_url")
+            return await addon.get_application_items_for_task(
+                project_name, **kwargs
             )
 
         settings = await addon.get_project_settings(
@@ -504,7 +541,11 @@ class ApplicationsAddon(BaseServerAddon):
 
         output = []
         try:
-            app_items = get_application_items(settings_value)
+            app_items = get_application_items(
+                settings_value,
+                version=addon.version,
+                fill_icon_url=fill_icon_url,
+            )
             app_items_by_name = {
                 app_item.full_name: app_item
                 for app_item in app_items
@@ -599,7 +640,11 @@ class ApplicationsAddon(BaseServerAddon):
         return []
 
     async def get_applications_for_context(
-        self, project_name: str | None, variant: str
+        self,
+        project_name: str | None,
+        variant: str,
+        *,
+        fill_icon_url: bool = True,
     ) -> list[ApplicationItem]:
         """Get applications available for a given context.
 
@@ -614,7 +659,11 @@ class ApplicationsAddon(BaseServerAddon):
             empty list.
 
         """
-        return await self.get_application_items(project_name, variant)
+        return await self.get_application_items(
+            project_name,
+            variant,
+            fill_icon_url=fill_icon_url,
+        )
 
     async def get_tools_for_context(
         self, project_name: str | None, variant: str
@@ -739,7 +788,10 @@ class ApplicationsAddon(BaseServerAddon):
         if variant is None:
             variant = "production"
         app_items = await self.get_application_items(
-            project_name=project_name, variant=variant, version=version
+            project_name=project_name,
+            variant=variant,
+            version=version,
+            fill_icon_url=True,
         )
 
         return {
