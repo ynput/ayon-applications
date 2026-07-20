@@ -547,11 +547,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             filename: str = os.path.basename(request.match_info["filename"])
             # TODO find better way how to cache
             if filename not in self.__class__._icons_cache:
-                url = self.get_app_icon_url(filename, server=True)
-                if not url:
-                    _cache_icon(filename, None)
-                    raise web.HTTPNotFound()
-
+                base_url = ayon_api.get_base_url()
+                url = (
+                    f"{base_url}/api/addons/{self.name}/{self.version}"
+                    f"/icons/{filename}"
+                )
                 data = None
                 async with ClientSession() as session:
                     async with session.get(url) as resp:
