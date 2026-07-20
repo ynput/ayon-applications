@@ -106,21 +106,11 @@ class ChooseAppDialog(QtWidgets.QDialog):
         empty_icon = QtGui.QIcon(empty_pix)
 
         items = []
-        icons_by_name = {}
         for app in applications:
-            icon_name = app.icon
-            if icon_name and icon_name not in icons_by_name:
-                icon_url = self._addon.get_app_icon_url(
-                    icon_name, server=True
-                )
-                icons_by_name[icon_name] = get_qt_icon({
-                    "type": "url",
-                    "url": icon_url,
-                })
-
-            icon = icons_by_name.get(icon_name)
-            if icon is None:
-                icon = empty_icon
+            icon_def = self._addon.prepare_app_icon_def(app.icon)
+            icon = empty_icon
+            if icon_def:
+                icon = get_qt_icon(icon_def)
 
             item = QtGui.QStandardItem(
                 app.label

@@ -41,9 +41,14 @@ if typing.TYPE_CHECKING:
     from typing import Literal
 
     BoolArg = Literal["1", "0"]
-    from ayon_applications.manager import Application
     from ayon_core.tools.tray.webserver import WebServerManager
+    from ayon_applications.manager import Application
     from ayon_applications.ui.process_monitor import ProcessMonitorWindow
+
+try:
+    from ayon_core.lib import AYONUrlIcon
+except ImportError:
+    AYONUrlIcon = None
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
@@ -292,6 +297,50 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         return "/".join([
             server_url, "addons", cls.name, "icons", icon_name
         ])
+
+    @classmethod
+    def prepare_app_icon_def(
+        cls,
+        icon: dict[str, Any] | None,
+        *,
+        version: str | None = None,
+    ) -> AYONUrlIcon | dict[str, str] | None:
+        """Prepare icon definition based on a group icon.
+
+        Todos:
+            Use icon definition classes from ayon core (added in core 1.9.5).
+
+        Args:
+            icon (dict[str, Any] | None): Icon definition or filename.
+            version (str | None): Specific version of applications addon.
+
+        Returns:
+            AYONUrlIcon | dict[str, str] | None: Icon definition or None.
+
+        """
+        if not isinstance(icon, dict):
+            return None
+
+        if version is None:
+            version = cls.version
+
+        # Expected value example in url: '/api{addon_url}/icons/maya.png'
+        url = icon.get("url")
+        if not isinstance(url, str):
+            return None
+
+        new_url = (
+            url
+            .format(addon_url=f"/addons/{cls.name}/{version}")
+            .replace("//", "/")
+            .lstrip("/")
+        )
+        if AYONUrlIcon is not None:
+            return AYONUrlIcon(new_url)
+        return {
+            "type": "ayon_url",
+            "url": new_url,
+        }
 
     @classmethod
     def get_application_items(
