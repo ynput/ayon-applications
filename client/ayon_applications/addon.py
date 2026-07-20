@@ -327,12 +327,15 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         if not isinstance(url, str):
             return None
 
-        new_url = (
-            url
-            .format(addon_url=f"/addons/{cls.name}/{version}")
-            .replace("//", "/")
-            .lstrip("/")
-        )
+        # Fill 'addon_url' placeholder with actual addon url
+        if "{addon_url}" in url:
+            try:
+                url = url.format(addon_url=f"/addons/{cls.name}/{version}")
+            except (KeyError, TypeError) as exc:
+                print(f"Failed to prepare icon URL: {exc}")
+                return None
+
+        new_url = url.replace("//", "/").lstrip("/")
         if AYONUrlIcon is not None:
             return AYONUrlIcon(new_url)
         return {
