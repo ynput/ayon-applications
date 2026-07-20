@@ -107,10 +107,9 @@ class ChooseAppDialog(QtWidgets.QDialog):
 
         items = []
         for app in applications:
-            icon_def = self._addon.prepare_app_icon_def(app.icon)
             icon = empty_icon
-            if icon_def:
-                icon = get_qt_icon(icon_def)
+            if app.icon:
+                icon = get_qt_icon(app.icon)
 
             item = QtGui.QStandardItem(
                 app.label

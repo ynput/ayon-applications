@@ -300,50 +300,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         ])
 
     @classmethod
-    def prepare_app_icon_def(
-        cls,
-        icon: dict[str, Any] | None,
-        *,
-        version: str | None = None,
-    ) -> AYONUrlIcon | dict[str, str] | None:
-        """Prepare icon definition based on a group icon.
-
-        Args:
-            icon (dict[str, Any] | None): Icon definition or filename.
-            version (str | None): Specific version of applications addon.
-
-        Returns:
-            AYONUrlIcon | dict[str, str] | None: Icon definition or None.
-
-        """
-        if not isinstance(icon, dict):
-            return None
-
-        if version is None:
-            version = cls.version
-
-        # Expected value example in url: '/api{addon_url}/icons/maya.png'
-        url = icon.get("url")
-        if not isinstance(url, str):
-            return None
-
-        # Fill 'addon_url' placeholder with actual addon url
-        if "{addon_url}" in url:
-            try:
-                url = url.format(addon_url=f"/addons/{cls.name}/{version}")
-            except (KeyError, TypeError) as exc:
-                print(f"Failed to prepare icon URL: {exc}")
-                return None
-
-        new_url = url.replace("//", "/").lstrip("/")
-        if AYONUrlIcon is not None:
-            return AYONUrlIcon(new_url)
-        return {
-            "type": "ayon_url",
-            "url": new_url,
-        }
-
-    @classmethod
     def get_application_items(
         cls,
         project_name: str | None = None,
@@ -402,7 +358,23 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"addons/{cls.name}/{cls.version}/"
             f"apps{context_path}?{query}"
         )
-        return response.data["applications"]
+        app_items = response.data["applications"]
+        # Fill icon urls with 'addon_url' and prepare icon definitions
+        for app_item in app_items:
+            icon = app_item["icon"]
+            if not icon:
+                continue
+            try:
+                url = icon["url"].format(
+                    addon_url=f"/addons/{cls.name}/{cls.version}"
+                )
+            except Exception:
+                continue
+            app_item["icon"] = {
+                "type": "ayon_url",
+                "url": url.lstrip("/"),
+            }
+        return app_items
 
     @classmethod
     def get_tool_items(
