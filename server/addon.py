@@ -5,7 +5,6 @@ It is responsible for managing settings and initial setup of addon.
 """
 import os
 import aiofiles
-import inspect
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
@@ -98,16 +97,6 @@ for host_name, extensions in HOST_TO_EXT_MAPPING.items():
         EXT_TO_HOST_MAPPING[extension] = host_name
 
 
-def is_func_signature_supported(func, *args, **kwargs):
-    sig = inspect.signature(func)
-    try:
-        sig.bind(*args, **kwargs)
-        return True
-    except TypeError:
-        pass
-    return False
-
-
 def create_chunks(values: list, chunk_size=100):
     chunks = []
     if not values:
@@ -144,6 +133,10 @@ class ApplicationsAddon(BaseServerAddon):
     has_attributes = True
 
     def initialize(self):
+        # Mark getter functions with version of their signature
+        setattr(self.get_application_items, "version", 2)
+        setattr(self.get_application_items_for_task, "version", 2)
+
         EventStream.subscribe(
             "bundle.updated",
             self._on_bundle_updated,
@@ -408,13 +401,10 @@ class ApplicationsAddon(BaseServerAddon):
                 version=addon.version,
                 fill_icon_url=fill_icon_url,
             )
-            # Key 'fill_icon_url' was added in version 1.4.4
-            if not is_func_signature_supported(
-                addon.get_application_items,
-                project_name,
-                **kwargs
-            ):
+            func_version = getattr(addon.get_application_items, "version", 1)
+            if func_version < 2:
                 kwargs.pop("fill_icon_url")
+
             return await addon.get_application_items(project_name, **kwargs)
 
         if project_name is None:
@@ -522,13 +512,12 @@ class ApplicationsAddon(BaseServerAddon):
                 version=addon.version,
                 fill_icon_url=fill_icon_url,
             )
-            # Key 'fill_icon_url' was added in version 1.4.4
-            if not is_func_signature_supported(
-                addon.get_application_items,
-                project_name,
-                **kwargs
-            ):
+            func_version = getattr(
+                addon.get_application_items_for_task, "version", 1
+            )
+            if func_version < 2:
                 kwargs.pop("fill_icon_url")
+
             return await addon.get_application_items_for_task(
                 project_name, **kwargs
             )
