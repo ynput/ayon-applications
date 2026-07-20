@@ -128,8 +128,7 @@ def get_items_for_tool_groups(groups):
 def get_app_names_by_task_type(
     addon_settings: dict[str, Any],
     task_types: set[str],
-    *,
-    app_items: list[ApplicationItem] | None = None,
+    app_items: list[ApplicationItem],
 ) -> dict[str, list[str]]:
     app_names_by_task_type = {
         task_type: []
@@ -137,9 +136,6 @@ def get_app_names_by_task_type(
     }
     if not task_types:
         return app_names_by_task_type
-
-    if app_items is None:
-        app_items = get_application_items(addon_settings)
 
     profiles = addon_settings["project_applications"]["profiles"]
 
