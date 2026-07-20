@@ -45,12 +45,6 @@ if typing.TYPE_CHECKING:
     from ayon_applications.manager import Application
     from ayon_applications.ui.process_monitor import ProcessMonitorWindow
 
-try:
-    # TODO remove when package.py requires ayon-core >=1.9.5
-    from ayon_core.lib import AYONUrlIcon
-except ImportError:
-    AYONUrlIcon = None
-
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     name = "applications"
