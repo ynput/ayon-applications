@@ -4,16 +4,19 @@ This module contains the server side of the Applications addon.
 It is responsible for managing settings and initial setup of addon.
 """
 import os
-from typing import Any
-from typing import TYPE_CHECKING
+import aiofiles
+from pathlib import Path
+from typing import Any, TYPE_CHECKING
 
 import semver
-from fastapi import Query
+from fastapi import HTTPException, Request, Query
+from fastapi.responses import FileResponse
 
 from ayon_server.lib.postgres import Postgres
 from ayon_server.logging import logger
 from ayon_server.events import EventStream, EventModel
 from ayon_server.addons import BaseServerAddon, AddonLibrary
+from ayon_server.api.dependencies import CurrentUser
 from ayon_server.actions.config import set_action_config
 from ayon_server.actions.context import ActionContext
 from ayon_server.entities import TaskEntity
@@ -137,6 +140,41 @@ class ApplicationsAddon(BaseServerAddon):
         )
 
         self.add_endpoint(
+            "icons/{filename}",
+            self._get_icon,
+            method="GET",
+        )
+        self.add_endpoint(
+            "customIcons",
+            self._get_custom_icons,
+            method="GET",
+        )
+        self.add_endpoint(
+            "customIcons/{filename}",
+            self._upload_custom_icon,
+            method="POST",
+        )
+        self.add_endpoint(
+            "customIcons/{filename}",
+            self._upload_custom_icon,
+            method="PUT",
+        )
+        self.add_endpoint(
+            "customIcons/{filename}",
+            self._get_custom_icon,
+            method="GET",
+        )
+        self.add_endpoint(
+            "customIcons/{filename}",
+            self._delete_custom_icon,
+            method="DELETE",
+        )
+        self.add_endpoint(
+            "apps",
+            self._get_applications_endpoint,
+            method="GET",
+        )
+        self.add_endpoint(
             "apps/{project_name}",
             self._get_applications_endpoint,
             method="GET",
@@ -144,6 +182,11 @@ class ApplicationsAddon(BaseServerAddon):
         self.add_endpoint(
             "apps/{project_name}/task/{task_id}",
             self._get_task_applications_endpoint,
+            method="GET",
+        )
+        self.add_endpoint(
+            "tools",
+            self._get_tools_endpoint,
             method="GET",
         )
         self.add_endpoint(
@@ -689,14 +732,14 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _get_applications_endpoint(
         self,
-        project_name: str,
+        project_name: str | None = None,
         variant: str | None = Query(None, title="Settings Variant"),
         version: str | None = Query(None, title="Addon version"),
     ):
         if variant is None:
             variant = "production"
         app_items = await self.get_application_items(
-            project_name, variant=variant, version=version
+            project_name=project_name, variant=variant, version=version
         )
 
         return {
@@ -722,7 +765,7 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _get_tools_endpoint(
         self,
-        project_name: str,
+        project_name: str | None = None,
         variant: str | None = Query(None, title="Settings Variant"),
         version: str | None = Query(None, title="Addon version"),
     ):
@@ -735,3 +778,85 @@ class ApplicationsAddon(BaseServerAddon):
         return {
             "tools": [tool_item for tool_item in tool_items]
         }
+
+    def _get_custom_icons_dir(self) -> Path:
+        current_dir = Path(os.path.abspath(__file__)).parent
+        return current_dir.parent.parent / "custom_icons"
+
+    async def _get_icon(self, filename: str) -> FileResponse:
+        filename = os.path.basename(filename)
+
+        custom_icons_dir = self._get_custom_icons_dir()
+        if custom_icons_dir.exists():
+            path = custom_icons_dir / filename
+            if path.is_file():
+                return FileResponse(path)
+
+        current_dir = Path(os.path.abspath(__file__)).parent
+        path = current_dir.parent / "public" / "icons" / filename
+        if not path.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Icon '{filename}' not found"
+            )
+
+        return FileResponse(path)
+
+    async def _upload_custom_icon(
+        self,
+        request: Request,
+        user: CurrentUser,
+        filename: str,
+    ) -> dict[str, bool]:
+        filename = os.path.basename(filename)
+        custom_icons_dir = self._get_custom_icons_dir()
+        custom_icons_dir.mkdir(parents=True, exist_ok=True)
+        filepath = custom_icons_dir / filename
+        try:
+            async with aiofiles.open(str(filepath), "wb") as stream:
+                async for chunk in request.stream():
+                    await stream.write(chunk)
+        except Exception:
+            if filepath.exists():
+                filepath.unlink()
+            raise HTTPException(
+                status_code=500,
+                detail={"success": False},
+            )
+
+        return {"success": True}
+
+    def _get_custom_icons(self) -> dict[str, list[dict[str, str]]]:
+        custom_icons_dir = self._get_custom_icons_dir()
+        filenames = []
+        if custom_icons_dir.exists():
+            for item in custom_icons_dir.iterdir():
+                if item.is_file():
+                    filenames.append({"filename": item.name})
+        return {"icons": filenames}
+
+    def _get_custom_icon(self, filename: str) -> FileResponse:
+        filename = os.path.basename(filename)
+        custom_icons_dir = self._get_custom_icons_dir()
+        filepath = custom_icons_dir / filename
+        if not filepath.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail=f"File '{filename}' not found"
+            )
+        return FileResponse(filepath)
+
+    def _delete_custom_icon(self, filename: str) -> dict[str, bool]:
+        filename = os.path.basename(filename)
+        custom_icons_dir = self._get_custom_icons_dir()
+        filepath = custom_icons_dir / filename
+        if not filepath.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "success": False,
+                    "message": f"File '{filename}' not found",
+                }
+            )
+        filepath.unlink()
+        return {"success": True}

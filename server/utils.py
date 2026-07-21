@@ -64,12 +64,11 @@ def get_items_for_app_groups(groups):
 
         icon = None
         if icon_name:
-
             url = urllib.parse.urlparse(icon_name)
             if not url.scheme:
                 # it's a bare filename served from this addons public folder
                 icon_name = os.path.basename(icon_name)
-                icon_name = f"{{addon_url}}/public/icons/{icon_name}"
+                icon_name = f"/api{{addon_url}}/icons/{icon_name}"
 
             icon = {
                 "type": "url",
