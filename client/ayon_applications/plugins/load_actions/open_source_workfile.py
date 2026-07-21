@@ -4,7 +4,7 @@ import os
 from typing import Optional, Any
 
 import ayon_api
-from ayon_core.addon import IHostAddon, AddonsManager
+from ayon_core.addon import IHostAddon
 from ayon_core.pipeline.actions import (
     LoaderSimpleActionPlugin,
     LoaderActionSelection,
@@ -87,7 +87,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         # Get compatible applications
         task_id = version.get("taskId")
         project_name = selection.project_name
-        addons_manager = AddonsManager()
+        addons_manager = self.get_addons_manager()
         compatible_apps = self._get_compatible_apps(
             addons_manager,
             file_ext=file_ext,
