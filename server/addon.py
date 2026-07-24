@@ -391,9 +391,12 @@ class ApplicationsAddon(BaseServerAddon):
             return []
 
         if addon is not self and hasattr(addon, "get_application_items"):
-            return await addon.get_application_items(
-                project_name, variant=variant, version=addon.version
+            kwargs = dict(
+                variant=variant,
+                version=addon.version,
             )
+
+            return await addon.get_application_items(project_name, **kwargs)
 
         if project_name is None:
             settings = await addon.get_studio_settings(variant=variant)
@@ -402,7 +405,11 @@ class ApplicationsAddon(BaseServerAddon):
                 project_name, variant=variant
             )
         try:
-            return get_application_items(settings.dict())
+            return get_application_items(
+                settings.dict(),
+                version=addon.version,
+                fill_icon_url=True,
+            )
 
         except Exception:
             logger.trace(
@@ -504,7 +511,11 @@ class ApplicationsAddon(BaseServerAddon):
 
         output = []
         try:
-            app_items = get_application_items(settings_value)
+            app_items = get_application_items(
+                settings_value,
+                version=addon.version,
+                fill_icon_url=True,
+            )
             app_items_by_name = {
                 app_item.full_name: app_item
                 for app_item in app_items
@@ -599,7 +610,9 @@ class ApplicationsAddon(BaseServerAddon):
         return []
 
     async def get_applications_for_context(
-        self, project_name: str | None, variant: str
+        self,
+        project_name: str | None,
+        variant: str,
     ) -> list[ApplicationItem]:
         """Get applications available for a given context.
 
@@ -614,7 +627,10 @@ class ApplicationsAddon(BaseServerAddon):
             empty list.
 
         """
-        return await self.get_application_items(project_name, variant)
+        return await self.get_application_items(
+            project_name,
+            variant,
+        )
 
     async def get_tools_for_context(
         self, project_name: str | None, variant: str
@@ -739,7 +755,9 @@ class ApplicationsAddon(BaseServerAddon):
         if variant is None:
             variant = "production"
         app_items = await self.get_application_items(
-            project_name=project_name, variant=variant, version=version
+            project_name=project_name,
+            variant=variant,
+            version=version,
         )
 
         return {

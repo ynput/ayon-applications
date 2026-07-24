@@ -28,7 +28,10 @@ class ToolItem:
 
 
 def get_application_items(
-    addon_settings: dict[str, Any]
+    addon_settings: dict[str, Any],
+    *,
+    version: str = "",
+    fill_icon_url: bool = False,
 ) -> list[ApplicationItem]:
     app_settings = addon_settings["applications"]
     app_groups = app_settings.pop("additional_apps")
@@ -38,7 +41,11 @@ def get_application_items(
         value["name"] = group_name
         app_groups.append(value)
 
-    return get_items_for_app_groups(app_groups)
+    return get_items_for_app_groups(
+        app_groups,
+        version=version,
+        fill_icon_url=fill_icon_url,
+    )
 
 
 def get_tool_items(
@@ -51,7 +58,12 @@ def _sort_getter(item: ApplicationItem):
     return item.group_label, item.variant_label
 
 
-def get_items_for_app_groups(groups):
+def get_items_for_app_groups(
+    groups: list[dict[str, Any]],
+    *,
+    version: str = "",
+    fill_icon_url: bool = False,
+) -> list[ApplicationItem]:
     items = []
     for group in groups:
         group_name = group["name"]
@@ -69,6 +81,10 @@ def get_items_for_app_groups(groups):
                 # it's a bare filename served from this addons public folder
                 icon_name = os.path.basename(icon_name)
                 icon_name = f"/api{{addon_url}}/icons/{icon_name}"
+                if fill_icon_url and version:
+                    icon_name = icon_name.format(
+                        addon_url=f"/addons/applications/{version}"
+                    )
 
             icon = {
                 "type": "url",
@@ -128,8 +144,7 @@ def get_items_for_tool_groups(groups):
 def get_app_names_by_task_type(
     addon_settings: dict[str, Any],
     task_types: set[str],
-    *,
-    app_items: list[ApplicationItem] | None = None,
+    app_items: list[ApplicationItem],
 ) -> dict[str, list[str]]:
     app_names_by_task_type = {
         task_type: []
@@ -137,9 +152,6 @@ def get_app_names_by_task_type(
     }
     if not task_types:
         return app_names_by_task_type
-
-    if app_items is None:
-        app_items = get_application_items(addon_settings)
 
     profiles = addon_settings["project_applications"]["profiles"]
 
