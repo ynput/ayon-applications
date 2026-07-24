@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 class GroupAppInfo:
     name: str
     label: str
-    icon: Optional[str] = None
+    icon: dict[str, str] | None = None
 
 
 class ApplicationManager:
@@ -88,14 +88,14 @@ class ApplicationManager:
             return group_info.label
         return group_name
 
-    def get_app_icon(self, group_name: str) -> Optional[str]:
+    def get_app_icon(self, group_name: str) -> dict[str, str] | None:
         """Get icon for application group by name.
 
         Args:
             group_name (str): Application name.
 
         Returns:
-            Optional[str]: Application icon filename.
+            dict[str, str] | None: Application icon definition.
 
         """
         group_info = self._app_group_info.get(group_name)

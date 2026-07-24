@@ -41,8 +41,8 @@ if typing.TYPE_CHECKING:
     from typing import Literal
 
     BoolArg = Literal["1", "0"]
-    from ayon_applications.manager import Application
     from ayon_core.tools.tray.webserver import WebServerManager
+    from ayon_applications.manager import Application
     from ayon_applications.ui.process_monitor import ProcessMonitorWindow
 
 
@@ -352,7 +352,26 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"addons/{cls.name}/{cls.version}/"
             f"apps{context_path}?{query}"
         )
-        return response.data["applications"]
+        app_items = response.data["applications"]
+
+        # Fill icon urls with 'addon_url' and prepare icon definitions
+        if not version:
+            version = cls.version
+        addon_url = f"/addons/{cls.name}/{version}"
+
+        for app_item in app_items:
+            icon = app_item["icon"]
+            if not icon:
+                continue
+            try:
+                url = icon["url"].format(addon_url=addon_url)
+            except Exception:
+                continue
+            app_item["icon"] = {
+                "type": "ayon_url",
+                "url": url.lstrip("/"),
+            }
+        return app_items
 
     @classmethod
     def get_tool_items(
@@ -522,11 +541,11 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             filename: str = os.path.basename(request.match_info["filename"])
             # TODO find better way how to cache
             if filename not in self.__class__._icons_cache:
-                url = self.get_app_icon_url(filename, server=True)
-                if not url:
-                    _cache_icon(filename, None)
-                    raise web.HTTPNotFound()
-
+                base_url = ayon_api.get_base_url()
+                url = (
+                    f"{base_url}/api/addons/{self.name}/{self.version}"
+                    f"/icons/{filename}"
+                )
                 data = None
                 async with ClientSession() as session:
                     async with session.get(url) as resp:
