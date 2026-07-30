@@ -9,7 +9,6 @@ import typing
 from typing import Optional, Any, Generator
 
 from ayon_core.lib import find_executable
-from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
@@ -168,13 +167,11 @@ class ApplicationGroup:
         data: dict[str, Any],
         manager: "ApplicationManager",
     ):
-        icon = ICONS_BY_GROUP_NAME.get(name)
-        if not icon:
-            icon = data.get("icon")
+        icon = manager.get_app_icon(name)
 
-        label = LABELS_BY_GROUP_NAME.get(name)
+        label = data.get("label")
         if not label:
-            label = data.get("label")
+            label = manager.get_app_label(name)
 
         self.name = name
         self.manager = manager
@@ -182,7 +179,7 @@ class ApplicationGroup:
 
         self.enabled = data["enabled"]
         self.label = label
-        self.icon = icon
+        self.icon: dict[str, str] | None = icon
         env = {}
         try:
             env = json.loads(data["environment"])
@@ -288,7 +285,7 @@ class Application:
         return self.group.host_name
 
     @property
-    def icon(self) -> Optional[str]:
+    def icon(self) -> dict[str, str] | None:
         return self.group.icon
 
     @property

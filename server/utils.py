@@ -28,7 +28,10 @@ class ToolItem:
 
 
 def get_application_items(
-    addon_settings: dict[str, Any]
+    addon_settings: dict[str, Any],
+    *,
+    version: str = "",
+    fill_icon_url: bool = False,
 ) -> list[ApplicationItem]:
     app_settings = addon_settings["applications"]
     app_groups = app_settings.pop("additional_apps")
@@ -38,7 +41,11 @@ def get_application_items(
         value["name"] = group_name
         app_groups.append(value)
 
-    return get_items_for_app_groups(app_groups)
+    return get_items_for_app_groups(
+        app_groups,
+        version=version,
+        fill_icon_url=fill_icon_url,
+    )
 
 
 def get_tool_items(
@@ -51,7 +58,12 @@ def _sort_getter(item: ApplicationItem):
     return item.group_label, item.variant_label
 
 
-def get_items_for_app_groups(groups):
+def get_items_for_app_groups(
+    groups: list[dict[str, Any]],
+    *,
+    version: str = "",
+    fill_icon_url: bool = False,
+) -> list[ApplicationItem]:
     items = []
     for group in groups:
         group_name = group["name"]
@@ -64,12 +76,15 @@ def get_items_for_app_groups(groups):
 
         icon = None
         if icon_name:
-
             url = urllib.parse.urlparse(icon_name)
             if not url.scheme:
                 # it's a bare filename served from this addons public folder
                 icon_name = os.path.basename(icon_name)
-                icon_name = f"{{addon_url}}/public/icons/{icon_name}"
+                icon_name = f"/api{{addon_url}}/icons/{icon_name}"
+                if fill_icon_url and version:
+                    icon_name = icon_name.format(
+                        addon_url=f"/addons/applications/{version}"
+                    )
 
             icon = {
                 "type": "url",
@@ -124,3 +139,52 @@ def get_items_for_tool_groups(groups):
 
     items.sort(key=_sort_getter)
     return items
+
+
+def get_app_names_by_task_type(
+    addon_settings: dict[str, Any],
+    task_types: set[str],
+    app_items: list[ApplicationItem],
+) -> dict[str, list[str]]:
+    app_names_by_task_type = {
+        task_type: []
+        for task_type in task_types
+    }
+    if not task_types:
+        return app_names_by_task_type
+
+    profiles = addon_settings["project_applications"]["profiles"]
+
+    app_names = {item.full_name for item in app_items}
+    default_profile = None
+    profiles_by_task_type = {}
+    for profile in profiles:
+        if not profile["task_types"]:
+            if default_profile is None:
+                default_profile = profile
+            continue
+
+        for task_type in profile["task_types"]:
+            profiles_by_task_type.setdefault(task_type, profile)
+
+    for task_type_name in app_names_by_task_type:
+        task_type_profile = profiles_by_task_type.get(task_type_name)
+        if task_type_profile is None:
+            task_type_profile = default_profile
+            if task_type_profile is None:
+                continue
+
+        if task_type_profile["allow_type"] == "all_applications":
+            profile_apps = list(app_names)
+            profile_apps.sort()
+        else:
+            profile_apps = [
+                app_name
+                for app_name in task_type_profile["applications"]
+                if app_name in app_names
+            ]
+
+        if profile_apps:
+            app_names_by_task_type[task_type_name] = profile_apps
+
+    return app_names_by_task_type
