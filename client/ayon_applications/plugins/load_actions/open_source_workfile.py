@@ -87,7 +87,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         # Get compatible applications
         task_id = version.get("taskId")
         project_name = selection.project_name
-        addons_manager = self.get_addons_manager()
+        addons_manager = self._context.get_addons_manager()
         compatible_apps = self._get_compatible_apps(
             addons_manager,
             file_ext=file_ext,
@@ -114,9 +114,17 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             return LoaderActionResult("Cancelled", success=False)
 
         selected_app = next(
-            app for app in compatible_apps
-            if app.full_name == selected_app_name
+            (app for app in compatible_apps
+             if app.full_name == selected_app_name),
+            None
         )
+
+        if not selected_app.find_executable():
+            return LoaderActionResult(
+                f"Application '{selected_app.label}' "
+                "has no available executable on this machine.",
+                success=False,
+            )
 
         # Launch application
         try:
@@ -208,12 +216,6 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             if app.full_name not in allowed_names:
                 continue
 
-            try:
-                exe = app.find_executable()
-            except Exception:
-                continue
-
-            if exe and os.path.exists(str(exe)):
-                compatible.append(app)
+            compatible.append(app)
 
         return compatible
