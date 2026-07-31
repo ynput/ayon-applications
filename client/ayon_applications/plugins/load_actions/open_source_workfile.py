@@ -119,13 +119,11 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             None
         )
 
-        if not selected_app.find_executable():
+        if not selected_app:
             return LoaderActionResult(
-                f"Application '{selected_app.label}' "
-                "has no available executable on this machine.",
+                f"Selected application '{selected_app_name}' was not found.",
                 success=False,
             )
-
         # Launch application
         try:
             product_id = version["productId"]
