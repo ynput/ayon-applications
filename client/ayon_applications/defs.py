@@ -167,9 +167,7 @@ class ApplicationGroup:
         data: dict[str, Any],
         manager: "ApplicationManager",
     ):
-        icon = data.get("icon")
-        if not icon:
-            icon = manager.get_app_icon(name)
+        icon = manager.get_app_icon(name)
 
         label = data.get("label")
         if not label:
@@ -181,7 +179,7 @@ class ApplicationGroup:
 
         self.enabled = data["enabled"]
         self.label = label
-        self.icon = icon
+        self.icon: dict[str, str] | None = icon
         env = {}
         try:
             env = json.loads(data["environment"])
@@ -287,7 +285,7 @@ class Application:
         return self.group.host_name
 
     @property
-    def icon(self) -> Optional[str]:
+    def icon(self) -> dict[str, str] | None:
         return self.group.icon
 
     @property

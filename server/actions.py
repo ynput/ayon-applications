@@ -60,7 +60,11 @@ async def get_action_manifests(
     )
     addon_settings = settings_model.dict()
 
-    app_items = get_application_items(addon_settings)
+    app_items = get_application_items(
+        addon_settings,
+        version=addon.version,
+        fill_icon_url=False,
+    )
     app_items_by_name = {
         item.full_name: item
         for item in app_items
@@ -148,7 +152,11 @@ async def get_dynamic_action_manifests(
     )
     addon_settings = settings_model.dict()
 
-    app_items = get_application_items(addon_settings)
+    app_items = get_application_items(
+        addon_settings,
+        version=addon.version,
+        fill_icon_url=False,
+    )
     app_items_by_name = {
         item.full_name: item
         for item in app_items
