@@ -200,6 +200,26 @@
                         "linux": []
                     },
                     "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2024.2/bin/python3.10\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2024.2/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2024.2\"\n}"
+                },
+                {
+                    "name": "2026",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [],
+                        "darwin": [
+                            "/opt/Autodesk/flame_2026/bin/flame.app"
+                        ],
+                        "linux": [
+                            "/opt/Autodesk/flame_2026/bin/flame"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2026/bin/python3.11\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flame_2026/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2026\"\n}"
                 }
             ]
         },
