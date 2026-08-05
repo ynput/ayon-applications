@@ -40,6 +40,9 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             return False
 
         for version in selection.get_selected_version_entities():
+            if not version["taskId"]:
+                continue
+
             source = version.get("attrib", {}).get("source")
 
             if not source:
