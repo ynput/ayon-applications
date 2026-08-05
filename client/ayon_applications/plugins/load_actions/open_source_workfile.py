@@ -170,6 +170,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         if not apps_addon:
             return []
         # host names that can open this extension
+        # NOTE: Does not respect project bundle addons.
         host_names: set[str] = set()
         for addon in addons_manager.addons:
             if not isinstance(addon, IHostAddon):
