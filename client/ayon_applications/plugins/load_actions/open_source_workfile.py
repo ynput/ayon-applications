@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from typing import Optional, Any
 
-import ayon_api
 from ayon_core.addon import IHostAddon
 from ayon_core.pipeline.actions import (
     LoaderSimpleActionPlugin,
