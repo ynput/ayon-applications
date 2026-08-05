@@ -88,7 +88,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             )
 
         # Get compatible applications
-        task_id = version.get("taskId")
+        task_id = version["taskId"]
         project_name = selection.project_name
         addons_manager = self._context.get_addons_manager()
         compatible_apps = self._get_compatible_apps(
