@@ -165,7 +165,11 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
     ) -> list[Any]:
         """Get compatible applications for file extension."""
 
-        # 1) host names that can open this extension
+        # Find the applications matching the host names
+        apps_addon = addons_manager.get("applications")
+        if not apps_addon:
+            return []
+        # host names that can open this extension
         host_names: set[str] = set()
         for addon in addons_manager.addons:
             if not isinstance(addon, IHostAddon):
@@ -186,11 +190,6 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 host_names.add(host_name)
 
         if not host_names:
-            return []
-
-        # Find the applications matching the host names
-        apps_addon = addons_manager.get("applications")
-        if not apps_addon:
             return []
 
         app_items = apps_addon.get_application_items(
