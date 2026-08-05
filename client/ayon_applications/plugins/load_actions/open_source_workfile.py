@@ -128,26 +128,14 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 success=False,
             )
         # Launch application
-        try:
-            run_ayon_launcher_process(
-                "addon", "applications", "launch-by-id",
-                "--project", project_name,
-                "--task-id", version["taskId"],
-                "--app", selected_app.full_name,
-                "--workfile-path", workfile_path,
-                "--use-last-workfile", "0",
-            )
-            return LoaderActionResult(
-                f"<b>{selected_app.full_label or selected_app.label}</b> "
-                f"launched with <b>{workfile_name}</b>",
-                success=True,
-            )
-        except Exception as e:
-            self.log.error(f"Failed to launch: {e}", exc_info=True)
-            return LoaderActionResult(
-                f"Failed to launch application:\n{str(e)}",
-                success=False,
-            )
+        run_ayon_launcher_process(
+            "addon", "applications", "launch-by-id",
+            "--project", project_name,
+            "--task-id", version["taskId"],
+            "--app", selected_app.full_name,
+            "--workfile-path", workfile_path,
+            "--use-last-workfile", "0",
+        )
 
     def _get_compatible_apps(
         self,
