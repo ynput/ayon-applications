@@ -108,28 +108,33 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 success=False,
             )
         apps_addon = addons_manager["applications"]
-        selected_app_name = choose_app(apps_addon, compatible_apps)
+        selected_app = next(
+            (app for app in compatible_apps
+             if app.full_name == version["data"]["ayon_app_name"]),
+            None
+        )
+        if not selected_app:
+            selected_app_name = choose_app(apps_addon, compatible_apps)
+            if not selected_app_name:
+                return LoaderActionResult("Cancelled", success=False)
+
+            selected_app = next(
+                (app for app in compatible_apps
+                if app.full_name == selected_app_name),
+                None
+            )
+
+            if not selected_app:
+                return LoaderActionResult(
+                    f"Selected application '{selected_app_name}' was not found.",
+                    success=False,
+                )
 
         anatomy = selection.get_project_anatomy()
         workfile_path: str = anatomy.fill_root(source_path)
         if not os.path.exists(workfile_path):
             return LoaderActionResult(
                 f"Source workfile does not exist at '{workfile_path}'",
-                success=False,
-            )
-
-        if not selected_app_name:
-            return LoaderActionResult("Cancelled", success=False)
-
-        selected_app = next(
-            (app for app in compatible_apps
-             if app.full_name == selected_app_name),
-            None
-        )
-
-        if not selected_app:
-            return LoaderActionResult(
-                f"Selected application '{selected_app_name}' was not found.",
                 success=False,
             )
         # Launch application
