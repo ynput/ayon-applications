@@ -196,7 +196,6 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         app_items = apps_addon.get_application_items(
             project_name,
             task_id=task_id,
-            version=apps_addon.version
         )
 
         allowed_names = {
