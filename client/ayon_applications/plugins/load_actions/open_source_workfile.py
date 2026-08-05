@@ -126,7 +126,10 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
 
             if not selected_app:
                 return LoaderActionResult(
-                    f"Selected application '{selected_app_name}' was not found.",
+                    (
+                        f"Selected application '{selected_app_name}'"
+                        " was not found."
+                    ),
                     success=False,
                 )
 
