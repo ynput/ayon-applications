@@ -129,20 +129,10 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             )
         # Launch application
         try:
-            product_id = version["productId"]
-            product = ayon_api.get_product_by_id(project_name, product_id)
-            folder = ayon_api.get_folder_by_id(
-                project_name, product["folderId"]
-            )
-            task = (
-                ayon_api.get_task_by_id(project_name, task_id)
-                if task_id else None
-            )
             run_ayon_launcher_process(
-                "addon", "applications", "launch",
+                "addon", "applications", "launch-by-id",
                 "--project", project_name,
-                "--folder", folder["path"],
-                "--task", task["name"] if task else None,
+                "--task-id", version["taskId"],
                 "--app", selected_app.full_name,
                 "--workfile-path", workfile_path,
                 "--use-last-workfile", "0",
