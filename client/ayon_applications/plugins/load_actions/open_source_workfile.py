@@ -1,7 +1,8 @@
 """Loader action to open source workfiles in Tray Browser."""
 from __future__ import annotations
 import os
-from typing import Optional, Any
+import collections
+from typing import Optional, Any, TYPE_CHECKING
 
 from ayon_core.addon import IHostAddon
 from ayon_core.pipeline.actions import (
@@ -9,8 +10,13 @@ from ayon_core.pipeline.actions import (
     LoaderActionSelection,
     LoaderActionResult,
 )
-from ayon_core.lib import run_ayon_launcher_process
+from ayon_core.lib import run_detached_ayon_launcher_process
 from ayon_applications.ui.debug_terminal_launch import choose_app
+from ayon_applications import ApplicationGroup
+
+if TYPE_CHECKING:
+    from ayon_applications import Application
+    from ayon_applications.manager import ApplicationManager
 
 
 class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
@@ -127,7 +133,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 success=False,
             )
         # Launch application
-        run_ayon_launcher_process(
+        run_detached_ayon_launcher_process(
             "addon", "applications", "launch-by-id",
             "--project", project_name,
             "--task-id", version["taskId"],
@@ -178,21 +184,62 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             task_id=task_id,
         )
 
-        allowed_names = {
-            item["full_name"]
-            for item in app_items
-            if item.get("host_name") in host_names
-        }
-        if not allowed_names:
-            return []
-
-        # 3) map back to Application objects for choose_app and launch flow
         app_manager = apps_addon.get_applications_manager()
-        compatible = []
-        for app in app_manager.applications.values():
-            if app.full_name not in allowed_names:
+
+        return self._create_fake_applications(
+            app_manager,
+            app_items,
+            host_names
+        )
+
+    def _create_fake_applications(
+            self,
+            app_manager: ApplicationManager,
+            app_items: list[dict[str, Any]],
+            host_names: set[str]) -> list[Application]:
+        """Fake application objects representing compatible applications.
+
+        Args:
+            app_manager (ApplicationManager): Applications manager
+                instance from applications addon
+            app_items (list[dict[str, Any]]): Application items from
+            applications addon
+            host_names (set[str]): host names that can open the source workfile
+
+        Returns:
+            list[Application]: Fake application objects representing
+                compatible applications.
+        """
+        app_items_by_group = collections.defaultdict(list)
+        for app_item in app_items:
+            if app_item["host_name"] not in host_names:
                 continue
+            full_name = app_item["full_name"]
+            group_name = full_name.split("/")[0]
+            app_items_by_group[group_name].append(app_item)
 
-            compatible.append(app)
-
-        return compatible
+        output = []
+        for group_name, group_app_items in app_items_by_group.items():
+            host_name = None
+            variants = []
+            for app_item in group_app_items:
+                variants.append({
+                    "name": app_item["full_name"].split("/")[1],
+                    "label": app_item["variant_label"],
+                    "environment": "{}",
+                    "arguments": [],
+                    "executables": {},
+                })
+            group = ApplicationGroup(
+                group_name,
+                {
+                    "enabled": True,
+                    "environment": "{}",
+                    "host_name": host_name,
+                    "variants": variants,
+                },
+                app_manager
+            )
+            for variant in group.variants.values():
+                output.append(variant)
+        return output
