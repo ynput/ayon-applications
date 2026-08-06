@@ -108,9 +108,10 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 success=False,
             )
         apps_addon = addons_manager["applications"]
+        ayon_app_name = version["data"].get("ayon_app_name")
         selected_app = next(
             (app for app in compatible_apps
-             if app.full_name == version["data"]["ayon_app_name"]),
+             if ayon_app_name and app.full_name == ayon_app_name),
             None
         )
         if not selected_app:
