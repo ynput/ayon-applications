@@ -107,24 +107,18 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 f"No compatible applications found for {file_ext}",
                 success=False,
             )
-        apps_addon = addons_manager["applications"]
+        app_by_name = {app.full_name: app for app in compatible_apps}
+        selected_app = None
         ayon_app_name = version["data"].get("ayon_app_name")
-        selected_app = next(
-            (app for app in compatible_apps
-             if ayon_app_name and app.full_name == ayon_app_name),
-            None
-        )
+        if ayon_app_name:
+            selected_app = app_by_name.get(ayon_app_name)
         if not selected_app:
+            apps_addon = addons_manager["applications"]
             selected_app_name = choose_app(apps_addon, compatible_apps)
             if not selected_app_name:
                 return LoaderActionResult("Cancelled", success=False)
 
-            selected_app = next(
-                (app for app in compatible_apps
-                if app.full_name == selected_app_name),
-                None
-            )
-
+            selected_app = app_by_name.get(selected_app_name)
             if not selected_app:
                 return LoaderActionResult(
                     (
