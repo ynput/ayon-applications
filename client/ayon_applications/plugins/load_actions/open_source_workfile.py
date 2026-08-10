@@ -104,29 +104,27 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         )
         if not compatible_apps:
             return LoaderActionResult(
-                f"No compatible applications found for {file_ext}",
+                f"No compatible applications for {file_ext} "
+                f"enabled for context: {project_name} > {task_id}",
                 success=False,
             )
-        app_by_name = {app.full_name: app for app in compatible_apps}
-        selected_app = None
-        ayon_app_name = version["data"].get("ayon_app_name")
-        if ayon_app_name:
-            selected_app = app_by_name.get(ayon_app_name)
-        if not selected_app:
-            apps_addon = addons_manager["applications"]
-            selected_app_name = choose_app(apps_addon, compatible_apps)
-            if not selected_app_name:
-                return LoaderActionResult("Cancelled", success=False)
+        apps_addon = addons_manager["applications"]
+        selected_app_name = choose_app(apps_addon, compatible_apps)
+        if not selected_app_name:
+            return LoaderActionResult("Cancelled", success=False)
 
-            selected_app = app_by_name.get(selected_app_name)
-            if not selected_app:
-                return LoaderActionResult(
-                    (
-                        f"Selected application '{selected_app_name}'"
-                        " was not found."
-                    ),
-                    success=False,
-                )
+        selected_app = next((
+            (app for app in compatible_apps
+             if app.full_name == selected_app_name), None
+        ))
+        if not selected_app:
+            return LoaderActionResult(
+                (
+                    f"Selected application '{selected_app_name}'"
+                    " was not found."
+                ),
+                success=False,
+            )
 
         anatomy = selection.get_project_anatomy()
         workfile_path: str = anatomy.fill_root(source_path)
@@ -166,6 +164,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 continue
 
             try:
+
                 extensions = addon.get_workfile_extensions()
             except Exception:
                 self.log.error(
