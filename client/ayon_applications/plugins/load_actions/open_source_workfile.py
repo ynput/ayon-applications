@@ -166,7 +166,6 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 continue
 
             try:
-
                 extensions = addon.get_workfile_extensions()
             except Exception:
                 self.log.error(
