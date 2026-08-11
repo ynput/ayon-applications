@@ -123,7 +123,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         app_by_name = {app.full_name: app for app in compatible_apps}
         selected_app = None
         ayon_app_name = version["data"].get("ayon_app_name")
-        if ayon_app_name:
+        if use_matching_application and ayon_app_name:
             selected_app = app_by_name.get(ayon_app_name)
         if not selected_app:
             apps_addon = addons_manager["applications"]
