@@ -15,10 +15,11 @@ from ayon_core.lib import (
     AbstractAttrDef,
     TextDef,
     BoolDef,
-    UILabelDef,
-    EnumDef,
     run_detached_ayon_launcher_process,
 )
+from ayon_core.style import load_stylesheet
+from qtpy import QtWidgets, QtCore
+
 from ayon_applications import ApplicationGroup
 
 if TYPE_CHECKING:
@@ -115,37 +116,33 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 f"enabled for context: {project_name} > {task_id}",
                 success=False,
             )
-        step = form_values.get("step")
-        use_matching_application = form_values.get(
-            "use_matching_application", False
-        )
-        if step is None:
-            return self._has_matching_application(use_matching_application)
-        app_by_name = {app.full_name: app for app in compatible_apps}
         selected_app = None
-        ayon_app_name = version["data"].get("ayon_app_name")
-        if use_matching_application and ayon_app_name:
-            selected_app = app_by_name.get(ayon_app_name)
-        if not selected_app:
-            selected_app_name = form_values.get(
-                "selected_app", ayon_app_name
-            )
-            if step == "finished-check-matching-application":
-                return self._show_app_dialog(
-                    compatible_apps,
-                    workfile_name,
-                    project_name,
-                    ayon_app_name
-                )
-            if not selected_app_name:
-                return LoaderActionResult("Cancelled", success=False)
+        step = form_values.get("step")
+        auto_launch = form_values.get("autolaunch", False)
+        if step is None:
+            return self._has_matching_application(auto_launch)
 
-            selected_app = app_by_name.get(selected_app_name)
+        ayon_app_name = version["data"].get("ayon_app_name")
+        if auto_launch and ayon_app_name:
+            selected_app = next(
+                (app for app in compatible_apps
+                 if app.full_name == ayon_app_name
+                ), None
+            )
+
+        if not selected_app:
+            selected_app = self._show_app_dialog(
+                compatible_apps,
+                workfile_name,
+                project_name,
+                ayon_app_name
+            )
+
             if not selected_app:
                 return LoaderActionResult(
                     (
-                        f"Selected application '{selected_app_name}'"
-                        " was not found."
+                        "No application selected to open "
+                        f"workfile '{workfile_name}'"
                     ),
                     success=False,
                 )
@@ -164,6 +161,11 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             "--app", selected_app.full_name,
             "--workfile-path", workfile_path,
             "--use-last-workfile", "0",
+        )
+        return LoaderActionResult(
+            f"Launching {selected_app.full_name} "
+            f"to open workfile '{workfile_name}'",
+            success=True,
         )
 
     def _get_compatible_apps(
@@ -269,12 +271,11 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         return output
 
     def _has_matching_application(
-            self, use_matching_application: bool
-        ) -> LoaderActionResult:
+            self, autolaunch: bool) -> LoaderActionResult:
         """Check if any selected version has matching application.
 
         Args:
-            use_matching_application (bool): Whether to use matching
+            autolaunch (bool): Whether to automatically launch the matching
                 application if available.
         Returns:
             LoaderActionResult: Result of the action, including form
@@ -286,7 +287,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 visible=False,
             ),
             BoolDef(
-                "use_matching_application",
+                "autolaunch",
                 label="Automatically run matching application",
                 default=False,
             )
@@ -294,7 +295,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         form_values = {
             key: value
             for key, value in (
-                ("use_matching_application", use_matching_application),
+                ("autolaunch", autolaunch),
             )
             if value is not None
         }
@@ -309,61 +310,64 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
 
     def _show_app_dialog(
             self,
-            apps: list["Application"],
+            apps: list[Application],
             workfile_name: str,
             project_name: str,
             source_app_full_name: Optional[str] = None
-        ) -> LoaderActionResult:
-        """Show dialog to select application to open workfile.
+    ) -> str:
+        """Show application selection dialog."""
+        dialog = QtWidgets.QDialog()
+        dialog.setWindowTitle("Open Source Workfile")
+        dialog.setMinimumWidth(400)
+        dialog.setStyleSheet(load_stylesheet())
 
-        Args:
-            apps (list[Application]): List of compatible applications.
-            workfile_name (str): Name of the source workfile.
-            project_name (str): Name of the project.
-            source_app_full_name (Optional[str]): Full name of the
-                application that was used to create the publish, if any.
-        Returns:
-            LoaderActionResult: Result of the action, including form
-                to display to user.
-        """
-        fields: list[AbstractAttrDef] = [
-            TextDef(
-                "step",
-                visible=False,
-            ),
-            UILabelDef(f"Project: {project_name}"),
-            UILabelDef(f"Workfile: {workfile_name}"),
-        ]
-        app_list = {}
-        for app in apps:
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        info = QtWidgets.QLabel(
+            f"<h3>Open Source Workfile</h3>"
+            f"<p><b>Workfile:</b> {workfile_name}</p>"
+            f"<p><b>Project:</b> {project_name}</p>"
+        )
+        info.setTextFormat(QtCore.Qt.RichText)
+        layout.addWidget(info)
+
+        app_list = QtWidgets.QListWidget()
+        preferred_index = 0
+        for i, app in enumerate(apps):
             label = app.full_label or app.name
 
             # Highlight the app that was used to create the publish so that
             # the user knows it's the recommended one to open with.
             if source_app_full_name and app.full_name == source_app_full_name:
+                preferred_index = i
                 label += " (used to create publish)"
 
-            app_list[app.full_name] = label
-        fields.extend([
-            EnumDef(
-                "selected_app",
-                label="Select application",
-                items=app_list,
-                default=source_app_full_name
-            )
-        ])
-        form_values = {
-            key: value
-            for key, value in (
-                ("selected_app", source_app_full_name),
-            )
-            if value is not None
-        }
-        form_values["step"] = "finished-select-application"
-        return LoaderActionResult(
-            form=ActionForm(
-                title="Select application to open workfile",
-                fields=fields,
-            ),
-            form_values=form_values
-        )
+            item = QtWidgets.QListWidgetItem(label)
+            item.setData(QtCore.Qt.UserRole, app)
+            app_list.addItem(item)
+
+        # Preselect the first entry or the one matching the source app
+        app_list.setCurrentRow(preferred_index)
+
+        layout.addWidget(app_list)
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        cancel_btn = QtWidgets.QPushButton("Cancel")
+        open_btn = QtWidgets.QPushButton("Open")
+        open_btn.setDefault(True)
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(open_btn)
+        layout.addLayout(btn_layout)
+
+        open_btn.clicked.connect(dialog.accept)
+        cancel_btn.clicked.connect(dialog.reject)
+        app_list.itemDoubleClicked.connect(dialog.accept)
+
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            item = app_list.currentItem()
+            if not item:
+                return None
+
+            return item.data(QtCore.Qt.UserRole)
+        return None
