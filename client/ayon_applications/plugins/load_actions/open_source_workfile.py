@@ -15,9 +15,10 @@ from ayon_core.lib import (
     AbstractAttrDef,
     TextDef,
     BoolDef,
+    UILabelDef,
+    EnumDef,
     run_detached_ayon_launcher_process,
 )
-from ayon_applications.ui.debug_terminal_launch import choose_app
 from ayon_applications import ApplicationGroup
 
 if TYPE_CHECKING:
@@ -126,8 +127,16 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         if use_matching_application and ayon_app_name:
             selected_app = app_by_name.get(ayon_app_name)
         if not selected_app:
-            apps_addon = addons_manager["applications"]
-            selected_app_name = choose_app(apps_addon, compatible_apps)
+            selected_app_name = form_values.get(
+                "selected_app", ayon_app_name
+            )
+            if step == "finished-check-matching-application":
+                return self._show_app_dialog(
+                    compatible_apps,
+                    workfile_name,
+                    project_name,
+                    ayon_app_name
+                )
             if not selected_app_name:
                 return LoaderActionResult("Cancelled", success=False)
 
@@ -293,6 +302,67 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         return LoaderActionResult(
             form=ActionForm(
                 title="Check for matching application",
+                fields=fields,
+            ),
+            form_values=form_values
+        )
+
+    def _show_app_dialog(
+            self,
+            apps: list["Application"],
+            workfile_name: str,
+            project_name: str,
+            source_app_full_name: Optional[str] = None
+        ) -> LoaderActionResult:
+        """Show dialog to select application to open workfile.
+
+        Args:
+            apps (list[Application]): List of compatible applications.
+            workfile_name (str): Name of the source workfile.
+            project_name (str): Name of the project.
+            source_app_full_name (Optional[str]): Full name of the
+                application that was used to create the publish, if any.
+        Returns:
+            LoaderActionResult: Result of the action, including form
+                to display to user.
+        """
+        fields: list[AbstractAttrDef] = [
+            TextDef(
+                "step",
+                visible=False,
+            ),
+            UILabelDef(f"Project: {project_name}"),
+            UILabelDef(f"Workfile: {workfile_name}"),
+        ]
+        app_list = {}
+        for app in apps:
+            label = app.full_label or app.name
+
+            # Highlight the app that was used to create the publish so that
+            # the user knows it's the recommended one to open with.
+            if source_app_full_name and app.full_name == source_app_full_name:
+                label += " (used to create publish)"
+
+            app_list[app.full_name] = label
+        fields.extend([
+            EnumDef(
+                "selected_app",
+                label="Select application",
+                items=app_list,
+                default=source_app_full_name
+            )
+        ])
+        form_values = {
+            key: value
+            for key, value in (
+                ("selected_app", source_app_full_name),
+            )
+            if value is not None
+        }
+        form_values["step"] = "finished-select-application"
+        return LoaderActionResult(
+            form=ActionForm(
+                title="Select application to open workfile",
                 fields=fields,
             ),
             form_values=form_values
