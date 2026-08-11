@@ -6,11 +6,17 @@ from typing import Optional, Any, TYPE_CHECKING
 
 from ayon_core.addon import IHostAddon
 from ayon_core.pipeline.actions import (
+    ActionForm,
     LoaderSimpleActionPlugin,
     LoaderActionSelection,
     LoaderActionResult,
 )
-from ayon_core.lib import run_detached_ayon_launcher_process
+from ayon_core.lib import (
+    AbstractAttrDef,
+    TextDef,
+    BoolDef,
+    run_detached_ayon_launcher_process,
+)
 from ayon_applications.ui.debug_terminal_launch import choose_app
 from ayon_applications import ApplicationGroup
 
@@ -108,24 +114,32 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 f"enabled for context: {project_name} > {task_id}",
                 success=False,
             )
-        apps_addon = addons_manager["applications"]
-        selected_app_name = choose_app(apps_addon, compatible_apps)
-        if not selected_app_name:
-            return LoaderActionResult("Cancelled", success=False)
-
-        selected_app = next((
-            (app for app in compatible_apps
-             if app.full_name == selected_app_name), None
-        ))
+        step = form_values.get("step")
+        use_matching_application = form_values.get(
+            "use_matching_application", False
+        )
+        if step is None:
+            return self._has_matching_application(use_matching_application)
+        app_by_name = {app.full_name: app for app in compatible_apps}
+        selected_app = None
+        ayon_app_name = version["data"].get("ayon_app_name")
+        if ayon_app_name:
+            selected_app = app_by_name.get(ayon_app_name)
         if not selected_app:
-            return LoaderActionResult(
-                (
-                    f"Selected application '{selected_app_name}'"
-                    " was not found."
-                ),
-                success=False,
-            )
+            apps_addon = addons_manager["applications"]
+            selected_app_name = choose_app(apps_addon, compatible_apps)
+            if not selected_app_name:
+                return LoaderActionResult("Cancelled", success=False)
 
+            selected_app = app_by_name.get(selected_app_name)
+            if not selected_app:
+                return LoaderActionResult(
+                    (
+                        f"Selected application '{selected_app_name}'"
+                        " was not found."
+                    ),
+                    success=False,
+                )
         anatomy = selection.get_project_anatomy()
         workfile_path: str = anatomy.fill_root(source_path)
         if not os.path.exists(workfile_path):
@@ -244,3 +258,42 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             for variant in group.variants.values():
                 output.append(variant)
         return output
+
+    def _has_matching_application(
+            self, use_matching_application: bool
+        ) -> LoaderActionResult:
+        """Check if any selected version has matching application.
+
+        Args:
+            use_matching_application (bool): Whether to use matching
+                application if available.
+        Returns:
+            LoaderActionResult: Result of the action, including form
+                to display to user.
+        """
+        fields: list[AbstractAttrDef] = [
+            TextDef(
+                "step",
+                visible=False,
+            ),
+            BoolDef(
+                "use_matching_application",
+                label="Automatically run matching application",
+                default=False,
+            )
+        ]
+        form_values = {
+            key: value
+            for key, value in (
+                ("use_matching_application", use_matching_application),
+            )
+            if value is not None
+        }
+        form_values["step"] = "finished-check-matching-application"
+        return LoaderActionResult(
+            form=ActionForm(
+                title="Check for matching application",
+                fields=fields,
+            ),
+            form_values=form_values
+        )
