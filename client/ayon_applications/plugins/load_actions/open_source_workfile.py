@@ -116,36 +116,23 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 f"enabled for context: {project_name} > {task_id}",
                 success=False,
             )
-        selected_app = None
-        step = form_values.get("step")
-        auto_launch = form_values.get("autolaunch", False)
-        if step is None:
-            return self._has_matching_application(auto_launch)
 
         ayon_app_name = version["data"].get("ayon_app_name")
-        if auto_launch and ayon_app_name:
-            selected_app = next(
-                (app for app in compatible_apps
-                 if app.full_name == ayon_app_name
-                ), None
-            )
+        selected_app = self._show_app_dialog(
+            compatible_apps,
+            workfile_name,
+            project_name,
+            ayon_app_name
+        )
 
         if not selected_app:
-            selected_app = self._show_app_dialog(
-                compatible_apps,
-                workfile_name,
-                project_name,
-                ayon_app_name
+            return LoaderActionResult(
+                (
+                    "No application selected to open "
+                    f"workfile '{workfile_name}'"
+                ),
+                success=False,
             )
-
-            if not selected_app:
-                return LoaderActionResult(
-                    (
-                        "No application selected to open "
-                        f"workfile '{workfile_name}'"
-                    ),
-                    success=False,
-                )
         anatomy = selection.get_project_anatomy()
         workfile_path: str = anatomy.fill_root(source_path)
         if not os.path.exists(workfile_path):
@@ -269,44 +256,6 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             for variant in group.variants.values():
                 output.append(variant)
         return output
-
-    def _has_matching_application(
-            self, autolaunch: bool) -> LoaderActionResult:
-        """Check if any selected version has matching application.
-
-        Args:
-            autolaunch (bool): Whether to automatically launch the matching
-                application if available.
-        Returns:
-            LoaderActionResult: Result of the action, including form
-                to display to user.
-        """
-        fields: list[AbstractAttrDef] = [
-            TextDef(
-                "step",
-                visible=False,
-            ),
-            BoolDef(
-                "autolaunch",
-                label="Automatically run matching application",
-                default=False,
-            )
-        ]
-        form_values = {
-            key: value
-            for key, value in (
-                ("autolaunch", autolaunch),
-            )
-            if value is not None
-        }
-        form_values["step"] = "finished-check-matching-application"
-        return LoaderActionResult(
-            form=ActionForm(
-                title="Check for matching application",
-                fields=fields,
-            ),
-            form_values=form_values
-        )
 
     def _show_app_dialog(
             self,
