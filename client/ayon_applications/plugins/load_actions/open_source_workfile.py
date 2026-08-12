@@ -4,6 +4,7 @@ import os
 import collections
 from typing import Optional, Any, TYPE_CHECKING
 
+import ayon_api
 from ayon_core.addon import IHostAddon
 from ayon_core.pipeline.actions import (
     LoaderSimpleActionPlugin,
@@ -13,8 +14,9 @@ from ayon_core.pipeline.actions import (
 from ayon_core.lib import (
     run_detached_ayon_launcher_process,
 )
-from ayon_core.style import load_stylesheet
-from qtpy import QtWidgets, QtCore
+from ayon_core.style import load_stylesheet, get_app_icon_path
+from ayon_core.tools.utils import get_qt_icon
+from qtpy import QtWidgets, QtCore, QtGui
 
 from ayon_applications import ApplicationGroup
 
@@ -107,9 +109,10 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             task_id=task_id
         )
         if not compatible_apps:
+            task = ayon_api.get_task_by_id(project_name, task_id)
             return LoaderActionResult(
                 f"No compatible applications for {file_ext} "
-                f"enabled for context: {project_name} > {task_id}",
+                f"enabled for context: {project_name} > {task['name']}",
                 success=False,
             )
 
@@ -256,6 +259,8 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
     ) -> str:
         """Show application selection dialog."""
         dialog = QtWidgets.QDialog()
+        icon = QtGui.QIcon(get_app_icon_path())
+        dialog.setWindowIcon(icon)
         dialog.setWindowTitle("Open Source Workfile")
         dialog.setMinimumWidth(400)
         dialog.setStyleSheet(load_stylesheet())
@@ -271,10 +276,14 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         layout.addWidget(info)
 
         app_list = QtWidgets.QListWidget()
+        empty_pix = QtGui.QPixmap(128, 128)
+        empty_icon = QtGui.QIcon(empty_pix)
         preferred_index = 0
         for i, app in enumerate(apps):
             label = app.full_label or app.name
-
+            icon = empty_icon
+            if app.icon:
+                icon = get_qt_icon(app.icon)
             # Highlight the app that was used to create the publish so that
             # the user knows it's the recommended one to open with.
             if source_app_full_name and app.full_name == source_app_full_name:
@@ -282,6 +291,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
                 label += " (used to create publish)"
 
             item = QtWidgets.QListWidgetItem(label)
+            item.setData(QtCore.Qt.DecorationRole, icon)
             item.setData(QtCore.Qt.UserRole, app)
             app_list.addItem(item)
 
