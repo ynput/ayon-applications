@@ -269,7 +269,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         layout = QtWidgets.QVBoxLayout(dialog)
 
         info = QtWidgets.QLabel(
-            f"<h3>Open Source Workfile</h3>"
+            "<h3>Open Source Workfile</h3>"
             f"<p><b>Workfile:</b> {workfile_name}</p>"
             f"<p><b>Project:</b> {project_name}</p>"
         )
