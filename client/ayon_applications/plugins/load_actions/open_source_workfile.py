@@ -122,13 +122,7 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         )
 
         if not selected_app:
-            return LoaderActionResult(
-                (
-                    "No application selected to open "
-                    f"workfile '{workfile_name}'"
-                ),
-                success=False,
-            )
+            return
         anatomy = selection.get_project_anatomy()
         workfile_path: str = anatomy.fill_root(source_path)
         if not os.path.exists(workfile_path):
