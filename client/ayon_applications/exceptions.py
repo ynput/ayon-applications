@@ -1,3 +1,6 @@
+import os
+
+
 class ApplicationNotFound(Exception):
     """Application was not found in ApplicationManager by name."""
 
@@ -18,6 +21,22 @@ class ApplicationExecutableNotFound(Exception):
             msg = (
                 "Executable paths for application \"{}\"({}) are not set."
             )
+        elif any(
+            os.path.exists(executable.executable_path)
+            and not os.path.isfile(executable.executable_path)
+            for executable in application.executables
+        ):
+            msg = (
+                "Invalid executable path configured for application "
+                "\"{}\"({}); the path must point to a file."
+            )
+            details = "Invalid paths:"
+            for executable in application.executables:
+                if (
+                    os.path.exists(executable.executable_path)
+                    and not os.path.isfile(executable.executable_path)
+                ):
+                    details += "\n- " + executable.executable_path
         else:
             msg = (
                 "Defined executable paths for application \"{}\"({})"
