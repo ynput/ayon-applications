@@ -351,12 +351,12 @@ class ProcessManager:
             )
             for row in rows
         ]
-        deactivated: set[str] = set()
+        deactivated: list[str] = []
         for proc in processes:
             if proc.pid is None:
                 proc.state = ProcessState.INACTIVE
                 proc.active = False
-                deactivated.add(proc.hash)
+                deactivated.append(proc.hash)
 
             elif proc.state == ProcessState.ACTIVE:
                 exe = proc.executable.as_posix()
@@ -366,15 +366,17 @@ class ProcessManager:
                 proc.active = is_running
                 if not is_running:
                     proc.state = ProcessState.INACTIVE
-                    deactivated.add(proc.hash)
+                    deactivated.append(proc.hash)
 
         if deactivated:
-            joined_hashes = ",".join(deactivated)
+            placeholders = ",".join("?" * len(deactivated))
+            cursor = cnx.cursor()
             cursor.execute(
                 f"UPDATE process_info SET state=?"
-                f" WHERE hash IN (?)",
-                (ProcessState.INACTIVE.name, joined_hashes)
+                f" WHERE hash IN ({placeholders})",
+                (ProcessState.INACTIVE.name, *deactivated)
             )
+            cnx.commit()
 
         return processes
 
