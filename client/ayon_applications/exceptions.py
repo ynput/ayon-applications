@@ -1,6 +1,3 @@
-import os
-
-
 class ApplicationNotFound(Exception):
     """Application was not found in ApplicationManager by name."""
 
