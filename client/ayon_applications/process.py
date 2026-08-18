@@ -48,7 +48,7 @@ class ProcessInfo:
     args: list[str]
     env: dict[str, str]
     cwd: str
-    hash: Optional[str] = None
+    hash: str = ""
     pid: Optional[int] = None
     active: bool = False
     output: Optional[Path] = None
@@ -57,7 +57,7 @@ class ProcessInfo:
 
     def __post_init__(self) -> None:
         """Post-initialization to compute the hash if not provided."""
-        if self.hash is None:
+        if self.hash == "":
             self.hash = ProcessManager.get_process_info_hash(self)
 
 
@@ -359,6 +359,54 @@ class ProcessManager:
 
         return processes
 
+    def delete_processes_info(self, process_hashes: set[str]) -> bool:
+        """Delete process information by hash.
+
+        This also deletes the output file if it exists.
+
+        Args:
+            process_hashes (set[str]): Hashes of processes to delete.
+
+        Returns:
+            bool: True if deleted, False if not found.
+
+        """
+        if not process_hashes:
+            return False
+
+        # Convert to tuple for delete operation
+        process_hashes = tuple(process_hashes)
+        placeholders = ",".join("?" * len(process_hashes))
+
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
+        cursor.execute(
+            (
+                "SELECT hash, output_file FROM process_info"
+                f" WHERE hash IN ({placeholders})"
+            ),
+            process_hashes
+        )
+        filtered_hashes = []
+        for row in cursor.fetchall():
+            process_hash, output = row
+            filtered_hashes.append(process_hash)
+            if output and Path(output).exists():
+                # File might not exist anymore, so we use contextlib.suppress
+                with contextlib.suppress(OSError):
+                    os.remove(output)
+
+        if not filtered_hashes:
+            return False
+
+        placeholders = ",".join("?" * len(filtered_hashes))
+        cursor.execute(
+            f"DELETE FROM process_info WHERE hash IN ({placeholders})",
+            filtered_hashes
+        )
+        cnx.commit()
+        return cursor.rowcount > 0
+
     def delete_process_info(self, process_hash: str) -> bool:
         """Delete process information by hash.
 
@@ -369,22 +417,9 @@ class ProcessManager:
 
         Returns:
             bool: True if deleted, False if not found.
-        """
-        process = self.get_process_info(process_hash)
-        if process is None:
-            return False
-        if process.output and Path(process.output).exists():
-            # File might not exist anymore, so we use contextlib.suppress
-            with contextlib.suppress(OSError):
-                os.remove(process.output)
 
-        cnx = self._get_process_storage_connection()
-        cursor = cnx.cursor()
-        cursor.execute(
-            "DELETE FROM process_info WHERE hash = ?",
-            (process_hash,))
-        cnx.commit()
-        return cursor.rowcount > 0
+        """
+        return self.delete_processes_info({process_hash})
 
     def delete_inactive_processes(self) -> int:
         """Delete all inactive process information.
@@ -670,6 +705,6 @@ class ProcessManager:
             list[ProcessInfo]: List of descendant process information.
 
         """
-        if process_info.pid is None:
+        if process_info.pid is None or not process_info.active:
             return []
         return self.get_descendant_processes_by_pid(process_info.pid)
