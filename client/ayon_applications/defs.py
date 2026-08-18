@@ -112,7 +112,7 @@ class ApplicationExecutable:
 
         # This is not 100% validation but it is better than remove ability to
         #   launch .bat, .sh or extentionless files
-        if os.path.exists(self.executable_path):
+        if os.path.isfile(self.executable_path):
             return self.executable_path
         return None
 
