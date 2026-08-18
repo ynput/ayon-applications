@@ -21,7 +21,7 @@ class ApplicationExecutableNotFound(Exception):
         else:
             msg = (
                 "Defined executable paths for application \"{}\"({})"
-                " are not available on this machine."
+                " are not valid or not available on this machine."
             )
             details = "Defined paths:"
             for executable in application.executables:
