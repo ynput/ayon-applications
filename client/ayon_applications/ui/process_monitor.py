@@ -894,6 +894,16 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         self._setup_ui()
 
+    def keyReleaseEvent(self, event) -> None:
+        if (
+            event.modifiers() == QtCore.Qt.NoModifier
+            and event.key() == QtCore.Qt.Key_Delete
+        ):
+            self._delete_selected_process()
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
+
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         central_widget = self
