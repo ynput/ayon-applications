@@ -3,16 +3,13 @@ from __future__ import annotations
 
 import contextlib
 import enum
-from datetime import datetime, timezone
 from logging import getLogger
 from pathlib import Path
 import time
 from time import perf_counter
-from typing import TYPE_CHECKING
+import typing
 
-from ayon_applications.process import ProcessInfo, ProcessManager, ProcessState
-from ayon_core.style import load_stylesheet
-from ayon_core.tools.utils import get_ayon_qt_app
+import arrow
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtCore import (
     QModelIndex,
@@ -22,14 +19,43 @@ from qtpy.QtCore import (
     Slot,
 )
 
+from ayon_core.style import load_stylesheet
+from ayon_core.tools.utils import get_ayon_qt_app
+from ayon_applications.process import (
+    ProcessInfo,
+    ProcessManager,
+    ProcessState,
+)
+
 from .ansi_parser import AnsiToHtmlConverter
 
 DEFAULT_RELOAD_INTERVAL = 2000
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from types import TracebackType
 
-ModelIndex = QModelIndex | QPersistentModelIndex
+    ModelIndex = QModelIndex | QPersistentModelIndex
+
+PROCESS_NAME_ROLE = QtCore.Qt.UserRole + 1
+PROCESS_EXECUTABLE_ROLE = QtCore.Qt.UserRole + 2
+PROCESS_PID_ROLE = QtCore.Qt.UserRole + 3
+PROCESS_STATUS_ROLE = QtCore.Qt.UserRole + 4
+PROCESS_STATE_ROLE = QtCore.Qt.UserRole + 5
+PROCESS_CREATED_ROLE = QtCore.Qt.UserRole + 6
+PROCESS_START_TIME_ROLE = QtCore.Qt.UserRole + 7
+PROCESS_OUTPUT_FILE_ROLE = QtCore.Qt.UserRole + 8
+PROCESS_HASH_ROLE = QtCore.Qt.UserRole + 9
+ITEM_TYPE_ROLE = QtCore.Qt.UserRole + 10
+
+MAIN_PROCESS_ITEM = 0
+DESCENDANT_PROCESS_ITEM = 1
+
+
+class ProcessState:
+    RUNNING = 0
+    CHILD_RUNNING = 1
+    STOPPED = 2
+    UNKNOWN = 3
 
 
 class FileChangeWatcher(QtCore.QObject):
@@ -145,17 +171,16 @@ class ProcessDescendantsUpdateWorker(QRunnable):
     """Worker thread for updating process descendants."""
 
     def __init__(
-            self,
-            manager: ProcessManager,
-            parent_pid: int,
-            parent_hash: str):
+        self,
+        manager: ProcessManager,
+        parent_process: ProcessInfo,
+    ):
         """Initialize the worker."""
         super().__init__()
         self.signals = ProcessDescendantsUpdateWorkerSignals()
         self.signature = self.__class__.__name__
         self._manager = manager
-        self._parent_pid = parent_pid
-        self._parent_hash = parent_hash
+        self._parent_process = parent_process
         self._log = getLogger(self.signature)
 
     @Slot()
@@ -163,9 +188,11 @@ class ProcessDescendantsUpdateWorker(QRunnable):
         """Update process descendants data in background thread."""
         with CatchTime() as timer:
             try:
-                descendants = self._manager.get_descendant_processes_by_pid(
-                    self._parent_pid)
-                self.signals.finished.emit(self._parent_hash, descendants)
+                descendants = self._manager.get_descendant_processes(
+                    self._parent_process
+                )
+                parent_hash = self._parent_process.hash
+                self.signals.finished.emit(parent_hash, descendants)
             except Exception as e:  # noqa: BLE001
                 self.signals.error.emit(str(e))
         self._log.debug(
@@ -270,25 +297,27 @@ class CleanupWorkerSignals(QtCore.QObject):
 class CleanupWorker(QRunnable):
     """Worker thread for cleanup operations."""
 
-    def __init__(self,
-                 manager: ProcessManager,
-                 cleanup_type: str,
-                 process_hash: str | None = None) -> None:
+    def __init__(
+        self,
+        manager: ProcessManager,
+        cleanup_type: str,
+        process_hashes: set[str] | None = None
+    ) -> None:
         """Initialize the worker.
 
         Args:
             manager (ApplicationManager): Application manager instance.
-            cleanup_type (str): Type of cleanup ("inactive" or "single").
-            process_hash (Optional[str]): Hash of the process to delete
-                if cleanup_type is "single".
+            cleanup_type (str): Type of cleanup ("inactive" or "selection").
+            process_hashes (set[str] | None): Hashes of the processes
+                to delete if cleanup_type is "selection".
 
         """
         super().__init__()
         self.signals = CleanupWorkerSignals()
         self.signature = f"{self.__class__.__name__} ({cleanup_type})"
         self._manager = manager
-        self._cleanup_type = cleanup_type  # "inactive" or "single"
-        self._process_hash = process_hash
+        self._cleanup_type = cleanup_type  # "inactive" or "selection"
+        self._process_hashes = process_hashes
         self._log = getLogger(self.signature)
 
     @Slot()
@@ -299,7 +328,7 @@ class CleanupWorker(QRunnable):
         try:
             if self._cleanup_type == "inactive":
                 self._cleanup_inactive()
-            elif self._cleanup_type == "single":
+            elif self._cleanup_type == "selection":
                 self._remove_selected()
         except Exception as e:  # noqa: BLE001
             self.signals.error.emit(str(e))
@@ -310,12 +339,12 @@ class CleanupWorker(QRunnable):
         self.signals.finished.emit(deleted_count)
 
     def _remove_selected(self) -> None:
-        """Remove a single selected process."""
-        if not self._process_hash:
-            self.signals.error.emit("No process hash provided")
+        """Remove selected processes."""
+        if not self._process_hashes:
+            self.signals.error.emit("No process hashes provided")
             return
 
-        self._manager.delete_process_info(self._process_hash)
+        self._manager.delete_processes_info(self._process_hashes)
         self.signals.finished.emit(1)
 
 
@@ -332,11 +361,34 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     _child_running_icon: QtGui.QIcon
     ICON_SIZE = 12
 
+    # Columns
+    HEADERS = [
+        "Name", "Executable", "PID", "Status", "Created", "Start Time",
+        "Output File", "Hash"
+    ]
+    COLUMNS = enum.IntEnum(  # type: ignore[misc]
+        "columns",
+        {
+            name.replace(" ", "_").upper(): i
+            for i, name in enumerate(HEADERS)
+        },
+    )
+    _display_roles_mapping = {
+        COLUMNS.NAME: PROCESS_NAME_ROLE,
+        COLUMNS.EXECUTABLE: PROCESS_EXECUTABLE_ROLE,
+        COLUMNS.PID: PROCESS_PID_ROLE,
+        COLUMNS.STATUS: PROCESS_STATUS_ROLE,
+        COLUMNS.CREATED: PROCESS_CREATED_ROLE,
+        COLUMNS.START_TIME: PROCESS_START_TIME_ROLE,
+        COLUMNS.OUTPUT_FILE: PROCESS_OUTPUT_FILE_ROLE,
+        COLUMNS.HASH: PROCESS_HASH_ROLE,
+    }
+
     def __init__(
-            self,
-            manager: ProcessManager,
-            parent: QtCore.QObject | None = None,
-            ) -> None:
+        self,
+        manager: ProcessManager,
+        parent: QtCore.QObject | None = None,
+    ) -> None:
         """Initialize the model.
 
         Args:
@@ -345,59 +397,214 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         """
         super().__init__(parent)
-        self._generate_icons(size=self.ICON_SIZE)
-        self._processes: list[ProcessInfo] = []
-        self._manager = manager
-        # map of top-level process hash to its first-column item
-        self._top_item_by_hash: dict[str, QtGui.QStandardItem] = {}
-        # Columns
-        self.headers = [
-            "Name", "Executable", "PID", "Status", "Created", "Start Time",
-            "Output File", "Hash"
-        ]
-        self.columns = enum.IntEnum(  # type: ignore[misc]
-            "columns",
-            {
-                name.replace(" ", "_").upper(): i
-                for i, name in enumerate(self.headers)
-            },
-        )
-        self.setColumnCount(len(self.headers))
-        self.setHorizontalHeaderLabels(self.headers)
+        self.setColumnCount(len(self.HEADERS))
+        self.setHorizontalHeaderLabels(self.HEADERS)
 
-    def _status_icon(self, process: ProcessInfo) -> QtGui.QIcon:
+        self._generate_icons(size=self.ICON_SIZE)
+        self._manager = manager
+
+        self._process_by_hash: dict[str, ProcessInfo] = {}
+        self._items_by_hash: dict[str, QtGui.QStandardItem] = {}
+        # Helper mappings to reliably cleanup cached items
+        self._root_hashes: set[str] = set()
+        self._descendent_hashes: dict[str, set[str]] = {}
+
+    def update_processes(self, processes: list[ProcessInfo]) -> None:
+        """Replace current content with provided processes.
+
+        Args:
+            processes (list[ProcessInfo]): List of ProcessInfo objects.
+
+        """
+        processes_by_hash = {
+            process.hash: process
+            for process in processes
+        }
+        _hashless_process = processes_by_hash.pop(None, None)
+
+        root_item = self.invisibleRootItem()
+
+        to_remove = set(self._root_hashes)
+
+        new_items = []
+        for process_hash, process in processes_by_hash.items():
+            to_remove.discard(process_hash)
+            item = self._items_by_hash.get(process_hash)
+            if item is None:
+                item = QtGui.QStandardItem()
+                item.setEditable(False)
+                item.setColumnCount(self.columnCount())
+                new_items.append(item)
+
+                item.setData(MAIN_PROCESS_ITEM, ITEM_TYPE_ROLE)
+            self._fill_item_data(item, process)
+            self._root_hashes.add(process_hash)
+            self._items_by_hash[process_hash] = item
+            self._descendent_hashes.setdefault(process_hash, set())
+
+        for process_hash in to_remove:
+            for child_hash in self._descendent_hashes.pop(process_hash):
+                self._items_by_hash.pop(child_hash)
+                self._process_by_hash.pop(child_hash)
+
+            item = self._items_by_hash.pop(process_hash)
+            root_item.takeRow(item.row())
+            self._root_hashes.discard(process_hash)
+            self._process_by_hash.pop(process_hash)
+
+        if new_items:
+            root_item.appendRows(new_items)
+
+        self._process_by_hash.update(processes_by_hash)
+
+    def update_descendants(
+        self, parent_hash: str, descendants: list[ProcessInfo]
+    ) -> None:
+        """Update descendant processes under a given parent process.
+
+        Args:
+            parent_hash (str): Hash of the parent process.
+            descendants (list[ProcessInfo]): List of descendant
+                ProcessInfo objects.
+
+        """
+        parent_item = self._items_by_hash.get(parent_hash)
+        parent_proc = self._process_by_hash.get(parent_hash)
+        if parent_item is None:
+            return
+
+        existing_hashes = self._descendent_hashes[parent_hash]
+        existing_items_by_hash = {
+            child_hash: self._items_by_hash[child_hash]
+            for child_hash in existing_hashes
+        }
+
+        new_items: list[QtGui.QStandardItem] = []
+        for child_proc in descendants:
+            item = existing_items_by_hash.pop(child_proc.hash, None)
+            if item is None:
+                item = QtGui.QStandardItem()
+                item.setEditable(False)
+                item.setColumnCount(self.columnCount())
+                new_items.append(item)
+
+                # Make descendant name slightly italic to hint hierarchy
+                font = item.font()
+                font.setItalic(True)
+                item.setFont(font)
+
+                item.setData(DESCENDANT_PROCESS_ITEM, ITEM_TYPE_ROLE)
+
+            self._fill_item_data(item, child_proc)
+
+            self._process_by_hash[child_proc.hash] = child_proc
+            self._items_by_hash[child_proc.hash] = item
+
+        self._descendent_hashes[parent_hash] = {
+            child_proc.hash for child_proc in descendants
+        }
+
+        for item in existing_items_by_hash.values():
+            process_hash = item.data(PROCESS_HASH_ROLE)
+            self._process_by_hash.pop(process_hash)
+            parent_item.takeRow(item.row())
+
+        if new_items:
+            parent_item.appendRows(new_items)
+
+        if parent_proc is not None:
+            state = self._get_process_state(parent_proc)
+            if parent_item.data(PROCESS_STATE_ROLE) != state:
+                icon = self._get_status_icon(state)
+                parent_item.setData(state, PROCESS_STATE_ROLE)
+                parent_item.setData(icon, QtCore.Qt.DecorationRole)
+
+    def get_process_by_hash(self, process_hash: str) -> ProcessInfo | None:
+        return self._process_by_hash.get(process_hash)
+
+    def get_index_by_hash(self, process_hash: str) -> QtCore.QModelIndex:
+        """Get model index for process matching given hash.
+
+        Args:
+            process_hash (str): Process hash to search for.
+
+        Returns:
+            QtCore.QModelIndex: Matching model index or None
+                if not found.
+
+        """
+        item = self._items_by_hash.get(process_hash)
+        if item is not None:
+            return item.index()
+        return self.index(-1, -1)
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if not index.isValid():
+            return super().data(index, role)
+
+        col = index.column()
+        if role == QtCore.Qt.DecorationRole:
+            if col != self.COLUMNS.NAME:
+                return None
+
+        if role == QtCore.Qt.DisplayRole:
+            role = self._display_roles_mapping.get(col)
+            if role is None:
+                return ""
+
+        if role >= QtCore.Qt.UserRole:
+            index = index.sibling(index.row(), 0)
+
+        return super().data(index, role)
+
+    def flags(self, index):
+        return super().flags(index.sibling(index.row(), 0))
+
+    def _get_status_icon(self, state: int) -> QtGui.QIcon:
         """Return a small colored circle icon representing process status.
 
         Args:
-            process (ProcessInfo): ProcessInfo object.
+            state (int): Process state.
 
         Returns:
             QtGui.QIcon: Colored circle icon.
 
         """
+        if state == ProcessState.RUNNING:
+            return self._running_icon
+        if state == ProcessState.CHILD_RUNNING:
+            return self._child_running_icon
+        if state == ProcessState.STOPPED:
+            return self._stopped_icon
+        return self._unknown_icon
+
+    def _get_process_state(self, process: ProcessInfo) -> int:
+        """.
+
+        Args:
+            process (ProcessInfo): ProcessInfo object.
+
+        Returns:
+            int: Process state.
+
+        """
+        if process.pid and process.active:
+            return ProcessState.RUNNING
+
         # If top-level process has children, prefer child-running state
         if process.hash:
-            parent_item = self._top_item_by_hash.get(process.hash)
+            parent_item = self._items_by_hash.get(process.hash)
             if parent_item is not None:
-                for i in range(parent_item.rowCount()):
-                    child = parent_item.child(i, self.columns.NAME)
-                    if child is None:
-                        continue
-                    cproc: ProcessInfo | None = child.data(
-                        QtCore.Qt.ItemDataRole.UserRole)
-                    if (
-                        cproc
-                        and cproc.pid
-                        and cproc.state == ProcessState.ACTIVE
-                    ):
-                        return self._child_running_icon
+                for row in range(parent_item.rowCount()):
+                    child = parent_item.child(row, 0)
+                    process_hash = child.data(PROCESS_HASH_ROLE)
+                    cproc = self._process_by_hash.get(process_hash)
+                    if cproc and cproc.pid and cproc.active:
+                        return ProcessState.CHILD_RUNNING
 
-        if process.state == ProcessState.ACTIVE:
-            return self._running_icon
-        if process.state == ProcessState.INACTIVE:
-            return self._stopped_icon
-        # UNKNOWN or checking
-        return self._unknown_icon
+        if process.pid:
+            return ProcessState.STOPPED
+        return ProcessState.UNKNOWN
 
     @classmethod
     def _generate_icons(cls, size: int = 12) -> None:
@@ -443,290 +650,55 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         painter.end()
         return QtGui.QIcon(pix)
 
-    def update_processes(self, processes: list[ProcessInfo]) -> None:
-        """Replace current content with provided processes.
-
-        Args:
-            processes (list[ProcessInfo]): List of ProcessInfo objects.
-
-        """
-        self._processes = list(processes)
-        root_item = self.invisibleRootItem()
-        root_item.removeRows(0, root_item.rowCount())
-        self._top_item_by_hash.clear()
-
-        for process in self._processes:
-            row_items: list[QtGui.QStandardItem] = []
-            bg = self._data_background_role(process)
-            for col in range(len(self.headers)):
-                text = self._data_display_role(col, process)
-                item = QtGui.QStandardItem(
-                    str(text) if text is not None else ""
-                )
-                item.setEditable(False)
-                # Store ProcessInfo in UserRole on the first column item
-                if col == self.columns.NAME:
-                    item.setData(process, QtCore.Qt.ItemDataRole.UserRole)
-                    item.setIcon(self._status_icon(process))
-                    if process.hash:
-                        self._top_item_by_hash[process.hash] = item
-                # Set background color for entire row via individual items
-                if bg is not None:
-                    item.setBackground(bg)
-                row_items.append(item)
-            root_item.appendRow(row_items)
-
-    def update_descendants(
-        self, parent_hash: str, descendants: list[ProcessInfo]
+    def _fill_item_data(
+        self, item: QtGui.QStandardItem, process: ProcessInfo
     ) -> None:
-        """Update descendant processes under a given parent process.
+        executable = process.executable.as_posix()
+        pid_value = "N/A"
+        created_at = "N/A"
+        start_time = "N/A"
+        output_file = "N/A"
+        status = "UNKNOWN"
 
-        Args:
-            parent_hash (str): Hash of the parent process.
-            descendants (list[ProcessInfo]): List of descendant
-                ProcessInfo objects.
+        if process.pid is not None:
+            pid_value = str(process.pid)
+            status = "Running" if process.active else "Stopped"
 
-        """
-        parent_item = self._top_item_by_hash.get(parent_hash)
-        if parent_item is None:
-            return
-        # remove previous children
-        parent_item.removeRows(0, parent_item.rowCount())
+        if process.created_at:
+            try:
+                # Parse the UTC timestamp from SQLite and convert
+                # to local timezone
+                # SQLite CURRENT_TIMESTAMP format is "YYYY-MM-DD HH:MM:SS"
+                created_arrow = arrow.get(process.created_at).to("local")
+                created_at = created_arrow.strftime("%Y-%m-%d %H:%M:%S")
 
-        for child_proc in descendants:
-            child_items: list[QtGui.QStandardItem] = []
-            bg = self._data_background_role(child_proc)
-            for col in range(len(self.headers)):
-                text = self._data_display_role(col, child_proc)
-                citem = QtGui.QStandardItem(
-                    str(text) if text is not None else ""
-                )
-                citem.setEditable(False)
-                if col == self.columns.NAME:
-                    citem.setData(child_proc, QtCore.Qt.ItemDataRole.UserRole)
-                    citem.setIcon(self._status_icon(child_proc))
-                    # Make descendant name slightly italic to hint hierarchy
-                    font = citem.font()
-                    font.setItalic(True)
-                    citem.setFont(font)
-                if bg is not None:
-                    citem.setBackground(bg)
-                child_items.append(citem)
-            parent_item.appendRow(child_items)
+            except (ValueError, AttributeError):
+                # If parsing fails, return the original string
+                created_at = process.created_at
 
-        # After updating children, refresh parent's icon
-        # (parent ProcessInfo stored in UserRole)
-        with contextlib.suppress(Exception):
-            parent_proc: ProcessInfo | None = parent_item.data(
-                QtCore.Qt.ItemDataRole.UserRole
-            )
-            if parent_proc is not None:
-                parent_item.setIcon(self._status_icon(parent_proc))
+        if process.start_time:
+            st_obj = arrow.get(process.start_time).to("local")
+            start_time = st_obj.strftime("%Y-%m-%d %H:%M:%S")
 
-    def get_process_at_row(self, row: int) -> ProcessInfo | None:
-        """Get the ProcessInfo stored at the given row.
+        if process.output:
+            output_file = str(process.output)
 
-        Args:
-            row (int): Row index.
-
-        Returns:
-            Optional[ProcessInfo]: ProcessInfo object or None if not found.
-
-        """
-        item = self.item(row, self.columns.NAME)
-        return (
-            None
-            if item is None
-            else item.data(QtCore.Qt.ItemDataRole.UserRole)
-        )
-
-    def get_process_at_index(
-        self, index: QtCore.QModelIndex
-    ) -> ProcessInfo | None:
-        """Get the ProcessInfo stored at the given index.
-
-        Args:
-            index (QtCore.QModelIndex): Model index.
-
-        Returns:
-            Optional[ProcessInfo]: ProcessInfo object or None if not found.
-
-        """
-        if not index.isValid():
-            return None
-        first_col_index = index.sibling(index.row(), self.columns.NAME)
-        item = self.itemFromIndex(first_col_index)
-        return None if item is None else item.data(
-            QtCore.Qt.ItemDataRole.UserRole)
-
-    def find_indexes_by_hashes(
-        self, hashes: set[str]
-    ) -> list[QtCore.QModelIndex]:
-        """Find model indexes for processes matching given hashes.
-
-        Args:
-            hashes (set[str]): Set of process hashes to search for.
-
-        Returns:
-            list[QtCore.QModelIndex]: List of matching model indexes.
-
-        """
-        results: list[QtCore.QModelIndex] = []
-        root = self.invisibleRootItem()
-        for r in range(root.rowCount()):
-            top_item = root.child(r, self.columns.NAME)
-            if top_item is None:
-                continue
-            proc: ProcessInfo | None = top_item.data(
-                QtCore.Qt.ItemDataRole.UserRole
-            )
-            if proc and proc.hash and proc.hash in hashes:
-                results.append(self.indexFromItem(top_item))
-            # children
-            for cr in range(top_item.rowCount()):
-                child = top_item.child(cr, self.columns.NAME)
-                if child is None:
-                    continue
-                cproc: ProcessInfo | None = child.data(
-                    QtCore.Qt.ItemDataRole.UserRole
-                )
-                if cproc and cproc.hash and cproc.hash in hashes:
-                    results.append(self.indexFromItem(child))
-        return results
-
-    def get_index_by_hash(self, hash_: str) -> QtCore.QModelIndex | None:
-        """Get model index for process matching given hash.
-
-        Args:
-            hash_ (str): Process hash to search for.
-
-        Returns:
-            Optional[QtCore.QModelIndex]: Matching model index or None
-                if not found.
-
-        """
-        item = self._top_item_by_hash.get(hash_)
-        return self.indexFromItem(item) if item else None
-
-    def _data_display_role(  # noqa: C901, PLR0911, PLR0912
-        self, column: int, process: ProcessInfo
-    ) -> str | None:
-        """Get display text for a given column and process.
-
-        Args:
-            column (int): Column index.
-            process (ProcessInfo): ProcessInfo object.
-
-        Returns:
-            Optional[str]: Display text or None if column is invalid.
-
-        """
-        if column == self.columns.NAME:
-            return process.name
-        if column == self.columns.EXECUTABLE:
-            return process.executable.as_posix() or "N/A"
-        if column == self.columns.PID:
-            return str(process.pid) if process.pid else "N/A"
-        if column == self.columns.STATUS:
-            if process.state == ProcessState.ACTIVE:
-                return "Running"
-            if process.state == ProcessState.INACTIVE:
-                return "Stopped"
-            return "Unknown"
-        if column == self.columns.CREATED:
-            if process.created_at:
-                try:
-                    # Parse the UTC timestamp from SQLite and convert
-                    # to local timezone
-                    # SQLite CURRENT_TIMESTAMP format is "YYYY-MM-DD HH:MM:SS"
-                    utc_dt = datetime.strptime(  # noqa: DTZ007
-                        process.created_at, "%Y-%m-%d %H:%M:%S"
-                    )
-                    # Assume it is UTC and convert to local timezone
-                    utc_dt = utc_dt.replace(tzinfo=timezone.utc)
-                    local_dt = utc_dt.astimezone()
-                    return local_dt.strftime("%Y-%m-%d %H:%M:%S")
-                except (ValueError, AttributeError):
-                    # If parsing fails, return the original string
-                    return process.created_at
-            return "N/A"
-        if column == self.columns.START_TIME:
-            if process.start_time:
-                try:
-                    return datetime.fromtimestamp(
-                        process.start_time,
-                        tz=datetime.now().astimezone().tzinfo,
-                    ).strftime("%Y-%m-%d %H:%M:%S")
-                except (OSError, OverflowError, ValueError):
-                    return str(process.start_time)
-            return "N/A"
-        if column == self.columns.OUTPUT_FILE:
-            return str(process.output) if process.output else "N/A"
-        if column == self.columns.HASH:
-            with contextlib.suppress(Exception):
-                return process.hash or self._manager.get_process_info_hash(
-                    process
-                )
-            return "N/A"
-        return None
-
-    @staticmethod
-    def _data_background_role(process: ProcessInfo) -> QtGui.QColor:
-        if process.state == ProcessState.ACTIVE:
-            return QtGui.QColor(200, 255, 200)  # Light green
-        if process.state == ProcessState.INACTIVE:
-            return QtGui.QColor(255, 200, 200)  # Light red
-        return QtGui.QColor(240, 240, 240)  # Light gray
-
-    def sort(  # noqa: C901
-        self,
-        column: int,
-        order: QtCore.Qt.SortOrder = QtCore.Qt.SortOrder.AscendingOrder,
-    ) -> None:
-        """Sort the model based on a column and order.
-
-        Args:
-            column (int): Column index to sort by.
-            order (QtCore.Qt.SortOrder): Sort order (Ascending or Descending).
-
-        """
-        if not self._processes:
-            return
-        reverse = order == QtCore.Qt.SortOrder.DescendingOrder
-
-        def key_func(  # noqa: PLR0911
-            process: ProcessInfo,
-        ) -> str | int | float:
-            """Key function for sorting based on column.
-
-            Returns:
-                Union[str, int]: Value to sort by.
-
-            """
-            if column == self.columns.NAME:
-                return process.name or ""
-            if column == self.columns.EXECUTABLE:
-                return (
-                    process.executable.as_posix() if process.executable else ""
-                )
-            if column == self.columns.PID:
-                return process.pid or 0
-            if column == self.columns.STATUS:
-                return process.active
-            if column == self.columns.CREATED:
-                return process.created_at or ""
-            if column == self.columns.START_TIME:
-                return process.start_time or 0
-            if column == self.columns.OUTPUT_FILE:
-                return process.output.as_posix() if process.output else ""
-            if column == self.columns.HASH:
-                return process.hash or ""
-
-            return ""
-
-        sorted_processes = sorted(
-            self._processes, key=key_func, reverse=reverse)
-        self.update_processes(sorted_processes)
+        state = self._get_process_state(process)
+        # TODO find out which can be filled only once and which need to be
+        #   updated every time
+        for value, role in (
+            (process.name, PROCESS_NAME_ROLE),
+            (process.hash, PROCESS_HASH_ROLE),
+            (executable, PROCESS_EXECUTABLE_ROLE),
+            (pid_value, PROCESS_PID_ROLE),
+            (created_at, PROCESS_CREATED_ROLE),
+            (start_time, PROCESS_START_TIME_ROLE),
+            (output_file, PROCESS_OUTPUT_FILE_ROLE),
+            (status, PROCESS_STATUS_ROLE),
+        ):
+            old_value = item.data(role)
+            if old_value != value:
+                item.setData(value, role)
 
 
 class ProcessMonitorController(QtCore.QObject):
@@ -817,7 +789,8 @@ class ProcessMonitorController(QtCore.QObject):
             return
         try:
             worker = ProcessDescendantsUpdateWorker(
-                self.manager, parent_process.pid, parent_process.hash)
+                self.manager, parent_process
+            )
             worker.signals.finished.connect(self._on_descendants_finished)
             worker.signals.error.connect(self._on_error)
             self._thread_pool.start(worker)
@@ -912,15 +885,17 @@ class ProcessMonitorController(QtCore.QObject):
         except Exception as exc:  # noqa: BLE001
             self.error.emit(str(exc))
 
-    def delete_single(self, process_hash: str) -> None:
-        """Delete a single process by its hash in background thread.
+    def delete_processes(self, process_hashes: set[str]) -> None:
+        """Delete processes by hash in background thread.
 
         Args:
-            process_hash (str): Hash of the process to delete.
+            process_hashes (set[str]): Hash of the processes to delete.
 
         """
         try:
-            worker = CleanupWorker(self.manager, "single", process_hash)
+            worker = CleanupWorker(
+                self.manager, "selection", process_hashes
+            )
             worker.signals.finished.connect(self._on_cleanup_finished)
             worker.signals.error.connect(self._on_error)
             self._thread_pool.start(worker)
@@ -977,10 +952,18 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         self._current_process = None
         self._is_loading = False
-        # Track last selection to restore across refreshes (including children)
-        self._last_selected_hashes: set[str] = set()
 
         self._setup_ui()
+
+    def keyReleaseEvent(self, event) -> None:
+        if (
+            event.modifiers() == QtCore.Qt.NoModifier
+            and event.key() == QtCore.Qt.Key_Delete
+        ):
+            self._delete_selected_process()
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -1057,18 +1040,24 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
     def _setup_tree_view_ui(self) -> None:
         """Set up the process tree view UI."""
         self._tree_model = ProcessTreeModel(manager=self._controller.manager)
+        self._tree_proxy = QtCore.QSortFilterProxyModel()
+        self._tree_proxy.setSourceModel(self._tree_model)
         self._tree_view = QtWidgets.QTreeView()
-        self._tree_view.setModel(self._tree_model)
-        self._tree_view.setSelectionBehavior(
-            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self._tree_view.setModel(self._tree_proxy)
+        self._tree_view.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection
+        )
         self._tree_view.setSortingEnabled(True)
+        self._tree_view.sortByColumn(
+            ProcessTreeModel.COLUMNS.CREATED, QtCore.Qt.DescendingOrder
+        )
         self._tree_view.doubleClicked.connect(self._on_row_double_clicked)
 
         header = self._tree_view.header()
         header.setStretchLastSection(True)
-        for i in range(len(self._tree_model.headers)):
+        for col in range(len(self._tree_model.HEADERS)):
             header.setSectionResizeMode(
-                i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+                col, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
         # Make tree view expand to fill available space
         self._tree_view.setSizePolicy(
@@ -1179,30 +1168,8 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._controller.refresh()
 
     def _on_processes_refreshed(self, processes: list[ProcessInfo]) -> None:
-        selection_model = self._tree_view.selectionModel()
-        selected_hashes: set[str] = set()
-        if selection_model.hasSelection():
-            for index in selection_model.selectedRows():
-                proc = self._tree_model.get_process_at_index(index)
-                if proc and proc.hash:
-                    selected_hashes.add(proc.hash)
-        # remember for later (children restored after descendants load)
-        self._last_selected_hashes = selected_hashes
-
         # Update the model with new processes
         self._tree_model.update_processes(processes)
-
-        # Restore selection for any top-level rows we can now
-        indexes_to_select = self._tree_model.find_indexes_by_hashes(
-            selected_hashes)
-        for idx in indexes_to_select:
-            selection_model.select(
-                idx,
-                (
-                    QtCore.QItemSelectionModel.SelectionFlag.Select
-                    | QtCore.QItemSelectionModel.SelectionFlag.Rows
-                ),
-            )
 
         # Fetch descendants for each process with PID
         for proc in processes:
@@ -1218,9 +1185,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._log.debug("Process tree updated with new data")
 
     def _on_descendants_refreshed(
-            self,
-            parent_hash: object,
-            descendants: list[ProcessInfo]) -> None:
+        self,
+        parent_hash: object,
+        descendants: list[ProcessInfo]
+    ) -> None:
         """Handle updated descendants for a parent process.
 
         Args:
@@ -1230,22 +1198,12 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         """
         parent_hash_str = str(parent_hash)
         self._tree_model.update_descendants(parent_hash_str, descendants)
+
         # Expand parent row to show its children
         parent_index = self._tree_model.get_index_by_hash(parent_hash_str)
-        if parent_index is not None:
-            self._tree_view.setExpanded(parent_index, True)  # noqa: FBT003
-        # Try to restore child selection if needed
-        if self._last_selected_hashes:
-            sel_model = self._tree_view.selectionModel()
-            for idx in self._tree_model.find_indexes_by_hashes(
-                    self._last_selected_hashes):
-                sel_model.select(
-                    idx,
-                    (
-                        QtCore.QItemSelectionModel.SelectionFlag.Select
-                        | QtCore.QItemSelectionModel.SelectionFlag.Rows
-                    ),
-                )
+        proxy_index = self._tree_proxy.mapFromSource(parent_index)
+        if proxy_index.isValid():
+            self._tree_view.setExpanded(proxy_index, True)  # noqa: FBT003
 
     def _on_error(self, error_msg: str) -> None:
         """Handle refresh error.
@@ -1266,7 +1224,9 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         """
         if not index.isValid() or self._is_loading:
             return
-        process = self._tree_model.get_process_at_index(index)
+
+        process_hash = index.data(PROCESS_HASH_ROLE)
+        process = self._tree_model.get_process_by_hash(process_hash)
         if not process:
             return
         self._current_process = process
@@ -1384,17 +1344,30 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
                 "Please select a process to delete."
             )
             return
+
         indexes = selection.selectedRows()
-        if not indexes:
+        hashes = set()
+        for index in indexes:
+            if index.data(ITEM_TYPE_ROLE) == MAIN_PROCESS_ITEM:
+                hashes.add(index.data(PROCESS_HASH_ROLE))
+
+        if not hashes:
+            QtWidgets.QMessageBox.information(
+                self,
+                "No Valid Selection",
+                "Cannot delete a descendant process from DB.",
+            )
             return
-        process = self._tree_model.get_process_at_index(indexes[0])
-        if not process:
-            return
+
+        suffix = "" if len(hashes) == 1 else "es"
+        question = (
+            f"Delete {len(hashes)} process{suffix} and its output file?"
+        )
+
         reply = QtWidgets.QMessageBox.question(
             self,
             "Confirm Deletion",
-            f"Delete process '{process.name}' "
-            f"(PID: {process.pid}) and its output file?",
+            question,
             QtWidgets.QMessageBox.StandardButton.Yes
             | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.No,
@@ -1406,13 +1379,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._set_loading_state(loading=True)
         self._status_bar.showMessage("Deleting process...")
 
-        # Only top-level processes exist in DB -> require hash to delete
-        if process.hash:
-            self._controller.delete_single(process.hash)
-        else:
-            self._status_bar.showMessage(
-                "Cannot delete a descendant process from DB")
-            self._set_loading_state(loading=False)
+        self._controller.delete_processes(hashes)
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa: N802
         """Apply stylesheet when the window is shown."""

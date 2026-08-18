@@ -12,19 +12,12 @@ from dataclasses import dataclass
 from enum import Enum
 from hashlib import sha256
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING
 
 from ayon_core.lib import get_launcher_local_dir
 
 if TYPE_CHECKING:
     import subprocess
-
-
-class ProcessIdTriplet(NamedTuple):
-    """Triplet of process identification values."""
-    pid: int
-    executable: str
-    start_time: float | None  # the same goes for start time
 
 
 class ProcessState(Enum):
@@ -59,17 +52,17 @@ class ProcessInfo:
     args: list[str]
     env: dict[str, str]
     cwd: str
-    hash: str | None = None
+    hash: str = ""
     pid: int | None = None
     active: bool = False
     output: Path | None = None
     start_time: float | None = None
     created_at: str | None = None
-    state: ProcessState = ProcessState.UNKNOWN
+    state: ProcessState = ProcessState.ACTIVE
 
     def __post_init__(self) -> None:
         """Post-initialization to compute the hash if not provided."""
-        if self.hash is None:
+        if self.hash == "":
             self.hash = ProcessManager.get_process_info_hash(self)
 
 
@@ -127,9 +120,16 @@ class ProcessManager:
             "pid INTEGER DEFAULT NULL, "
             "output_file TEXT DEFAULT NULL, "
             "start_time REAL DEFAULT NULL, "
-            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+            f"state TEXT DEFAULT '{ProcessState.ACTIVE.name}'"
             ")"
         )
+        # Migrate existing databases that lack the state column.
+        with contextlib.suppress(sqlite3.OperationalError):
+            cursor.execute(
+                "ALTER TABLE process_info "
+                f"ADD COLUMN state TEXT DEFAULT '{ProcessState.ACTIVE.name}'"
+            )
         cnx.commit()
         self._thread_local.connection = cnx
 
@@ -197,8 +197,8 @@ class ProcessManager:
         cursor.execute(
             "INSERT OR REPLACE INTO process_info "
             "(hash, name, executable, args, env, cwd, "
-            "pid, output_file, start_time) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "pid, output_file, start_time, state) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 process_info.hash,
                 process_info.name,
@@ -212,6 +212,7 @@ class ProcessManager:
                     if process_info.output else None
                 ),
                 process_info.start_time,
+                process_info.state.name,
             )
         )
         cnx.commit()
@@ -246,6 +247,7 @@ class ProcessManager:
             output=Path(row[7]) if row[7] else None,
             start_time=row[8],
             created_at=row[9],
+            state=ProcessState[row[10]] if row[10] else ProcessState.ACTIVE,
         )
 
     def get_process_info_by_name(
@@ -278,6 +280,7 @@ class ProcessManager:
             output=Path(row[7]) if row[7] else None,
             start_time=row[8],
             created_at=row[9],
+            state=ProcessState[row[10]] if row[10] else ProcessState.ACTIVE,
         )
 
     def get_process_info_by_pid(self, pid: int) -> ProcessInfo | None:
@@ -309,6 +312,7 @@ class ProcessManager:
             output=Path(row[7]) if row[7] else None,
             start_time=row[8],
             created_at=row[9],
+            state=ProcessState[row[10]] if row[10] else ProcessState.ACTIVE,
         )
 
     def get_current_process_info(self) -> ProcessInfo | None:
@@ -346,20 +350,13 @@ class ProcessManager:
                 output=Path(row[7]) if row[7] else None,
                 start_time=row[8],
                 created_at=row[9],
+                state=(
+                    ProcessState[row[10]] if row[10] else ProcessState.ACTIVE
+                ),
             )
             for row in rows
         ]
-        # Check if processes are still running
-        # This is done by checking the pid of the process.
-        # It is using `_are_processes_running` method which
-        # checks for processes in batch, mostly because of the fallback
-        # on systems without `psutil` module. See `_are_processes_running`
-        # documentation for more details.
-        # Build list of (pid, executable_name, start_time) triplets so the
-        # check can verify PID + image and, when possible, process start time
-        # (stronger protection against PID reuse).
-        pid_triplets: list[ProcessIdTriplet] = []
-        processes_with_pid = []
+        deactivated: list[str] = []
         for idx, proc in enumerate(processes):
             # Time filter takes precedence. If requested and process is not
             # newer, skip it regardless of `top_count`.
@@ -371,35 +368,90 @@ class ProcessManager:
                 )
             ):
                 # Keep state as UNKNOWN and active as False
+                if proc.state == ProcessState.ACTIVE:
+                    proc.state = ProcessState.UNKNOWN
                 continue
 
             # If top_count is set, only check processes within that window.
             if top_count is not None and idx >= top_count:
                 # Keep state as UNKNOWN and active as False
+                if proc.state == ProcessState.ACTIVE:
+                    proc.state = ProcessState.UNKNOWN
                 continue
 
-            if proc.pid is None:
+            if proc.pid is None and proc.state != ProcessState.INACTIVE:
                 proc.state = ProcessState.INACTIVE
-                proc.active = False
-                continue
+                deactivated.append(proc.hash)
 
-            exe = proc.executable.as_posix()
-            pid_triplets.append(
-                ProcessIdTriplet(proc.pid, exe, proc.start_time))
-            processes_with_pid.append(proc)
-
-        if pid_triplets:
-            running_status = self._are_processes_running(pid_triplets)
-            for proc, (_, is_running) in zip(
-                    processes_with_pid, running_status):
-                proc.active = is_running
-                proc.state = (
-                    ProcessState.ACTIVE
-                    if is_running
-                    else ProcessState.INACTIVE
+            elif proc.state in ProcessState.ACTIVE:
+                exe = proc.executable.as_posix()
+                is_running = self._is_process_running(
+                    proc.pid, exe, proc.start_time
                 )
+                proc.active = is_running
+                if not is_running:
+                    proc.state = ProcessState.INACTIVE
+                    deactivated.append(proc.hash)
+
+        if deactivated:
+            placeholders = ",".join("?" * len(deactivated))
+            cursor = cnx.cursor()
+            cursor.execute(
+                f"UPDATE process_info SET state=?"
+                f" WHERE hash IN ({placeholders})",
+                (ProcessState.INACTIVE.name, *deactivated)
+            )
+            cnx.commit()
 
         return processes
+
+    def delete_processes_info(self, process_hashes: set[str]) -> bool:
+        """Delete process information by hash.
+
+        This also deletes the output file if it exists.
+
+        Args:
+            process_hashes (set[str]): Hashes of processes to delete.
+
+        Returns:
+            bool: True if deleted, False if not found.
+
+        """
+        if not process_hashes:
+            return False
+
+        # Convert to tuple for delete operation
+        process_hashes = tuple(process_hashes)
+        placeholders = ",".join("?" * len(process_hashes))
+
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
+        cursor.execute(
+            (
+                "SELECT hash, output_file FROM process_info"
+                f" WHERE hash IN ({placeholders})"
+            ),
+            process_hashes
+        )
+        filtered_hashes = []
+        for row in cursor.fetchall():
+            process_hash, output = row
+            filtered_hashes.append(process_hash)
+            if output and Path(output).exists():
+                # File might not exist anymore, so we use contextlib.suppress
+                with contextlib.suppress(OSError):
+                    os.remove(output)
+
+        if not filtered_hashes:
+            return False
+
+        placeholders = ",".join("?" * len(filtered_hashes))
+        cursor.execute(
+            f"DELETE FROM process_info WHERE hash IN ({placeholders})",
+            filtered_hashes
+        )
+        cnx.commit()
+        return cursor.rowcount > 0
 
     def delete_process_info(self, process_hash: str) -> bool:
         """Delete process information by hash.
@@ -411,22 +463,9 @@ class ProcessManager:
 
         Returns:
             bool: True if deleted, False if not found.
-        """
-        process = self.get_process_info(process_hash)
-        if process is None:
-            return False
-        if process.output and Path(process.output).exists():
-            # File might not exist anymore, so we use contextlib.suppress
-            with contextlib.suppress(OSError):
-                os.remove(process.output)
 
-        cnx = self._get_process_storage_connection()
-        cursor = cnx.cursor()
-        cursor.execute(
-            "DELETE FROM process_info WHERE hash = ?",
-            (process_hash,))
-        cnx.commit()
-        return cursor.rowcount > 0
+        """
+        return self.delete_processes_info({process_hash})
 
     def delete_inactive_processes(self) -> int:
         """Delete all inactive process information.
@@ -536,59 +575,6 @@ class ProcessManager:
             return Path(executable).name.lower() in candidates
 
         return Path(executable).as_posix() in candidates
-
-    @staticmethod
-    def _are_processes_running(
-            pid_triplets: list[ProcessIdTriplet]) -> list[tuple[int, bool]]:
-        """Check if the processes are still running.
-
-        This checks for presence of `psutil` module and uses it if available.
-
-        Args:
-            pid_triplets (list[ProcessIdTriplet]): Processes ID to check.
-
-        Returns:
-            list[tuple[int, bool]]: List of tuples with process ID and
-                boolean indicating if the process is running.
-
-        """
-        if not pid_triplets:
-            result: list[tuple[int, bool]] = []
-            return result
-
-        return ProcessManager._check_processes_running(
-                pid_triplets)
-
-    @staticmethod
-    def _check_processes_running(
-            pid_triplets: list[ProcessIdTriplet]) -> list[tuple[int, bool]]:
-        """Check if processes are running using psutil.
-
-        Args:
-            pid_triplets (list[ProcessIdTriplet]): List of triplets
-
-        Returns:
-            list[tuple[int, bool]]: List of tuples with process ID and
-                boolean indicating if the process is running.
-
-        """
-        import psutil
-
-        result: list[tuple[int, bool]] = []
-
-        for pid, exe, start_time in pid_triplets:
-            try:
-                is_running = ProcessManager._is_process_running(
-                    pid, exe, start_time
-                )
-            except Exception:  # noqa: BLE001
-                # if something goes wrong, fall back to pid_exists
-                try:
-                    is_running = psutil.pid_exists(pid)
-                except Exception:   # noqa: BLE001
-                    is_running = False
-            result.append((pid, is_running))
-        return result
 
     @staticmethod
     def get_executable_path_by_pid(pid: int) -> Path | None:
@@ -713,6 +699,6 @@ class ProcessManager:
             list[ProcessInfo]: List of descendant process information.
 
         """
-        if process_info.pid is None:
+        if process_info.pid is None or not process_info.active:
             return []
         return self.get_descendant_processes_by_pid(process_info.pid)
