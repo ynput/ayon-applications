@@ -48,7 +48,7 @@ class ProcessInfo:
     args: list[str]
     env: dict[str, str]
     cwd: str
-    hash: Optional[str] = None
+    hash: str = ""
     pid: Optional[int] = None
     active: bool = False
     output: Optional[Path] = None
@@ -57,7 +57,7 @@ class ProcessInfo:
 
     def __post_init__(self) -> None:
         """Post-initialization to compute the hash if not provided."""
-        if self.hash is None:
+        if self.hash == "":
             self.hash = ProcessManager.get_process_info_hash(self)
 
 
