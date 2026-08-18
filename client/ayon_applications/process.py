@@ -705,6 +705,6 @@ class ProcessManager:
             list[ProcessInfo]: List of descendant process information.
 
         """
-        if process_info.pid is None:
+        if process_info.pid is None or not process_info.active:
             return []
         return self.get_descendant_processes_by_pid(process_info.pid)
