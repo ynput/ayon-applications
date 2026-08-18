@@ -383,7 +383,7 @@ class ProcessManager:
                 proc.state = ProcessState.INACTIVE
                 deactivated.append(proc.hash)
 
-            elif proc.state in ProcessState.ACTIVE:
+            elif proc.state == ProcessState.ACTIVE:
                 exe = proc.executable.as_posix()
                 is_running = self._is_process_running(
                     proc.pid, exe, proc.start_time

@@ -40,7 +40,7 @@ PROCESS_NAME_ROLE = QtCore.Qt.UserRole + 1
 PROCESS_EXECUTABLE_ROLE = QtCore.Qt.UserRole + 2
 PROCESS_PID_ROLE = QtCore.Qt.UserRole + 3
 PROCESS_STATUS_ROLE = QtCore.Qt.UserRole + 4
-PROCESS_STATE_ROLE = QtCore.Qt.UserRole + 5
+PROCESS_UI_STATE_ROLE = QtCore.Qt.UserRole + 5
 PROCESS_CREATED_ROLE = QtCore.Qt.UserRole + 6
 PROCESS_START_TIME_ROLE = QtCore.Qt.UserRole + 7
 PROCESS_OUTPUT_FILE_ROLE = QtCore.Qt.UserRole + 8
@@ -51,7 +51,7 @@ MAIN_PROCESS_ITEM = 0
 DESCENDANT_PROCESS_ITEM = 1
 
 
-class ProcessState:
+class ProcessUIState:
     RUNNING = 0
     CHILD_RUNNING = 1
     STOPPED = 2
@@ -513,10 +513,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             parent_item.appendRows(new_items)
 
         if parent_proc is not None:
-            state = self._get_process_state(parent_proc)
-            if parent_item.data(PROCESS_STATE_ROLE) != state:
-                icon = self._get_status_icon(state)
-                parent_item.setData(state, PROCESS_STATE_ROLE)
+            ui_state = self._get_process_ui_state(parent_proc)
+            if parent_item.data(PROCESS_UI_STATE_ROLE) != ui_state:
+                icon = self._get_status_icon(ui_state)
+                parent_item.setData(ui_state, PROCESS_UI_STATE_ROLE)
                 parent_item.setData(icon, QtCore.Qt.DecorationRole)
 
     def get_process_by_hash(self, process_hash: str) -> ProcessInfo | None:
@@ -560,25 +560,25 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def flags(self, index):
         return super().flags(index.sibling(index.row(), 0))
 
-    def _get_status_icon(self, state: int) -> QtGui.QIcon:
+    def _get_status_icon(self, ui_state: int) -> QtGui.QIcon:
         """Return a small colored circle icon representing process status.
 
         Args:
-            state (int): Process state.
+            ui_state (int): Process state.
 
         Returns:
             QtGui.QIcon: Colored circle icon.
 
         """
-        if state == ProcessState.RUNNING:
+        if ui_state == ProcessUIState.RUNNING:
             return self._running_icon
-        if state == ProcessState.CHILD_RUNNING:
+        if ui_state == ProcessUIState.CHILD_RUNNING:
             return self._child_running_icon
-        if state == ProcessState.STOPPED:
+        if ui_state == ProcessUIState.STOPPED:
             return self._stopped_icon
         return self._unknown_icon
 
-    def _get_process_state(self, process: ProcessInfo) -> int:
+    def _get_process_ui_state(self, process: ProcessInfo) -> int:
         """.
 
         Args:
@@ -589,7 +589,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         """
         if process.pid and process.active:
-            return ProcessState.RUNNING
+            return ProcessUIState.RUNNING
 
         # If top-level process has children, prefer child-running state
         if process.hash:
@@ -600,11 +600,11 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                     process_hash = child.data(PROCESS_HASH_ROLE)
                     cproc = self._process_by_hash.get(process_hash)
                     if cproc and cproc.pid and cproc.active:
-                        return ProcessState.CHILD_RUNNING
+                        return ProcessUIState.CHILD_RUNNING
 
         if process.pid:
-            return ProcessState.STOPPED
-        return ProcessState.UNKNOWN
+            return ProcessUIState.STOPPED
+        return ProcessUIState.UNKNOWN
 
     @classmethod
     def _generate_icons(cls, size: int = 12) -> None:
@@ -683,7 +683,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         if process.output:
             output_file = str(process.output)
 
-        state = self._get_process_state(process)
+        ui_state = self._get_process_ui_state(process)
         # TODO find out which can be filled only once and which need to be
         #   updated every time
         for value, role in (
@@ -699,6 +699,12 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             old_value = item.data(role)
             if old_value != value:
                 item.setData(value, role)
+
+        old_ui_state = item.data(PROCESS_UI_STATE_ROLE)
+        if old_ui_state != ui_state:
+            icon = self._get_status_icon(ui_state)
+            item.setData(ui_state, PROCESS_UI_STATE_ROLE)
+            item.setData(icon, QtCore.Qt.DecorationRole)
 
 
 class ProcessMonitorController(QtCore.QObject):
@@ -1173,11 +1179,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         # Fetch descendants for each process with PID
         for proc in processes:
-            if not proc.active:
-                continue
-            if proc.state != ProcessState.ACTIVE:
-                continue
-            if proc.pid:
+            if proc.pid and proc.state == ProcessState.ACTIVE:
                 self._controller.fetch_descendants(proc)
 
         self._status_bar.showMessage(f"Loaded {len(processes)} processes")
