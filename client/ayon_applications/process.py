@@ -353,9 +353,8 @@ class ProcessManager:
         ]
         deactivated: list[str] = []
         for proc in processes:
-            if proc.pid is None:
+            if proc.pid is None and proc.state != ProcessState.INACTIVE:
                 proc.state = ProcessState.INACTIVE
-                proc.active = False
                 deactivated.append(proc.hash)
 
             elif proc.state == ProcessState.ACTIVE:
