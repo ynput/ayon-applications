@@ -155,17 +155,16 @@ class ProcessDescendantsUpdateWorker(QRunnable):
     """Worker thread for updating process descendants."""
 
     def __init__(
-            self,
-            manager: ProcessManager,
-            parent_pid: int,
-            parent_hash: str):
+        self,
+        manager: ProcessManager,
+        parent_process: ProcessInfo,
+    ):
         """Initialize the worker."""
         super().__init__()
         self.signals = ProcessDescendantsUpdateWorkerSignals()
         self.signature = self.__class__.__name__
         self._manager = manager
-        self._parent_pid = parent_pid
-        self._parent_hash = parent_hash
+        self._parent_process = parent_process
         self._log = getLogger(self.signature)
 
     @Slot()
@@ -173,9 +172,11 @@ class ProcessDescendantsUpdateWorker(QRunnable):
         """Update process descendants data in background thread."""
         with CatchTime() as timer:
             try:
-                descendants = self._manager.get_descendant_processes_by_pid(
-                    self._parent_pid)
-                self.signals.finished.emit(self._parent_hash, descendants)
+                descendants = self._manager.get_descendant_processes(
+                    self._parent_process
+                )
+                parent_hash = self._parent_process.hash
+                self.signals.finished.emit(parent_hash, descendants)
             except Exception as e:  # noqa: BLE001
                 self.signals.error.emit(str(e))
         self._log.debug(
@@ -756,7 +757,8 @@ class ProcessMonitorController(QtCore.QObject):
             return
         try:
             worker = ProcessDescendantsUpdateWorker(
-                self.manager, parent_process.pid, parent_process.hash)
+                self.manager, parent_process
+            )
             worker.signals.finished.connect(self._on_descendants_finished)
             worker.signals.error.connect(self._on_error)
             self._thread_pool.start(worker)
