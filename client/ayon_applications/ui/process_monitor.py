@@ -376,11 +376,10 @@ class CleanupWorker(QRunnable):
 
 @dataclass
 class _ModelState:
-    refresh_states: bool = False
-    refresh_processes: bool = False
+    refreshing_states: bool = False
+    refreshing_processes: bool = False
     stopped: bool = True
-    new_root_items: bool = False
-    updated_rows: set[int] = field(default_factory=set)
+    has_new_roots: bool = False
     descendants_to_update: dict[str, list] = field(default_factory=dict)
 
 
@@ -460,8 +459,8 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def start_workers(self):
         self._state.stopped = False
         self._refresh_timer.start()
-        if not self._state.refresh_states:
-            self._state.refresh_states = True
+        if not self._state.refreshing_states:
+            self._state.refreshing_states = True
             worker = SimpleWorker(self._refresh_states)
             worker.error.connect(self.error)
             self._thread_pool.start(worker)
@@ -475,10 +474,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._refresh_processes()
 
     def _refresh_processes(self) -> None:
-        if self._state.refresh_processes:
+        if self._state.refreshing_processes:
             return
 
-        self._state.refresh_processes = True
+        self._state.refreshing_processes = True
         self._refresh_timer.stop()
 
         processes = self._manager.get_all_process_info(invalidate=False)
@@ -520,8 +519,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         hashes_to_process.reverse()
         self._hashes_to_process = hashes_to_process
 
-        self._trigger_data_changes()
-
         for process_hash in tuple(to_remove):
             item = self._items_by_hash.get(process_hash)
             if item is None:
@@ -533,7 +530,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._remove_root_items(to_remove)
 
         if new_items:
-            self._state.new_root_items = True
+            self._state.has_new_roots = True
             root_item.appendRows(new_items)
             self.processes_refreshed.emit(root_item.rowCount())
 
@@ -544,39 +541,14 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         for process_hash, descendants in descendants_to_update.items():
             self._update_descendants(process_hash, descendants)
 
-        self._state.refresh_processes = False
+        self._state.refreshing_processes = False
         if not self._state.stopped:
             self._refresh_timer.start()
-
-    def _trigger_data_changes(self):
-        if not self._state.updated_rows:
-            return
-
-        self._state.updated_rows, updated_rows = (
-            set(), self._state.updated_rows
-        )
-        first_row = min(updated_rows)
-        last_row = max(updated_rows)
-        self.dataChanged.emit(
-            self.index(first_row, self.COLUMNS.NAME.value),
-            self.index(last_row, self.COLUMNS.NAME.value),
-            [QtCore.Qt.DecorationRole],
-        )
-        self.dataChanged.emit(
-            self.index(first_row, self.COLUMNS.STATUS.value),
-            self.index(last_row, self.COLUMNS.STATUS.value),
-            [QtCore.Qt.DisplayRole],
-        )
-        self.dataChanged.emit(
-            self.index(first_row, self.COLUMNS.STATUS.value),
-            self.index(last_row, self.columnCount() - 1),
-            [PROCESS_STATE_ROLE],
-        )
 
     def _refresh_states(self) -> None:
         """Refresh descendants for all root processes."""
         queue = deque(self._hashes_to_process)
-        self._state.refresh_states = False
+        self._state.refreshing_states = False
         while queue:
             if self._state.stopped:
                 return
@@ -631,12 +603,12 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         for _ in range(50):
             if self._state.stopped:
                 return
-            if self._state.new_root_items:
-                self._state.new_root_items = False
+            if self._state.has_new_roots:
+                self._state.has_new_roots = False
                 break
             QtCore.QThread.msleep(100)
 
-        if not self._state.refresh_states and not self._state.stopped:
+        if not self._state.refreshing_states and not self._state.stopped:
             self._thread_pool.start(self._refresh_states)
 
     def _remove_root_items(self, process_hashes: set[str]) -> None:
@@ -926,8 +898,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         item.setData(status, PROCESS_STATUS_ROLE)
         item.setData(icon, QtCore.Qt.DecorationRole)
         self.blockSignals(False)
-        if item.row() >= 0:
-            self._state.updated_rows.add(item.row())
 
     def _on_refresh_timer(self) -> None:
         self._refresh_processes()
