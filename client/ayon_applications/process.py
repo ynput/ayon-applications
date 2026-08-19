@@ -71,6 +71,8 @@ class ProcessInfo:
         stopped: int,
     ) -> ProcessInfo:
         """Create a ProcessInfo instance from database row values."""
+        if pid is None:
+            stopped = True
         return cls(
             name=name,
             executable=Path(executable),
@@ -244,7 +246,7 @@ class ProcessManager:
                     if process_info.output else None
                 ),
                 process_info.start_time,
-                0,
+                int(process_info.stopped),
             )
         )
         cnx.commit()
@@ -321,11 +323,17 @@ class ProcessManager:
         """
         return self.get_process_info_by_pid(os.getpid())
 
-    def get_all_process_info(self) -> list[ProcessInfo]:
+    def get_all_process_info(
+        self, *, invalidate: bool = True
+    ) -> list[ProcessInfo]:
         """Get all process information from the database.
+
+        Args:
+            invalidate (bool): Invalidate stopped state.
 
         Returns:
             list[ProcessInfo]: List of all process information.
+
         """
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
@@ -340,32 +348,44 @@ class ProcessManager:
             ProcessInfo.from_row_values(*row)
             for row in rows
         ]
-        deactivated: list[str] = []
+        deactivated: set[str] = set()
         for proc in processes:
             if proc.pid is None and not proc.stopped:
                 proc.stopped = True
-                deactivated.append(proc.hash)
+                deactivated.add(proc.hash)
 
-            elif not proc.stopped:
+            elif invalidate and not proc.stopped:
                 exe = proc.executable.as_posix()
                 is_running = self._is_process_running(
                     proc.pid, exe, proc.start_time
                 )
                 if not is_running:
                     proc.stopped = True
-                    deactivated.append(proc.hash)
+                    deactivated.add(proc.hash)
 
-        if deactivated:
-            placeholders = ",".join("?" * len(deactivated))
-            cursor = cnx.cursor()
-            cursor.execute(
-                f"UPDATE process_info SET stopped=?"
-                f" WHERE hash IN ({placeholders})",
-                (1, *deactivated)
-            )
-            cnx.commit()
+        self._mark_processes_stopped(set(deactivated))
 
         return processes
+
+    def _mark_processes_stopped(self, process_hashes: set[str]) -> None:
+        """Mark processes as stopped in the database.
+
+        Args:
+            process_hashes (set[str]): Hashes of processes to mark as stopped.
+
+        """
+        if not process_hashes:
+            return
+
+        placeholders = ",".join("?" * len(process_hashes))
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
+        cursor.execute(
+            f"UPDATE process_info SET stopped=?"
+            f" WHERE hash IN ({placeholders})",
+            (1, *process_hashes)
+        )
+        cnx.commit()
 
     def delete_processes_info(self, process_hashes: set[str]) -> bool:
         """Delete process information by hash.
@@ -474,6 +494,26 @@ class ProcessManager:
                 os.remove(file_path)
 
         return cursor.rowcount
+
+    def invalidate_process(self, process: ProcessInfo) -> bool:
+        """Check if a process is running using psutil.
+
+        Args:
+            process (ProcessInfo): Process information to check.
+
+        """
+        if process.stopped or process.pid is None:
+            return False
+
+        is_running = self._is_process_running(
+            process.pid,
+            str(process.executable),
+            process.start_time
+        )
+        if not is_running:
+            process.stopped = True
+            self._mark_processes_stopped({process.hash})
+        return is_running
 
     @staticmethod
     def _is_process_running(
