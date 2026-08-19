@@ -561,7 +561,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             int: Process state.
 
         """
-        if process.pid and process.active:
+        if process.pid and not process.stopped:
             return ProcessState.RUNNING
 
         # If top-level process has children, prefer child-running state
@@ -572,7 +572,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                     child = parent_item.child(row, 0)
                     process_hash = child.data(PROCESS_HASH_ROLE)
                     cproc = self._process_by_hash.get(process_hash)
-                    if cproc and cproc.pid and cproc.active:
+                    if cproc and cproc.pid and not cproc.stopped:
                         return ProcessState.CHILD_RUNNING
 
         if process.pid:
@@ -635,7 +635,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         if process.pid is not None:
             pid_value = str(process.pid)
-            status = "Running" if process.active else "Stopped"
+            status = "Stopped" if process.stopped else "Running"
 
         if process.created_at:
             try:
@@ -1156,7 +1156,7 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         if (
             self._auto_reload_checkbox.isChecked()
             and process.pid
-            and process.active
+            and not process.stopped
         ):
             self._controller.stop_file_reload()
             self._controller.start_file_watch(process.output)
@@ -1217,10 +1217,12 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             # self._controller.stop_file_reload()
             self._controller.stop_file_watch()
             self._controller.stop_file_reload()
-        elif (self._current_process and
-              self._current_process.pid and
-              self._current_process.active):
 
+        elif (
+            self._current_process
+            and self._current_process.pid
+            and not self._current_process.stopped
+        ):
             self._controller.stop_file_reload()
             self._controller.start_file_watch(self._current_process.output)
             # self._controller.start_file_reload(
