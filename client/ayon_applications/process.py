@@ -641,6 +641,7 @@ class ProcessManager:
                     cwd=child.cwd(),
                     pid=child.pid,
                     start_time=child.create_time(),
+                    stopped=False,
                 )
                 # If psutil returned the process, it's currently running
                 proc_info.stopped = True
