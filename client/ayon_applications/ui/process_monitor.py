@@ -321,11 +321,9 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def start_workers(self):
         self._state.stopped = False
         self._refresh_timer.start()
-        if not self._state.refreshing_states:
-            self._state.refreshing_states = True
-            worker = SimpleWorker(self._refresh_states)
-            worker.error.connect(self.error)
-            self._thread_pool.start(worker)
+        if not self._state.refresh_states_in_pool:
+            self._state.refresh_states_in_pool = True
+            self._thread_pool.start(self._refresh_states)
 
     def stop_workers(self):
         self._state.stopped = True
@@ -479,10 +477,8 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 break
             QtCore.QThread.msleep(100)
 
-        if not self._state.refreshing_states and not self._state.stopped:
-            worker = SimpleWorker(self._refresh_states)
-            worker.error.connect(self.error)
-            self._thread_pool.start(worker)
+        if not self._state.refresh_states_in_pool and not self._state.stopped:
+            self._thread_pool.start(self._refresh_states)
 
     def _remove_root_items(self, process_hashes: set[str]) -> None:
         root_item = self.invisibleRootItem()
