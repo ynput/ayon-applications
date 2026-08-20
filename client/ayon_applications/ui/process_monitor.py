@@ -237,7 +237,7 @@ class FileContentWorker(QRunnable):
 
 @dataclass
 class _ModelState:
-    refreshing_states: bool = False
+    refresh_states_in_pool: bool = False
     refreshing_processes: bool = False
     stopped: bool = True
     has_new_roots: bool = False
@@ -418,7 +418,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def _refresh_states(self) -> None:
         """Refresh descendants for all root processes."""
         queue = deque(self._hashes_to_process)
-        self._state.refreshing_states = False
+        self._state.refresh_states_in_pool = False
         while queue:
             if self._state.stopped:
                 return
