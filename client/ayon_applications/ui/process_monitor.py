@@ -298,9 +298,8 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._manager = manager
 
         self._process_by_hash: dict[str, ProcessInfo] = {}
-        self._items_by_hash: dict[str, QtGui.QStandardItem] = {}
-        # Used to handle refreshes of items
-        self._root_hashes: set[str] = set()
+        self._root_items_by_hash: dict[str, QtGui.QStandardItem] = {}
+        self._descendant_items_by_hash: dict[str, QtGui.QStandardItem] = {}
 
         # Helper mappings to reliably cleanup cached items
         self._hashes_to_process: list[str] = []
@@ -344,7 +343,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         root_item = self.invisibleRootItem()
 
-        to_remove = set(self._root_hashes)
+        to_remove = set(self._root_items_by_hash)
 
         new_items = []
         hashes_to_process = []
@@ -352,7 +351,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             if not process.stopped:
                 hashes_to_process.append(process_hash)
             to_remove.discard(process_hash)
-            item = self._items_by_hash.get(process_hash)
+            item = self._root_items_by_hash.get(process_hash)
             if item is not None:
                 if process.stopped:
                     self._set_item_state(
@@ -369,8 +368,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
             self._fill_item_data(item, process, MAIN_PROCESS_ITEM)
 
-            self._root_hashes.add(process_hash)
-            self._items_by_hash[process_hash] = item
+            self._root_items_by_hash[process_hash] = item
 
         hashes_to_process.reverse()
         self._hashes_to_process = hashes_to_process
@@ -405,7 +403,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
             process_hash = queue.popleft()
             process = self._process_by_hash.get(process_hash)
-            item = self._items_by_hash.get(process_hash)
+            item = self._root_items_by_hash.get(process_hash)
             if process is None or item is None:
                 continue
 
@@ -464,17 +462,17 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def _remove_root_items(self, process_hashes: set[str]) -> None:
         root_item = self.invisibleRootItem()
         for process_hash in process_hashes:
-            item = self._items_by_hash.pop(process_hash, None)
+            item = self._root_items_by_hash.pop(process_hash, None)
             if item is None:
                 continue
             for row in range(item.rowCount()):
                 child = item.child(row, 0)
                 child_hash = child.data(PROCESS_HASH_ROLE)
-                self._items_by_hash.pop(child_hash)
-                self._process_by_hash.pop(child_hash)
+                self._descendant_items_by_hash.pop(child_hash)
+                if child_hash not in self._root_items_by_hash:
+                    self._process_by_hash.pop(child_hash)
 
             root_item.takeRow(item.row())
-            self._root_hashes.discard(process_hash)
             self._process_by_hash.pop(process_hash)
 
     def _update_descendants(
@@ -488,7 +486,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 ProcessInfo objects.
 
         """
-        parent_item = self._items_by_hash.get(parent_hash)
+        parent_item = self._root_items_by_hash.get(parent_hash)
         parent_proc = self._process_by_hash.get(parent_hash)
         if parent_item is None:
             return
@@ -502,8 +500,9 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             child_hash = item.data(PROCESS_HASH_ROLE)
             proc = descendants_by_hash.pop(child_hash, None)
             if proc is None:
-                self._items_by_hash.pop(child_hash)
-                self._process_by_hash.pop(child_hash)
+                self._descendant_items_by_hash.pop(child_hash)
+                if child_hash not in self._root_items_by_hash:
+                    self._process_by_hash.pop(child_hash)
                 parent_item.removeRow(row)
                 continue
 
@@ -527,7 +526,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             self._fill_item_data(item, child_proc, DESCENDANT_PROCESS_ITEM)
 
             self._process_by_hash[child_proc.hash] = child_proc
-            self._items_by_hash[child_proc.hash] = item
+            self._descendant_items_by_hash[child_proc.hash] = item
 
         if new_items:
             parent_item.appendRows(new_items)
@@ -600,7 +599,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             return ProcessState.RUNNING
 
         if process.hash:
-            parent_item = self._items_by_hash.get(process.hash)
+            parent_item = self._root_items_by_hash.get(process.hash)
             # Process has any descendant items, consider it child-running
             if parent_item is not None and parent_item.rowCount() > 0:
                 return ProcessState.CHILD_RUNNING
