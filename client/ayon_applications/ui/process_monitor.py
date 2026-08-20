@@ -1076,7 +1076,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         header.setStretchLastSection(True)
         for col in range(len(self._tree_model.HEADERS)):
             header.setSectionResizeMode(
-                col, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+                col, QtWidgets.QHeaderView.ResizeMode.Interactive
+            )
+        for col, size in enumerate([165, 320, 55, 140, 140]):
+            header.resizeSection(col, size)
 
         # Make tree view expand to fill available space
         self._tree_view.setSizePolicy(
