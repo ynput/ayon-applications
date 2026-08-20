@@ -515,6 +515,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
             self._fill_item_data(item, process, MAIN_PROCESS_ITEM)
 
+            self._root_hashes.add(process_hash)
             self._items_by_hash[process_hash] = item
 
         hashes_to_process.reverse()
