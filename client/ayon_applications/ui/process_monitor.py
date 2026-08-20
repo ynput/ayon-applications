@@ -481,19 +481,47 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             self._thread_pool.start(self._refresh_states)
 
     def _remove_root_items(self, process_hashes: set[str]) -> None:
-        root_item = self.invisibleRootItem()
-
+        removed_rows = []
         for process_hash in process_hashes:
             item = self._items_by_hash.pop(process_hash)
-            while item.rowCount() > 0:
-                child = item.takeChild(0, 0)
+            for row in range(item.rowCount()):
+                child = item.child(row, 0)
                 child_hash = child.data(PROCESS_HASH_ROLE)
                 self._items_by_hash.pop(child_hash)
                 self._process_by_hash.pop(child_hash)
 
-            root_item.takeRow(item.row())
             self._root_hashes.discard(process_hash)
             self._process_by_hash.pop(process_hash)
+            removed_rows.append(item.row())
+
+        if len(removed_rows) == 0:
+            return
+
+        root_item = self.invisibleRootItem()
+        if len(removed_rows) == 1:
+            root_item.takeRow(removed_rows[0])
+            return
+
+        removed_rows.sort()
+        ranges = []
+        last_added_start = None
+        start = removed_rows.pop(0)
+        end = start
+        for row in removed_rows:
+            if row == end + 1:
+                end = row
+            else:
+                ranges.append((start, end))
+                last_added_start = start
+                start = row
+                end = row
+
+        if start != last_added_start:
+            ranges.append((start, end))
+        print(ranges)
+        for start, end in reversed(ranges):
+            print(start, end)
+            root_item.removeRows(start, end - start + 1)
 
     def _update_descendants(
         self, parent_hash: str, descendants: list[ProcessInfo]
