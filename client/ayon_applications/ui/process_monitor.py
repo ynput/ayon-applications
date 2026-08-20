@@ -791,6 +791,16 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._refresh_processes()
 
 
+class ElideTextDelegate(QtWidgets.QStyledItemDelegate):
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        if index.column() in (
+            ProcessTreeModel.COLUMNS.EXECUTABLE.value,
+            ProcessTreeModel.COLUMNS.OUTPUT_FILE.value,
+        ):
+            option.textElideMode = QtCore.Qt.ElideMiddle
+
+
 class ProcessMonitorController(QtCore.QObject):
     """Controller that encapsulates data logic for ProcessMonitorWindow.
 
@@ -1067,6 +1077,8 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
             ProcessTreeModel.COLUMNS.CREATED, QtCore.Qt.DescendingOrder
         )
         self._tree_view.doubleClicked.connect(self._on_row_double_clicked)
+        self._tree_delegate = ElideTextDelegate(self._tree_view)
+        self._tree_view.setItemDelegate(self._tree_delegate)
         self._tree_model.processes_refreshed.connect(
             self._on_processes_refreshed
         )
