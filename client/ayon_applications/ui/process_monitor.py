@@ -576,7 +576,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 continue
 
             state = ProcessState.UNKNOWN
-            is_running = False
             try:
                 is_running = self._manager.invalidate_process(process)
                 state = (
