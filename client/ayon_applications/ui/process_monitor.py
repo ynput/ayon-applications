@@ -473,7 +473,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 break
             QtCore.QThread.msleep(100)
 
-        if not self._state.refresh_states_in_pool and not self._state.stopped:
+        if self._state.stopped:
+            return
+
+        if not self._state.refresh_states_in_pool:
             self._thread_pool.start(self._refresh_states)
 
     def _remove_root_items(self, process_hashes: set[str]) -> None:
