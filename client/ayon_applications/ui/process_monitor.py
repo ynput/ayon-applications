@@ -1219,7 +1219,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._clean_selected_btn.clicked.connect(
             self._delete_selected_process)
 
-
         toolbar_layout.addWidget(self._refresh_btn, 0)
         toolbar_layout.addWidget(self._clean_inactive_btn, 0)
         toolbar_layout.addWidget(self._clean_selected_btn, 0)
