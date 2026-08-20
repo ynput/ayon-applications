@@ -36,7 +36,6 @@ ModelIndex = Union[QModelIndex, QPersistentModelIndex]
 PROCESS_NAME_ROLE = QtCore.Qt.UserRole + 1
 PROCESS_EXECUTABLE_ROLE = QtCore.Qt.UserRole + 2
 PROCESS_PID_ROLE = QtCore.Qt.UserRole + 3
-PROCESS_STATUS_ROLE = QtCore.Qt.UserRole + 4
 PROCESS_STATE_ROLE = QtCore.Qt.UserRole + 5
 PROCESS_CREATED_ROLE = QtCore.Qt.UserRole + 6
 PROCESS_START_TIME_ROLE = QtCore.Qt.UserRole + 7
@@ -262,8 +261,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     # Columns
     HEADERS = [
-        "Name", "Executable", "PID", "Status", "Created", "Start Time",
-        "Output File", "Hash"
+        "Name", "Executable", "PID", "Created", "Start Time", "Output File"
     ]
     COLUMNS = enum.IntEnum(  # type: ignore[misc]
         "columns",
@@ -276,7 +274,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         COLUMNS.NAME: PROCESS_NAME_ROLE,
         COLUMNS.EXECUTABLE: PROCESS_EXECUTABLE_ROLE,
         COLUMNS.PID: PROCESS_PID_ROLE,
-        COLUMNS.STATUS: PROCESS_STATUS_ROLE,
         COLUMNS.CREATED: PROCESS_CREATED_ROLE,
         COLUMNS.START_TIME: PROCESS_START_TIME_ROLE,
         COLUMNS.OUTPUT_FILE: PROCESS_OUTPUT_FILE_ROLE,
@@ -781,17 +778,10 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         if old_state == state:
             return
 
-        status = "UNKNOWN"
-        if state == ProcessState.RUNNING:
-            status = "Running"
-        elif state == ProcessState.STOPPED:
-            status = "Stopped"
-
         icon = self._get_status_icon(state)
 
         self.blockSignals(True)
         item.setData(state, PROCESS_STATE_ROLE)
-        item.setData(status, PROCESS_STATUS_ROLE)
         item.setData(icon, QtCore.Qt.DecorationRole)
         self.blockSignals(False)
 
