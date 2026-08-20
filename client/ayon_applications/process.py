@@ -683,8 +683,6 @@ class ProcessManager:
                     start_time=child.create_time(),
                     stopped=False,
                 )
-                # If psutil returned the process, it's currently running
-                proc_info.stopped = True
                 descendants.append(proc_info)
         return descendants
 
