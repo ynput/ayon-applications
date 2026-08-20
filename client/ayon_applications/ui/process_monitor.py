@@ -469,8 +469,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 child = item.child(row, 0)
                 child_hash = child.data(PROCESS_HASH_ROLE)
                 self._descendant_items_by_hash.pop(child_hash)
-                if child_hash not in self._root_items_by_hash:
-                    self._process_by_hash.pop(child_hash)
 
             root_item.takeRow(item.row())
             self._process_by_hash.pop(process_hash)
@@ -501,9 +499,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             proc = descendants_by_hash.pop(child_hash, None)
             if proc is None:
                 self._descendant_items_by_hash.pop(child_hash)
-                if child_hash not in self._root_items_by_hash:
-                    self._process_by_hash.pop(child_hash)
-                parent_item.removeRow(row)
+                parent_item.removeRow(item.row())
                 continue
 
             if proc.stopped:
@@ -524,8 +520,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             item.setFont(font)
 
             self._fill_item_data(item, child_proc, DESCENDANT_PROCESS_ITEM)
-
-            self._process_by_hash[child_proc.hash] = child_proc
             self._descendant_items_by_hash[child_proc.hash] = item
 
         if new_items:
