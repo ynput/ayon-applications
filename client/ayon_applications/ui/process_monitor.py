@@ -473,7 +473,9 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def _remove_root_items(self, process_hashes: set[str]) -> None:
         root_item = self.invisibleRootItem()
         for process_hash in process_hashes:
-            item = self._items_by_hash.pop(process_hash)
+            item = self._items_by_hash.pop(process_hash, None)
+            if item is None:
+                continue
             for row in range(item.rowCount()):
                 child = item.child(row, 0)
                 child_hash = child.data(PROCESS_HASH_ROLE)
