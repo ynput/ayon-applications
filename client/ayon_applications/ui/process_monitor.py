@@ -549,22 +549,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def get_process_by_hash(self, process_hash: str) -> ProcessInfo | None:
         return self._process_by_hash.get(process_hash)
 
-    def get_index_by_hash(self, process_hash: str) -> QtCore.QModelIndex:
-        """Get model index for process matching given hash.
-
-        Args:
-            process_hash (str): Process hash to search for.
-
-        Returns:
-            QtCore.QModelIndex: Matching model index or None
-                if not found.
-
-        """
-        item = self._items_by_hash.get(process_hash)
-        if item is not None:
-            return item.index()
-        return self.index(-1, -1)
-
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if not index.isValid():
             return super().data(index, role)
