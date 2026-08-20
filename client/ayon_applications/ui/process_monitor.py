@@ -636,7 +636,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
             root_item.takeRow(item.row())
             self._root_hashes.discard(process_hash)
-            self._items_by_hash.pop(process_hash)
             self._process_by_hash.pop(process_hash)
 
     def _update_descendants(
