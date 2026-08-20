@@ -387,15 +387,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         for process_hash, descendants in descendants_to_update.items():
             self._update_descendants(process_hash, descendants)
 
-        # Keep items with descendants
-        for process_hash in tuple(to_remove):
-            item = self._items_by_hash.get(process_hash)
-            if item is None:
-                continue
-
-            if item.rowCount() > 0:
-                to_remove.discard(process_hash)
-
         self._remove_root_items(to_remove)
 
         self._state.refreshing_processes = False
