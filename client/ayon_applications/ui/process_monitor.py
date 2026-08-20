@@ -924,7 +924,8 @@ class ProcessMonitorController(QtCore.QObject):
 
     """
     file_content = QtCore.Signal(str)
-    cleanup_finished = QtCore.Signal(int)
+    cleanup_finished = QtCore.Signal()
+    status_message_requested = QtCore.Signal(str)
     error = QtCore.Signal(str)
 
     def __init__(self, parent: Optional[QtCore.QObject] = None):
@@ -967,10 +968,6 @@ class ProcessMonitorController(QtCore.QObject):
         except Exception as exc:  # noqa: BLE001
             self.error.emit(str(exc))
 
-    def _on_file_content_loaded(self, content: str) -> None:
-        """Handle completion of file content loading."""
-        self.file_content.emit(content)
-
     # Auto-reload control
     def start_file_watch(self, file_path: Path) -> None:
         """Start watching file for instant updates.
@@ -998,53 +995,6 @@ class ProcessMonitorController(QtCore.QObject):
         self._file_reload_timer.stop()
         self._file_reload_target = None
 
-    def _on_file_reload_timeout(self) -> None:
-        """Handle file reload timer timeout."""
-        if self._file_reload_target:
-            self.load_file_content(self._file_reload_target)
-
-    @QtCore.Slot(object)
-    def _on_file_changed(self, file_obj: object) -> None:
-        """Instant update on file change."""
-        file_path = Path(str(file_obj))
-        self.load_file_content(file_path)
-
-    # Cleanup operations
-    def clean_inactive(self) -> None:
-        """Clean all inactive processes in background thread."""
-        try:
-            worker = CleanupWorker(self.manager, "inactive")
-            worker.signals.finished.connect(self._on_cleanup_finished)
-            worker.signals.error.connect(self._on_error)
-            self._thread_pool.start(worker)
-        except Exception as exc:  # noqa: BLE001
-            self.error.emit(str(exc))
-
-    def delete_processes(self, process_hashes: set[str]) -> None:
-        """Delete processes by hash in background thread.
-
-        Args:
-            process_hashes (set[str]): Hash of the processes to delete.
-
-        """
-        try:
-            worker = CleanupWorker(
-                self.manager, "selection", process_hashes
-            )
-            worker.signals.finished.connect(self._on_cleanup_finished)
-            worker.signals.error.connect(self._on_error)
-            self._thread_pool.start(worker)
-        except Exception as exc:  # noqa: BLE001
-            self.error.emit(str(exc))
-
-    def _on_cleanup_finished(self, deleted_proc: int) -> None:
-        """Handle completion of cleanup operation."""
-        self.cleanup_finished.emit(deleted_proc)
-
-    def _on_error(self, msg: str) -> None:
-        """Handle errors from workers."""
-        self.error.emit(msg)
-
     def shutdown(self) -> None:
         """Shutdown controller.
 
@@ -1056,6 +1006,67 @@ class ProcessMonitorController(QtCore.QObject):
             self.stop_file_watch()
         with contextlib.suppress(Exception):
             self._thread_pool.waitForDone()
+
+    # Cleanup operations
+    def clean_inactive(self) -> None:
+        """Clean all inactive processes in background thread."""
+        worker = SimpleWorker(self._cleanup_inactive)
+        self._thread_pool.start(worker)
+
+    def delete_processes(self, process_hashes: set[str]) -> None:
+        """Delete processes by hash in background thread.
+
+        Args:
+            process_hashes (set[str]): Hash of the processes to delete.
+
+        """
+        worker = SimpleWorker(self._delete_processes, process_hashes)
+        self._thread_pool.start(worker)
+
+    def _on_file_content_loaded(self, content: str) -> None:
+        """Handle completion of file content loading."""
+        self.file_content.emit(content)
+
+    def _on_file_reload_timeout(self) -> None:
+        """Handle file reload timer timeout."""
+        if self._file_reload_target:
+            self.load_file_content(self._file_reload_target)
+
+    @QtCore.Slot(object)
+    def _on_file_changed(self, file_obj: object) -> None:
+        """Instant update on file change."""
+        file_path = Path(str(file_obj))
+        self.load_file_content(file_path)
+
+    def _delete_processes(self, process_hashes: set[str]) -> None:
+        if not process_hashes:
+            self._on_error("No process hashes provided")
+            return
+        try:
+            self.manager.delete_processes_info(process_hashes)
+            self.status_message_requested.emit(
+                f"Deleted {len(process_hashes)} selected processes."
+            )
+            self.cleanup_finished.emit()
+
+        except Exception as exc:  # noqa: BLE001
+            self._on_error(str(exc))
+
+    def _cleanup_inactive(self) -> None:
+        """Clean up inactive processes."""
+        try:
+            deleted_count = self.manager.delete_inactive_processes()
+            self.status_message_requested.emit(
+                f"Deleted {deleted_count} inactive processes."
+            )
+            self.cleanup_finished.emit()
+
+        except Exception as exc:  # noqa: BLE001
+            self._on_error(str(exc))
+
+    def _on_error(self, msg: str) -> None:
+        """Handle errors from workers."""
+        self.error.emit(msg)
 
 
 class ProcessMonitorWindow(QtWidgets.QDialog):
@@ -1075,6 +1086,9 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._ansi_converter = AnsiToHtmlConverter()
 
         self._controller.file_content.connect(self._on_file_content)
+        self._controller.status_message_requested.connect(
+            self._on_status_message
+        )
         self._controller.cleanup_finished.connect(self._on_cleanup_finished)
         self._controller.error.connect(self._on_error)
 
@@ -1403,13 +1417,12 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
 
         self._controller.delete_processes(hashes)
 
-    def _on_cleanup_finished(
-            self,
-            deleted_proc: int) -> None:
-        """Handle completion of cleanup operation."""
+    def _on_status_message(self, message: str) -> None:
+        """Handle status message requests."""
+        self._status_bar.showMessage(message)
+
+    def _on_cleanup_finished(self) -> None:
         self._refresh_data()
-        self._status_bar.showMessage(
-            f"Deleted {deleted_proc} inactive processes.")
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa: N802
         """Apply stylesheet when the window is shown."""
