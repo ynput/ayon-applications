@@ -1099,6 +1099,10 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         if not index.isValid():
             return
 
+        item_type = index.data(ITEM_TYPE_ROLE)
+        if item_type != MAIN_PROCESS_ITEM:
+            return
+
         process_hash = index.data(PROCESS_HASH_ROLE)
         process = self._tree_model.get_process_by_hash(process_hash)
         if not process:
