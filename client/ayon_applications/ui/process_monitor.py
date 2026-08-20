@@ -629,7 +629,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         for process_hash in process_hashes:
             item = self._items_by_hash.pop(process_hash)
             while item.rowCount() > 0:
-                child = item.child(0, 0)
+                child = item.takeChild(0, 0)
                 child_hash = child.data(PROCESS_HASH_ROLE)
                 self._items_by_hash.pop(child_hash)
                 self._process_by_hash.pop(child_hash)
