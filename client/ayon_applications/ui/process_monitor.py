@@ -596,15 +596,16 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             return ProcessState.RUNNING
 
         # If top-level process has children, prefer child-running state
+        if not process.stopped:
+            return ProcessState.RUNNING
+
         if process.hash:
             parent_item = self._items_by_hash.get(process.hash)
             # Process has any descendant items, consider it child-running
             if parent_item is not None and parent_item.rowCount() > 0:
                 return ProcessState.CHILD_RUNNING
 
-        if process.stopped:
-            return ProcessState.STOPPED
-        return ProcessState.RUNNING
+        return ProcessState.STOPPED
 
     @classmethod
     def _generate_icons(cls, size: int = 12) -> None:
