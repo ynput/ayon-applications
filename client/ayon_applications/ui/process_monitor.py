@@ -614,19 +614,16 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             int: Process state.
 
         """
+        # If there is descendant process, it is running
         if item_type == DESCENDANT_PROCESS_ITEM:
             return ProcessState.RUNNING
 
         # If top-level process has children, prefer child-running state
         if process.hash:
             parent_item = self._items_by_hash.get(process.hash)
-            if parent_item is not None:
-                for row in range(parent_item.rowCount()):
-                    child = parent_item.child(row, 0)
-                    process_hash = child.data(PROCESS_HASH_ROLE)
-                    cproc = self._process_by_hash.get(process_hash)
-                    if cproc and cproc.pid and not cproc.stopped:
-                        return ProcessState.CHILD_RUNNING
+            # Process has any descendant items, consider it child-running
+            if parent_item is not None and parent_item.rowCount() > 0:
+                return ProcessState.CHILD_RUNNING
 
         if process.stopped:
             return ProcessState.STOPPED
