@@ -240,7 +240,6 @@ class _ModelState:
     refreshing_processes: bool = False
     stopped: bool = True
     has_new_roots: bool = False
-    rows_changed: bool = False
     descendants_to_update: dict[str, list] = field(default_factory=dict)
 
 
@@ -375,14 +374,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         hashes_to_process.reverse()
         self._hashes_to_process = hashes_to_process
-
-        if self._state.rows_changed:
-            self._state.rows_changed = False
-            self.dataChanged.emit(
-                self.index(0, 0),
-                self.index(root_item.rowCount() - 1, self.columnCount() - 1),
-                [QtCore.Qt.DisplayRole, QtCore.Qt.DecorationRole]
-            )
 
         if new_items:
             self._state.has_new_roots = True
@@ -753,13 +744,8 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
         icon = self._get_status_icon(state)
 
-        self.blockSignals(True)
         item.setData(state, PROCESS_STATE_ROLE)
         item.setData(icon, QtCore.Qt.DecorationRole)
-        self.blockSignals(False)
-
-        if item.row() >= 0:
-            self._state.rows_changed = True
 
     def _on_refresh_timer(self) -> None:
         self._refresh_processes()
