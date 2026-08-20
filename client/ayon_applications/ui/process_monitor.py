@@ -277,7 +277,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         COLUMNS.CREATED: PROCESS_CREATED_ROLE,
         COLUMNS.START_TIME: PROCESS_START_TIME_ROLE,
         COLUMNS.OUTPUT_FILE: PROCESS_OUTPUT_FILE_ROLE,
-        COLUMNS.HASH: PROCESS_HASH_ROLE,
     }
 
     def __init__(
