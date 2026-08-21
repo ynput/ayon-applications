@@ -9,7 +9,6 @@ import platform
 import sqlite3
 import threading
 from dataclasses import dataclass
-from enum import Enum
 from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -18,12 +17,6 @@ from ayon_core.lib import get_launcher_local_dir
 
 if TYPE_CHECKING:
     import subprocess
-
-
-class ProcessState(Enum):
-    """State of the process."""
-    ACTIVE = 1
-    INACTIVE = 2
 
 
 @dataclass
@@ -38,14 +31,12 @@ class ProcessInfo:
         hash (str): Hash of the process information.
         cwd (str): Current working directory for the process.
         pid (int): Process ID of the launched process.
-        active (bool): Whether the process is currently active.
         output (Path): Output of the process.
         start_time (float): Start time of the process in
             seconds since the epoch.
         created_at (str): Timestamp of when the process info was created in
 
     """
-
     name: str
     executable: Path
     args: list[str]
@@ -53,22 +44,66 @@ class ProcessInfo:
     cwd: str
     hash: str = ""
     pid: int | None = None
-    active: bool = False
     output: Path | None = None
     start_time: float | None = None
     created_at: str | None = None
-    state: ProcessState = ProcessState.ACTIVE
+    stopped: bool = False
 
     def __post_init__(self) -> None:
         """Post-initialization to compute the hash if not provided."""
         if self.hash == "":
             self.hash = ProcessManager.get_process_info_hash(self)
 
+    @classmethod
+    def from_row_values(
+        cls,
+        # NOTE Not sure why we don't use this?
+        _process_hash: str,
+        name: str,
+        executable: str,
+        args: str,
+        env: str,
+        cwd: str,
+        pid: int | None,
+        output: str | None,
+        start_time: float | None,
+        created_at: str | None,
+        stopped: int,
+    ) -> ProcessInfo:
+        """Create a ProcessInfo instance from database row values."""
+        if pid is None:
+            stopped = True
+        return cls(
+            name=name,
+            executable=Path(executable),
+            args=json.loads(args) if args else [],
+            env=json.loads(env) if env else {},
+            cwd=cwd,
+            pid=pid,
+            output=Path(output) if output else None,
+            start_time=start_time,
+            created_at=created_at,
+            stopped=bool(stopped),
+        )
+
 
 class ProcessManager:
     """Manager for handling processes in AYON Applications."""
 
     log: logging.Logger
+    _select_cols = ", ".join((
+        "hash",
+        "name",
+        "executable",
+        "args",
+        "env",
+        "cwd",
+        "pid",
+        "output_file",
+        "start_time",
+        "created_at",
+        "stopped",
+    ))
 
     def __init__(self) -> None:
         """Initialize the ProcessManager."""
@@ -120,14 +155,14 @@ class ProcessManager:
             "output_file TEXT DEFAULT NULL, "
             "start_time REAL DEFAULT NULL, "
             "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-            f"state TEXT DEFAULT '{ProcessState.ACTIVE.name}'"
+            "stopped INTEGER DEFAULT 0"
             ")"
         )
-        # Migrate existing databases that lack the state column.
+        # Migrate existing databases that lack the stopped column.
         with contextlib.suppress(sqlite3.OperationalError):
             cursor.execute(
                 "ALTER TABLE process_info "
-                f"ADD COLUMN state TEXT DEFAULT '{ProcessState.ACTIVE.name}'"
+                "ADD COLUMN stopped INTEGER DEFAULT 0"
             )
         cnx.commit()
         self._thread_local.connection = cnx
@@ -196,7 +231,7 @@ class ProcessManager:
         cursor.execute(
             "INSERT OR REPLACE INTO process_info "
             "(hash, name, executable, args, env, cwd, "
-            "pid, output_file, start_time, state) "
+            "pid, output_file, start_time, stopped) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 process_info.hash,
@@ -211,7 +246,7 @@ class ProcessManager:
                     if process_info.output else None
                 ),
                 process_info.start_time,
-                process_info.state.name,
+                int(process_info.stopped),
             )
         )
         cnx.commit()
@@ -228,26 +263,14 @@ class ProcessManager:
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
         cursor.execute(
-            "SELECT * FROM process_info WHERE hash = ?",
+            f"SELECT {self._select_cols} FROM process_info WHERE hash = ?",
             (process_hash,)
         )
         row = cursor.fetchone()
         if row is None:
             return None
 
-        return ProcessInfo(
-            name=row[1],
-            executable=Path(row[2]),
-            args=json.loads(row[3]),
-            env=json.loads(row[4]),
-            cwd=row[5],
-            hash=process_hash,
-            pid=row[6],
-            output=Path(row[7]) if row[7] else None,
-            start_time=row[8],
-            created_at=row[9],
-            state=ProcessState[row[10]] if row[10] else ProcessState.ACTIVE,
-        )
+        return ProcessInfo.from_row_values(*row)
 
     def get_process_info_by_name(
         self, name: str) -> ProcessInfo | None:
@@ -261,7 +284,7 @@ class ProcessManager:
         """
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
-        query = "SELECT * FROM process_info WHERE name = ?"
+        query = f"SELECT {self._select_cols} FROM process_info WHERE name = ?"
         params = [name]
 
         cursor.execute(query, params)
@@ -269,18 +292,7 @@ class ProcessManager:
         if row is None:
             return None
 
-        return ProcessInfo(
-            name=row[1],
-            executable=Path(row[2]),
-            args=json.loads(row[3]),
-            env=json.loads(row[4]),
-            cwd=row[5],
-            pid=row[6],
-            output=Path(row[7]) if row[7] else None,
-            start_time=row[8],
-            created_at=row[9],
-            state=ProcessState[row[10]] if row[10] else ProcessState.ACTIVE,
-        )
+        return ProcessInfo.from_row_values(*row)
 
     def get_process_info_by_pid(self, pid: int) -> ProcessInfo | None:
         """Get process information by process id.
@@ -293,7 +305,7 @@ class ProcessManager:
         """
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
-        query = "SELECT * FROM process_info WHERE pid = ?"
+        query = f"SELECT {self._select_cols} FROM process_info WHERE pid = ?"
         params = [pid]
 
         cursor.execute(query, params)
@@ -301,18 +313,7 @@ class ProcessManager:
         if row is None:
             return None
 
-        return ProcessInfo(
-            name=row[1],
-            executable=Path(row[2]),
-            args=json.loads(row[3]),
-            env=json.loads(row[4]),
-            cwd=row[5],
-            pid=row[6],
-            output=Path(row[7]) if row[7] else None,
-            start_time=row[8],
-            created_at=row[9],
-            state=ProcessState[row[10]] if row[10] else ProcessState.ACTIVE,
-        )
+        return ProcessInfo.from_row_values(*row)
 
     def get_current_process_info(self) -> ProcessInfo | None:
         """Get information for the current process.
@@ -322,62 +323,69 @@ class ProcessManager:
         """
         return self.get_process_info_by_pid(os.getpid())
 
-    def get_all_process_info(self) -> list[ProcessInfo]:
+    def get_all_process_info(
+        self, *, invalidate: bool = True
+    ) -> list[ProcessInfo]:
         """Get all process information from the database.
+
+        Args:
+            invalidate (bool): Invalidate stopped state.
 
         Returns:
             list[ProcessInfo]: List of all process information.
+
         """
         cnx = self._get_process_storage_connection()
         cursor = cnx.cursor()
-        sql = "SELECT * FROM process_info ORDER BY created_at DESC"
+        sql = (
+            f"SELECT {self._select_cols} FROM process_info"
+            " ORDER BY created_at DESC"
+        )
         cursor.execute(sql)
         rows = cursor.fetchall()
 
         processes: list[ProcessInfo] = [
-            ProcessInfo(
-                name=row[1],
-                executable=Path(row[2]),
-                args=json.loads(row[3]) if row[3] else [],
-                env=json.loads(row[4]) if row[4] else {},
-                cwd=row[5],
-                pid=row[6],
-                output=Path(row[7]) if row[7] else None,
-                start_time=row[8],
-                created_at=row[9],
-                state=(
-                    ProcessState[row[10]] if row[10] else ProcessState.ACTIVE
-                ),
-            )
+            ProcessInfo.from_row_values(*row)
             for row in rows
         ]
-        deactivated: list[str] = []
+        deactivated: set[str] = set()
         for proc in processes:
-            if proc.pid is None and proc.state != ProcessState.INACTIVE:
-                proc.state = ProcessState.INACTIVE
-                deactivated.append(proc.hash)
+            if proc.pid is None and not proc.stopped:
+                proc.stopped = True
+                deactivated.add(proc.hash)
 
-            elif proc.state == ProcessState.ACTIVE:
+            elif invalidate and not proc.stopped:
                 exe = proc.executable.as_posix()
                 is_running = self._is_process_running(
                     proc.pid, exe, proc.start_time
                 )
-                proc.active = is_running
                 if not is_running:
-                    proc.state = ProcessState.INACTIVE
-                    deactivated.append(proc.hash)
+                    proc.stopped = True
+                    deactivated.add(proc.hash)
 
-        if deactivated:
-            placeholders = ",".join("?" * len(deactivated))
-            cursor = cnx.cursor()
-            cursor.execute(
-                f"UPDATE process_info SET state=?"
-                f" WHERE hash IN ({placeholders})",
-                (ProcessState.INACTIVE.name, *deactivated)
-            )
-            cnx.commit()
+        self._mark_processes_stopped(set(deactivated))
 
         return processes
+
+    def _mark_processes_stopped(self, process_hashes: set[str]) -> None:
+        """Mark processes as stopped in the database.
+
+        Args:
+            process_hashes (set[str]): Hashes of processes to mark as stopped.
+
+        """
+        if not process_hashes:
+            return
+
+        placeholders = ",".join("?" * len(process_hashes))
+        cnx = self._get_process_storage_connection()
+        cursor = cnx.cursor()
+        cursor.execute(
+            f"UPDATE process_info SET stopped=?"
+            f" WHERE hash IN ({placeholders})",
+            (1, *process_hashes)
+        )
+        cnx.commit()
 
     def delete_processes_info(self, process_hashes: set[str]) -> bool:
         """Delete process information by hash.
@@ -425,7 +433,12 @@ class ProcessManager:
             filtered_hashes
         )
         cnx.commit()
-        return cursor.rowcount > 0
+
+        success = cursor.rowcount > 0
+
+        cursor.execute("VACUUM")
+        cnx.commit()
+        return success
 
     def delete_process_info(self, process_hash: str) -> bool:
         """Delete process information by hash.
@@ -458,18 +471,16 @@ class ProcessManager:
             process.output
             for process in all_processes
             if (
-                    not process.active
-                    and (process.output and Path(process.output).exists())
+                process.stopped
+                and (process.output and Path(process.output).exists())
             )
         ]
 
-        inactive_hashes = []
-
-        for process in all_processes:
-            if not process.active:
-                process_hash = self.get_process_info_hash(process)
-                inactive_hashes.append(process_hash)
-
+        inactive_hashes = [
+            process.hash
+            for process in all_processes
+            if process.stopped
+        ]
         if not inactive_hashes:
             return 0
 
@@ -481,13 +492,37 @@ class ProcessManager:
             inactive_hashes
         )
         cnx.commit()
+        removed_rows = cursor.rowcount
+
+        cursor.execute("VACUUM")
+        cnx.commit()
 
         for file_path in files_to_delete:
             # File might not exist anymore, so we use contextlib.suppress
             with contextlib.suppress(OSError):
                 os.remove(file_path)
 
-        return cursor.rowcount
+        return removed_rows
+
+    def invalidate_process(self, process: ProcessInfo) -> bool:
+        """Check if a process is running using psutil.
+
+        Args:
+            process (ProcessInfo): Process information to check.
+
+        """
+        if process.stopped or process.pid is None:
+            return False
+
+        is_running = self._is_process_running(
+            process.pid,
+            str(process.executable),
+            process.start_time
+        )
+        if not is_running:
+            process.stopped = True
+            self._mark_processes_stopped({process.hash})
+        return is_running
 
     @staticmethod
     def _is_process_running(
@@ -655,10 +690,8 @@ class ProcessManager:
                     cwd=child.cwd(),
                     pid=child.pid,
                     start_time=child.create_time(),
+                    stopped=False,
                 )
-                # If psutil returned the process, it's currently running
-                proc_info.active = True
-                proc_info.state = ProcessState.ACTIVE
                 descendants.append(proc_info)
         return descendants
 
@@ -673,6 +706,6 @@ class ProcessManager:
             list[ProcessInfo]: List of descendant process information.
 
         """
-        if process_info.pid is None or not process_info.active:
+        if process_info.pid is None or process_info.stopped:
             return []
         return self.get_descendant_processes_by_pid(process_info.pid)
