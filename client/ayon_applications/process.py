@@ -432,9 +432,13 @@ class ProcessManager:
             f"DELETE FROM process_info WHERE hash IN ({placeholders})",
             filtered_hashes
         )
+        cnx.commit()
+
+        success = cursor.rowcount > 0
+
         cursor.execute("VACUUM")
         cnx.commit()
-        return cursor.rowcount > 0
+        return success
 
     def delete_process_info(self, process_hash: str) -> bool:
         """Delete process information by hash.
