@@ -1866,6 +1866,31 @@
                 }
             ]
         },
+        "pureref": {
+            "enabled": true,
+            "host_name": "pureref",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "2.1.3",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\PureRef\\PureRef.exe"
+                        ],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "additional_apps": []
     }
 }

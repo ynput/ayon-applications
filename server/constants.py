@@ -103,6 +103,10 @@ INFO_BY_GROUP_NAME = {
         "label": "Premiere",
         "icon": "premiere.png",
     },
+    "pureref": {
+        "label": "PureRef",
+        "icon": "PureRef.png",
+    },
     "resolve": {
         "label": "Resolve",
         "icon": "resolve.png",
