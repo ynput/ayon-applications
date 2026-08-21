@@ -403,7 +403,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             if time.time() - start > 5:
                 break
             QtCore.QThread.msleep(100)
-        print(time.time() - start)
+
         if not self._state.refresh_in_pool:
             self._thread_pool.start(self._refresh)
 
