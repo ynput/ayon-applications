@@ -1872,8 +1872,8 @@
             "environment": "{}",
             "variants": [
                 {
-                    "name": "2-1-3",
-                    "label": "2.1.3",
+                    "name": "2.1.3",
+                    "label": "",
                     "show_grouped": true,
                     "executables": {
                         "windows": [
