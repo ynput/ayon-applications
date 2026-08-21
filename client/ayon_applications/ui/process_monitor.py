@@ -356,8 +356,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                     self._set_item_state(
                         item, process, MAIN_PROCESS_ITEM
                     )
-                    if item.rowCount() > 0:
-                        self._update_descendants(process_hash, [])
                 continue
 
             item = QtGui.QStandardItem()
