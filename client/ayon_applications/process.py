@@ -432,6 +432,7 @@ class ProcessManager:
             f"DELETE FROM process_info WHERE hash IN ({placeholders})",
             filtered_hashes
         )
+        cursor.execute("VACUUM")
         cnx.commit()
         return cursor.rowcount > 0
 
@@ -487,13 +488,17 @@ class ProcessManager:
             inactive_hashes
         )
         cnx.commit()
+        removed_rows = cursor.rowcount
+
+        cursor.execute("VACUUM")
+        cnx.commit()
 
         for file_path in files_to_delete:
             # File might not exist anymore, so we use contextlib.suppress
             with contextlib.suppress(OSError):
                 os.remove(file_path)
 
-        return cursor.rowcount
+        return removed_rows
 
     def invalidate_process(self, process: ProcessInfo) -> bool:
         """Check if a process is running using psutil.
