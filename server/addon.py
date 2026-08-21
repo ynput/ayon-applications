@@ -84,7 +84,6 @@ HOST_TO_EXT_MAPPING = {
     "nuke": {".nk"},
     "photoshop": {".psd", ".psb"},
     "premiere": {".prproj"},
-    "pureref": {".pur"},
     "resolve": {".drp"},
     "silhouette": {".sfx"},
     "substancedesigner": {".sbs", ".sbsar", ".sbsasm"},
