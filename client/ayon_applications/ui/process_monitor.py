@@ -334,23 +334,22 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._state.refreshing_processes = True
         self._refresh_timer.stop()
 
-        processes = self._manager.get_all_process_info(invalidate=False)
-        processes_by_hash = {
-            process.hash: process
-            for process in processes
-        }
-        _hashless_process = processes_by_hash.pop(None, None)
-
-        root_item = self.invisibleRootItem()
-
         to_remove = set(self._root_items_by_hash)
 
         new_items = []
         hashes_to_process = []
-        for process_hash, process in processes_by_hash.items():
+        processes = self._manager.get_all_process_info(invalidate=False)
+        for process in processes:
+            process_hash = process.hash
+            if not process_hash:
+                continue
+
+            self._process_by_hash[process_hash] = process
+            to_remove.discard(process_hash)
+
             if not process.stopped:
                 hashes_to_process.append(process_hash)
-            to_remove.discard(process_hash)
+
             item = self._root_items_by_hash.get(process_hash)
             if item is not None:
                 if process.stopped:
@@ -370,18 +369,21 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
             self._root_items_by_hash[process_hash] = item
 
-        hashes_to_process.reverse()
         self._hashes_to_process = hashes_to_process
 
         if new_items:
+            root_item = self.invisibleRootItem()
             self._state.has_new_roots = True
             root_item.appendRows(new_items)
             self.processes_refreshed.emit(root_item.rowCount())
 
-        self._process_by_hash.update(processes_by_hash)
-
-        descendants_to_update = self._state.descendants_to_update
-        self._state.descendants_to_update = {}
+        (
+            descendants_to_update,
+            self._state.descendants_to_update
+        ) = (
+            self._state.descendants_to_update,
+            {}
+        )
         for process_hash, descendants in descendants_to_update.items():
             self._update_descendants(process_hash, descendants)
 
