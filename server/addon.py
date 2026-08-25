@@ -282,9 +282,15 @@ class ApplicationsAddon(BaseServerAddon):
             ])
         # 'get_launcher_response' is available since AYON 1.8.3
         if hasattr(executor, "get_launcher_response"):
-            return await executor.get_launcher_response(args=args)
+            return await executor.get_launcher_response(
+                args=args,
+                message=f"Launching {app_name}."
+        )
         # Backwards compatibility
-        return await executor.get_launcher_action_response(args=args)
+        return await executor.get_launcher_action_response(
+            args=args,
+            message=f"Launching {app_name}."
+        )
 
     async def get_default_settings(self):
         return self.get_settings_model()(**DEFAULT_VALUES)
