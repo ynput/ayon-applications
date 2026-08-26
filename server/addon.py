@@ -289,7 +289,7 @@ class ApplicationsAddon(BaseServerAddon):
         # Backwards compatibility
         return await executor.get_launcher_action_response(
             args=args,
-            message=f"Launching {app_name}."
+            message=f"Launching {app_name}"
         )
 
     async def get_default_settings(self):
