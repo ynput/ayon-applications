@@ -607,8 +607,10 @@ class ApplicationsAddon(BaseServerAddon):
             )
 
         if hasattr(addon, "get_applications_settings_enum"):
-            v_enum_func = addon.get_applications_settings_enum()
-            return await v_enum_func(
+            return await addon.get_applications_settings_enum(
+                project_name=project_name,
+                settings_variant=settings_variant,
+            )
                 project_name=project_name,
                 addon=addon,
                 settings_variant=settings_variant,
