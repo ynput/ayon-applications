@@ -13,7 +13,7 @@ from fastapi import HTTPException, Request, Query
 from fastapi.responses import FileResponse
 
 from ayon_server.lib.postgres import Postgres
-from ayon_server.logging import logger
+from ayon_server.logging import logger, log_traceback
 from ayon_server.events import EventStream, EventModel
 from ayon_server.addons import BaseServerAddon, AddonLibrary
 from ayon_server.api.dependencies import CurrentUser
@@ -611,11 +611,19 @@ class ApplicationsAddon(BaseServerAddon):
                 project_name=project_name,
                 settings_variant=settings_variant,
             )
+
+        try:
+            return await applications_enum(
                 project_name=project_name,
                 addon=addon,
                 settings_variant=settings_variant,
             )
-        return []
+        except Exception:
+            log_traceback(
+                "Failed to get applications for"
+                f" Project: '{project_name}' Variant: '{settings_variant}'."
+            )
+            return []
 
     async def get_applications_for_context(
         self,
