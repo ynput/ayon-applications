@@ -526,6 +526,7 @@ class ApplicationLaunchContext:
 
             result = modules_from_path(path)
             # Future compatibility using 'ModulesResult'
+            # TODO Remove when ayon-core > 1.9.10 is required
             if hasattr(result, "modules"):
                 modules = [item.module for item in result.modules]
             else:
