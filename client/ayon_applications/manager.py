@@ -524,8 +524,15 @@ class ApplicationLaunchContext:
                 )
                 continue
 
-            modules, _crashed = modules_from_path(path)
-            for _filepath, module in modules:
+            result = modules_from_path(path)
+            # Future compatibility using 'ModulesResult'
+            if hasattr(result, "modules"):
+                modules = [item.module for item in result.modules]
+            else:
+                modules_info, _crashed = result
+                modules = [module for _, module in modules_info]
+
+            for module in modules:
                 all_classes["pre"].extend(
                     classes_from_module(PreLaunchHook, module)
                 )
