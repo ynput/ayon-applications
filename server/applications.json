@@ -241,6 +241,53 @@
                 }
             ]
         },
+        "katana": {
+            "enabled": true,
+            "host_name": "katana",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "9.0",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Katana9.0v1\\bin\\katanaBin.exe"
+                        ],
+                        "darwin": [],
+                        "linux": [
+                            "/opt/Katana9.0v1/katana"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "8.0",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Katana8.0v1\\bin\\katanaBin.exe"
+                        ],
+                        "darwin": [],
+                        "linux": [
+                            "/opt/Katana8.0v1/katana"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "nuke": {
             "enabled": true,
             "host_name": "nuke",
