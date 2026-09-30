@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import json
+import platform
 import traceback
 import tempfile
 import warnings
@@ -44,6 +45,22 @@ if typing.TYPE_CHECKING:
     from ayon_core.tools.tray.webserver import WebServerManager
     from ayon_applications.manager import Application
     from ayon_applications.ui.process_monitor import ProcessMonitorWindow
+
+
+# On macOS 27+ the CLI launcher must outlive the application. Once its
+# launcher exits, the application loses its "Local Network" permission
+# and cannot reach hosts on the local network (e.g. AYON server).
+def _is_macos_27_or_later() -> bool:
+    if platform.system().lower() != "darwin":
+        return False
+    try:
+        major = int(platform.mac_ver()[0].split(".")[0])
+    except ValueError:
+        return False
+    return major >= 27
+
+
+CLI_WAIT_FOR_APPLICATION = _is_macos_27_or_later()
 
 
 class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
@@ -442,6 +459,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         task_name: str,
         workfile_path: Optional[str] = None,
         use_last_workfile: Optional[bool] = None,
+        wait: bool = False,
     ):
         """Launch application.
 
@@ -453,6 +471,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             workfile_path (Optional[str]): Workfile path to use.
             use_last_workfile (Optional[bool]): Explicitly tell to use or
                 not use last workfile. Ignored if 'workfile_path' is passed.
+            wait (bool): Wait until the launched process finishes.
 
         """
         ensure_addons_are_process_ready(
@@ -494,9 +513,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         failed = True
         message = None
         detail = None
+        process = None
         try:
             app_manager = self.get_applications_manager()
-            app_manager.launch(app_name, **data)
+            process = app_manager.launch(app_name, **data)
             failed = False
 
         except (
@@ -516,6 +536,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             )
 
         if not failed:
+            if wait and process is not None:
+                process.wait()
             return
 
         if not headless:
@@ -742,6 +764,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             task,
             workfile_path=workfile_path,
             use_last_workfile=use_last_workfile,
+            wait=CLI_WAIT_FOR_APPLICATION,
         )
 
     def _cli_launch_with_task_id(
@@ -784,6 +807,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             task_entity["name"],
             workfile_path=workfile_path,
             use_last_workfile=use_last_workfile,
+            wait=CLI_WAIT_FOR_APPLICATION,
         )
 
     def _cli_launch_with_workfile_id(
@@ -812,6 +836,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             folder_entity["path"],
             task_entity["name"],
             workfile_path=workfile_path,
+            wait=CLI_WAIT_FOR_APPLICATION,
         )
 
     def _cli_launch_with_debug_terminal(
