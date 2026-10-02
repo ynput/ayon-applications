@@ -390,7 +390,11 @@ def prepare_app_environments(
     source_env = data["env"].copy()
 
     if addons_manager is None:
+        addons_manager = data.get("addons_manager")
+    if addons_manager is None:
         addons_manager = AddonsManager()
+    # Store addons manager so it can be reused by following preparations
+    data["addons_manager"] = addons_manager
 
     _add_python_version_paths(app, source_env, log, addons_manager)
 
@@ -668,8 +672,11 @@ def _prepare_last_workfile(
         workdir (str): Path to folder where workfiles should be stored.
 
     """
-    if not addons_manager:
+    if addons_manager is None:
+        addons_manager = data.get("addons_manager")
+    if addons_manager is None:
         addons_manager = AddonsManager()
+        data["addons_manager"] = addons_manager
 
     log = data["log"]
 
