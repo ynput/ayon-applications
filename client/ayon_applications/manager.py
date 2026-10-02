@@ -301,10 +301,6 @@ class ApplicationLaunchContext:
         # Application object
         self.application: Application = application
 
-        # Backwards compatibility for deprecated 'modules_manager' kwarg
-        modules_manager = data.pop("modules_manager", None)
-        if addons_manager is None:
-            addons_manager = modules_manager
         if addons_manager is None:
             addons_manager = AddonsManager()
 

@@ -212,7 +212,6 @@ def get_app_environments_for_context(
         launch_type=launch_type,
         env=env,
         addons_manager=addons_manager,
-        modules_manager=addons_manager,
     )
     context.run_prelaunch_hooks()
     return context.env
