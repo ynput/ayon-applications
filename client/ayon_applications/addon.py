@@ -432,7 +432,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"addons/{cls.name}/{cls.version}/"
             f"tools{context_path}?{query}"
         )
-        return response.data["applications"]
+        return response.data["tools"]
 
     def launch_application(
         self,
