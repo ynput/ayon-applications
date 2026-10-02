@@ -425,6 +425,7 @@ def prepare_app_environments(
         data.get("project_name"),
         data.get("folder_entity"),
         data.get("task_entity"),
+        project_settings=data.get("project_settings"),
     )
 
     # Add tools environments
@@ -566,8 +567,10 @@ def prepare_context_environments(
 
     # Load project specific environments
     project_name = project_entity["name"]
-    project_settings = get_project_settings(project_name)
-    data["project_settings"] = project_settings
+    project_settings = data.get("project_settings")
+    if project_settings is None:
+        project_settings = get_project_settings(project_name)
+        data["project_settings"] = project_settings
 
     app = data["app"]
     context_env = {
