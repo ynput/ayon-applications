@@ -496,7 +496,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         detail = None
         try:
             app_manager = self.get_applications_manager()
-            app_manager.launch(app_name, **data)
+            app_manager.launch(
+                app_name, addons_manager=self.manager, **data
+            )
             failed = False
 
         except (
