@@ -554,7 +554,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 data = None
                 async with ClientSession() as session:
                     async with session.get(url) as resp:
-                        if resp.status != 200:
+                        if resp.status == 200:
                             data = await resp.read()
 
                 _cache_icon(filename, data)
