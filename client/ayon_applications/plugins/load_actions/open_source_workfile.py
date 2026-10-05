@@ -50,23 +50,36 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
         if not selection.versions_selected():
             return False
 
+        return self._get_version_with_source(selection) is not None
+
+    def _get_version_with_source(
+        self, selection: LoaderActionSelection
+    ) -> Optional[dict[str, Any]]:
+        """Find first selected version with task and source workfile.
+
+        Used for both compatibility check and execution so they are always
+            evaluated the same way.
+
+        Args:
+            selection (LoaderActionSelection): Selection of loader action.
+
+        Returns:
+            Optional[dict[str, Any]]: Version entity or None if none of
+                selected versions has source workfile.
+
+        """
         for version in selection.get_selected_version_entities():
             if not version["taskId"]:
                 continue
 
             source = version.get("attrib", {}).get("source")
-
             if not source:
-                return False
+                continue
 
-            if source.startswith("{root"):
-                return True
-
-            elif os.path.exists(source):
-                # Assume it's a valid source workfile
-                return True
-
-        return False
+            # Rootless path or existing path is considered as valid source
+            if source.startswith("{root") or os.path.exists(source):
+                return version
+        return None
 
     def execute_simple_action(
             self,
@@ -74,22 +87,14 @@ class OpenSourceWorkfileAction(LoaderSimpleActionPlugin):
             form_values: dict[str, Any],
     ) -> Optional[LoaderActionResult]:
         """Open source workfile in DCC application."""
-        versions = selection.get_selected_version_entities()
-        version = versions[0] if versions else None
-
+        version = self._get_version_with_source(selection)
         if not version:
             return LoaderActionResult(
-                "No version selected",
+                "Selected versions don't have source workfile information.",
                 success=False,
             )
 
-        source_path = version.get("attrib", {}).get("source")
-        if not source_path:
-            return LoaderActionResult(
-                "This version doesn't have source workfile information.",
-                success=False,
-            )
-
+        source_path = version["attrib"]["source"]
         workfile_name = os.path.basename(source_path)
         file_ext = os.path.splitext(workfile_name)[1].lower()
         if not file_ext:
