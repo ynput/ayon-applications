@@ -13,6 +13,7 @@ from fastapi import HTTPException, Request, Query
 from fastapi.responses import FileResponse
 
 from ayon_server.lib.postgres import Postgres
+from ayon_server.exceptions import ForbiddenException
 from ayon_server.logging import logger, log_traceback
 from ayon_server.events import EventStream, EventModel
 from ayon_server.addons import BaseServerAddon, AddonLibrary
@@ -843,6 +844,11 @@ class ApplicationsAddon(BaseServerAddon):
         user: CurrentUser,
         filename: str,
     ) -> dict[str, bool]:
+        if not user.is_manager:
+            raise ForbiddenException(
+                "Only managers can upload custom icons"
+            )
+
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         custom_icons_dir.mkdir(parents=True, exist_ok=True)
@@ -861,7 +867,9 @@ class ApplicationsAddon(BaseServerAddon):
 
         return {"success": True}
 
-    def _get_custom_icons(self) -> dict[str, list[dict[str, str]]]:
+    def _get_custom_icons(
+        self, user: CurrentUser
+    ) -> dict[str, list[dict[str, str]]]:
         custom_icons_dir = self._get_custom_icons_dir()
         filenames = []
         if custom_icons_dir.exists():
@@ -881,7 +889,14 @@ class ApplicationsAddon(BaseServerAddon):
             )
         return FileResponse(filepath)
 
-    def _delete_custom_icon(self, filename: str) -> dict[str, bool]:
+    def _delete_custom_icon(
+        self, user: CurrentUser, filename: str
+    ) -> dict[str, bool]:
+        if not user.is_manager:
+            raise ForbiddenException(
+                "Only managers can delete custom icons"
+            )
+
         filename = os.path.basename(filename)
         custom_icons_dir = self._get_custom_icons_dir()
         filepath = custom_icons_dir / filename
