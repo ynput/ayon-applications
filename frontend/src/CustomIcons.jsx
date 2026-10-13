@@ -12,6 +12,8 @@ import {
 } from '@ynput/ayon-react-components'
 import styled, { css } from 'styled-components'
 
+import ImageCropDialog, { isCroppable, loadImage, needsCrop } from './ImageCropDialog'
+
 const ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'svg', 'gif', 'webp', 'ico']
 
 const isAllowedFile = (file) =>
@@ -108,15 +110,16 @@ const Card = styled.div`
     white-space: nowrap;
   }
 
-  .delete {
+  .actions {
     position: absolute;
     top: 4px;
     right: 4px;
+    display: flex;
     opacity: 0;
   }
 
-  &:hover .delete,
-  .delete:focus-visible {
+  &:hover .actions,
+  .actions:focus-within {
     opacity: 1;
   }
 `
@@ -147,6 +150,8 @@ const CustomIcons = ({ baseUrl }) => {
   // Files waiting for confirmation because they replace existing icons
   const [pendingFiles, setPendingFiles] = useState(null)
   const [toDelete, setToDelete] = useState(null)
+  // Image waiting in crop dialog, holds 'resolve' of the promise returned by 'requestCrop'
+  const [cropRequest, setCropRequest] = useState(null)
   const fileInputRef = useRef(null)
   const dragCounter = useRef(0)
 
@@ -197,7 +202,32 @@ const CustomIcons = ({ baseUrl }) => {
     }
   }
 
-  const handleFiles = (fileList) => {
+  const requestCrop = (request) =>
+    new Promise((resolve) => setCropRequest({ ...request, resolve }))
+
+  const onCropDone = (result) => {
+    cropRequest.resolve(result)
+    setCropRequest(null)
+  }
+
+  // Offer cropping for images that are not square or are bigger than the max size
+  const prepareFile = async (file) => {
+    if (!isCroppable(file.name)) return file
+    let loaded
+    try {
+      loaded = await loadImage(file)
+    } catch {
+      // Let the server decide what to do with it
+      return file
+    }
+    if (!needsCrop(loaded.image)) {
+      URL.revokeObjectURL(loaded.url)
+      return file
+    }
+    return requestCrop({ file, ...loaded, allowOriginal: true })
+  }
+
+  const handleFiles = async (fileList) => {
     const files = Array.from(fileList || [])
     if (!files.length) return
 
@@ -213,11 +243,42 @@ const CustomIcons = ({ baseUrl }) => {
     }
     if (!valid.length) return
 
-    if (valid.some((file) => icons.includes(file.name))) {
-      setPendingFiles(valid)
+    const prepared = []
+    for (const file of valid) {
+      const result = await prepareFile(file)
+      if (result) prepared.push(result)
+    }
+    if (!prepared.length) return
+
+    if (prepared.some((file) => icons.includes(file.name))) {
+      setPendingFiles(prepared)
       return
     }
-    uploadFiles(valid)
+    uploadFiles(prepared)
+  }
+
+  // Crop an already uploaded icon and replace it
+  const onCropExisting = async (filename) => {
+    let loaded
+    let file
+    try {
+      const response = await axios.get(getIconUrl(baseUrl, filename), {
+        params: { v: cacheKey },
+        responseType: 'blob',
+      })
+      file = new File([response.data], filename, { type: response.data.type })
+      loaded = await loadImage(file)
+    } catch (error) {
+      setMessage({ error: true, text: `Failed to load ${filename}: ${getErrorMessage(error)}` })
+      return
+    }
+    const result = await requestCrop({ file, ...loaded, allowOriginal: false })
+    if (!result) return
+    if (result.name !== filename && icons.includes(result.name)) {
+      setPendingFiles([result])
+      return
+    }
+    uploadFiles([result])
   }
 
   const onInputChange = (event) => {
@@ -261,7 +322,7 @@ const CustomIcons = ({ baseUrl }) => {
     event.preventDefault()
     dragCounter.current = 0
     setDragging(false)
-    if (!uploading) handleFiles(event.dataTransfer.files)
+    if (!uploading && !cropRequest) handleFiles(event.dataTransfer.files)
   }
 
   const replacedFilenames = (pendingFiles || [])
@@ -290,7 +351,7 @@ const CustomIcons = ({ baseUrl }) => {
             icon="upload"
             label={uploading ? 'Uploading...' : 'Upload icons'}
             variant="filled"
-            disabled={uploading}
+            disabled={uploading || !!cropRequest}
             onClick={() => fileInputRef.current?.click()}
           />
           <input
@@ -304,8 +365,9 @@ const CustomIcons = ({ baseUrl }) => {
         </Toolbar>
         <Hint>
           Uploaded icons can be selected in the Icon field of application and tool variants.
-          Drop image files here to upload them. Uploading a file with an existing name replaces
-          it.
+          Drop image files here to upload them. Images that are not square or are bigger than
+          512×512 px can be cropped and resized before upload. Uploading a file with an existing
+          name replaces it.
         </Hint>
 
         {message && (
@@ -328,19 +390,33 @@ const CustomIcons = ({ baseUrl }) => {
                 <Card key={filename} title={filename}>
                   <img src={`${getIconUrl(baseUrl, filename)}?v=${cacheKey}`} alt={filename} />
                   <span className="filename">{filename}</span>
-                  <Button
-                    className="delete"
-                    icon="delete"
-                    variant="text"
-                    tooltip="Delete icon"
-                    onClick={() => setToDelete(filename)}
-                  />
+                  <div className="actions">
+                    {isCroppable(filename) && (
+                      <Button
+                        icon="crop"
+                        variant="text"
+                        tooltip="Crop and resize icon"
+                        disabled={uploading}
+                        onClick={() => onCropExisting(filename)}
+                      />
+                    )}
+                    <Button
+                      icon="delete"
+                      variant="text"
+                      tooltip="Delete icon"
+                      onClick={() => setToDelete(filename)}
+                    />
+                  </div>
                 </Card>
               ))}
             </Grid>
           )}
         </ScrollPanel>
       </MainPanel>
+
+      {cropRequest && (
+        <ImageCropDialog key={cropRequest.url} request={cropRequest} onDone={onCropDone} />
+      )}
 
       <Dialog
         isOpen={!!pendingFiles}
