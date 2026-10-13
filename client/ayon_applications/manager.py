@@ -66,9 +66,12 @@ def get_macos_launch_services_args(
     # TODO: could it happen that we don't want the main executable here ?
     executable = launch_args[0]
     marker = ".app/Contents/MacOS/"
-    if marker not in executable:
-        return None
-    bundle_path = executable.split(marker, 1)[0] + ".app"
+    if executable.endswith(".app"):
+        bundle_path = executable
+    else:
+        if marker not in executable:
+            return None
+        bundle_path = executable.split(marker, 1)[0] + ".app"
 
     # '-W' keeps 'open' alive until the application quits
     args = ["open", "-n", "-W"]
