@@ -43,16 +43,6 @@ if TYPE_CHECKING:
     import logging
 
 
-def _is_macos_27_or_later() -> bool:
-    if platform.system().lower() != "darwin":
-        return False
-    try:
-        major = int(platform.mac_ver()[0].split(".")[0])
-    except ValueError:
-        return False
-    return major >= 27
-
-
 def get_macos_launch_services_args(
     launch_args: list[str], output_path: Optional[str] = None
 ) -> Optional[list[str]]:
@@ -69,8 +59,7 @@ def get_macos_launch_services_args(
     Returns:
         Optional[list[str]]: Wrapped launch arguments or None
     """
-    # Only wrap on macOS 27+
-    if not launch_args or not _is_macos_27_or_later():
+    if not launch_args or platform.system().lower() != "darwin":
         return None
 
     # 'open' always starts the bundle main executable
