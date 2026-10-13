@@ -12,7 +12,14 @@ import {
 } from '@ynput/ayon-react-components'
 import styled, { css } from 'styled-components'
 
-import ImageCropDialog, { isCroppable, loadImage, needsCrop } from './ImageCropDialog'
+import ImageCropDialog, {
+  MAX_ICON_SIZE,
+  isCroppable,
+  isRaster,
+  loadImage,
+  needsCrop,
+} from './ImageCropDialog'
+import RenameDialog from './RenameDialog'
 
 const ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'svg', 'gif', 'webp', 'ico']
 
@@ -147,9 +154,11 @@ const CustomIcons = ({ baseUrl }) => {
   const [dragging, setDragging] = useState(false)
   // Changes after each upload so replaced icons are not shown from cache
   const [cacheKey, setCacheKey] = useState(() => Date.now())
-  // Files waiting for confirmation because they replace existing icons
-  const [pendingFiles, setPendingFiles] = useState(null)
+  // Files waiting for confirmation because they replace existing icons,
+  // as { files, replaced }
+  const [pendingUpload, setPendingUpload] = useState(null)
   const [toDelete, setToDelete] = useState(null)
+  const [toRename, setToRename] = useState(null)
   // Image waiting in crop dialog, holds 'resolve' of the promise returned by 'requestCrop'
   const [cropRequest, setCropRequest] = useState(null)
   const fileInputRef = useRef(null)
@@ -178,7 +187,8 @@ const CustomIcons = ({ baseUrl }) => {
     return icons.filter((filename) => filename.toLowerCase().includes(value))
   }, [icons, search])
 
-  const uploadFiles = async (files) => {
+  // 'errors' are problems found before upload, shown together with the result
+  const uploadFiles = async (files, errors = []) => {
     setUploading(true)
     const failed = []
     for (const file of files) {
@@ -194,12 +204,12 @@ const CustomIcons = ({ baseUrl }) => {
     setCacheKey(Date.now())
     await loadIcons()
 
-    if (failed.length) {
-      setMessage({ error: true, text: `Failed to upload ${failed.join(', ')}` })
-    } else {
-      const count = files.length
-      setMessage({ error: false, text: `Uploaded ${count} icon${count === 1 ? '' : 's'}` })
-    }
+    const count = files.length - failed.length
+    const texts = []
+    if (count) texts.push(`Uploaded ${count} icon${count === 1 ? '' : 's'}.`)
+    if (failed.length) texts.push(`Failed to upload ${failed.join(', ')}.`)
+    texts.push(...errors)
+    setMessage({ error: !!(failed.length || errors.length), text: texts.join(' ') })
   }
 
   const requestCrop = (request) =>
@@ -210,21 +220,30 @@ const CustomIcons = ({ baseUrl }) => {
     setCropRequest(null)
   }
 
-  // Offer cropping for images that are not square or are bigger than the max size
-  const prepareFile = async (file) => {
-    if (!isCroppable(file.name)) return file
+  // Images that are not square or are bigger than the max size have to be cropped.
+  // Returns { file, confirmed } where 'confirmed' means that replacing an existing icon
+  // was already shown to the user, or null if the file is skipped.
+  const prepareFile = async (file, rejected) => {
+    if (!isRaster(file.name)) return { file, confirmed: false }
     let loaded
     try {
       loaded = await loadImage(file)
     } catch {
       // Let the server decide what to do with it
-      return file
+      return { file, confirmed: false }
     }
     if (!needsCrop(loaded.image)) {
       URL.revokeObjectURL(loaded.url)
-      return file
+      return { file, confirmed: false }
     }
-    return requestCrop({ file, ...loaded, allowOriginal: true })
+    if (!isCroppable(file.name)) {
+      // Cropped image can't be written in this format without changing extension
+      URL.revokeObjectURL(loaded.url)
+      rejected.push(file.name)
+      return null
+    }
+    const result = await requestCrop({ file, ...loaded, existingNames: icons })
+    return result && { file: result, confirmed: true }
   }
 
   const handleFiles = async (fileList) => {
@@ -233,52 +252,84 @@ const CustomIcons = ({ baseUrl }) => {
 
     const valid = files.filter(isAllowedFile)
     const invalid = files.filter((file) => !isAllowedFile(file))
+    const errors = []
     if (invalid.length) {
-      setMessage({
-        error: true,
-        text:
-          `Skipped unsupported files: ${invalid.map((file) => file.name).join(', ')}. ` +
-          `Allowed extensions: ${ALLOWED_EXTENSIONS.join(', ')}`,
-      })
+      errors.push(
+        `Skipped unsupported files: ${invalid.map((file) => file.name).join(', ')}. ` +
+          `Allowed extensions: ${ALLOWED_EXTENSIONS.join(', ')}.`,
+      )
     }
-    if (!valid.length) return
 
+    const rejected = []
     const prepared = []
     for (const file of valid) {
-      const result = await prepareFile(file)
+      const result = await prepareFile(file, rejected)
       if (result) prepared.push(result)
     }
+    if (rejected.length) {
+      errors.push(
+        `Skipped ${rejected.join(', ')}: these formats can't be cropped, the image must be ` +
+          `square and at most ${MAX_ICON_SIZE}×${MAX_ICON_SIZE} px.`,
+      )
+    }
+    if (errors.length) setMessage({ error: true, text: errors.join(' ') })
     if (!prepared.length) return
 
-    if (prepared.some((file) => icons.includes(file.name))) {
-      setPendingFiles(prepared)
+    const uploadList = prepared.map((item) => item.file)
+    const replaced = prepared
+      .filter((item) => !item.confirmed && icons.includes(item.file.name))
+      .map((item) => item.file.name)
+    if (replaced.length) {
+      setPendingUpload({ files: uploadList, replaced, errors })
       return
     }
-    uploadFiles(prepared)
+    uploadFiles(uploadList, errors)
   }
 
-  // Crop an already uploaded icon and replace it
+  const fetchIconFile = async (filename) => {
+    const response = await axios.get(getIconUrl(baseUrl, filename), {
+      params: { v: cacheKey },
+      responseType: 'blob',
+    })
+    return new File([response.data], filename, { type: response.data.type })
+  }
+
+  // Crop an already uploaded icon, it is replaced unless saved under a different name
   const onCropExisting = async (filename) => {
     let loaded
     let file
     try {
-      const response = await axios.get(getIconUrl(baseUrl, filename), {
-        params: { v: cacheKey },
-        responseType: 'blob',
-      })
-      file = new File([response.data], filename, { type: response.data.type })
+      file = await fetchIconFile(filename)
       loaded = await loadImage(file)
     } catch (error) {
       setMessage({ error: true, text: `Failed to load ${filename}: ${getErrorMessage(error)}` })
       return
     }
-    const result = await requestCrop({ file, ...loaded, allowOriginal: false })
-    if (!result) return
-    if (result.name !== filename && icons.includes(result.name)) {
-      setPendingFiles([result])
-      return
+    const result = await requestCrop({
+      file,
+      ...loaded,
+      existingNames: icons.filter((name) => name !== filename),
+    })
+    if (result) uploadFiles([result])
+  }
+
+  // Server has no rename, upload the file under new name and delete the old one
+  const onRename = async (newFilename) => {
+    const filename = toRename
+    setToRename(null)
+    setUploading(true)
+    try {
+      const file = await fetchIconFile(filename)
+      await axios.put(getIconUrl(baseUrl, newFilename), file, {
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      })
+      await axios.delete(getIconUrl(baseUrl, filename))
+      setMessage({ error: false, text: `Renamed ${filename} to ${newFilename}` })
+    } catch (error) {
+      setMessage({ error: true, text: `Failed to rename ${filename}: ${getErrorMessage(error)}` })
     }
-    uploadFiles([result])
+    setUploading(false)
+    await loadIcons()
   }
 
   const onInputChange = (event) => {
@@ -288,9 +339,9 @@ const CustomIcons = ({ baseUrl }) => {
   }
 
   const onConfirmReplace = () => {
-    const files = pendingFiles
-    setPendingFiles(null)
-    uploadFiles(files)
+    const { files, errors } = pendingUpload
+    setPendingUpload(null)
+    uploadFiles(files, errors)
   }
 
   const onConfirmDelete = async () => {
@@ -324,10 +375,6 @@ const CustomIcons = ({ baseUrl }) => {
     setDragging(false)
     if (!uploading && !cropRequest) handleFiles(event.dataTransfer.files)
   }
-
-  const replacedFilenames = (pendingFiles || [])
-    .map((file) => file.name)
-    .filter((filename) => icons.includes(filename))
 
   return (
     <Container>
@@ -365,9 +412,9 @@ const CustomIcons = ({ baseUrl }) => {
         </Toolbar>
         <Hint>
           Uploaded icons can be selected in the Icon field of application and tool variants.
-          Drop image files here to upload them. Images that are not square or are bigger than
-          512�512 px can be cropped and resized before upload. Uploading a file with an existing
-          name replaces it.
+          Drop image files here to upload them. Images that are not square or are bigger than{' '}
+          {MAX_ICON_SIZE}×{MAX_ICON_SIZE} px have to be cropped before upload. Uploading a file
+          with an existing name replaces it.
         </Hint>
 
         {message && (
@@ -401,6 +448,13 @@ const CustomIcons = ({ baseUrl }) => {
                       />
                     )}
                     <Button
+                      icon="edit"
+                      variant="text"
+                      tooltip="Rename icon"
+                      disabled={uploading}
+                      onClick={() => setToRename(filename)}
+                    />
+                    <Button
                       icon="delete"
                       variant="text"
                       tooltip="Delete icon"
@@ -418,16 +472,25 @@ const CustomIcons = ({ baseUrl }) => {
         <ImageCropDialog key={cropRequest.url} request={cropRequest} onDone={onCropDone} />
       )}
 
+      {toRename && (
+        <RenameDialog
+          filename={toRename}
+          existingNames={icons}
+          onRename={onRename}
+          onClose={() => setToRename(null)}
+        />
+      )}
+
       <Dialog
-        isOpen={!!pendingFiles}
-        onClose={() => setPendingFiles(null)}
+        isOpen={!!pendingUpload}
+        onClose={() => setPendingUpload(null)}
         header="Replace existing icons?"
         size="sm"
         footer={<Button label="Replace" variant="filled" onClick={onConfirmReplace} />}
       >
         <p>These icons already exist and will be replaced:</p>
         <ul>
-          {replacedFilenames.map((filename) => (
+          {(pendingUpload?.replaced || []).map((filename) => (
             <li key={filename}>{filename}</li>
           ))}
         </ul>

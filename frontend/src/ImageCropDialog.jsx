@@ -2,19 +2,28 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Dialog } from '@ynput/ayon-react-components'
 import styled from 'styled-components'
 
+import FilenameInput, { splitFilename, validateBaseName } from './FilenameInput'
+
 export const MAX_ICON_SIZE = 512
 
 const MIN_SELECTION_SIZE = 16
 const VIEW_MAX_WIDTH = 520
 const VIEW_MAX_HEIGHT = 400
-// Formats the canvas can write back without changing the filename
-const KEEP_FORMATS = ['image/png', 'image/jpeg', 'image/webp']
+// Formats the canvas can write, so the extension can be kept
+const CROP_TYPES = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+}
+// Size of these can be checked in browser (svg and ico are uploaded as they are)
+const RASTER_EXTENSIONS = [...Object.keys(CROP_TYPES), 'gif']
 
-// Raster formats that can be drawn to canvas (svg and ico are uploaded as they are)
-const CROPPABLE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp']
+const getExtension = (filename) => filename.split('.').pop().toLowerCase()
 
-export const isCroppable = (filename) =>
-  CROPPABLE_EXTENSIONS.includes(filename.split('.').pop().toLowerCase())
+export const isCroppable = (filename) => getExtension(filename) in CROP_TYPES
+
+export const isRaster = (filename) => RASTER_EXTENSIONS.includes(getExtension(filename))
 
 export const loadImage = (file) =>
   new Promise((resolve, reject) => {
@@ -43,7 +52,7 @@ const getDefaultSelection = (width, height) => {
   }
 }
 
-const cropFile = (file, image, selection) =>
+const cropFile = (file, image, selection, filename) =>
   new Promise((resolve, reject) => {
     const outputSize = Math.min(selection.size, MAX_ICON_SIZE)
     const canvas = document.createElement('canvas')
@@ -64,12 +73,7 @@ const cropFile = (file, image, selection) =>
       outputSize,
     )
 
-    let type = file.type
-    let filename = file.name
-    if (!KEEP_FORMATS.includes(type)) {
-      type = 'image/png'
-      filename = filename.replace(/\.[^.]+$/, '') + '.png'
-    }
+    const type = CROP_TYPES[getExtension(file.name)]
     canvas.toBlob(
       (blob) => {
         if (!blob) {
@@ -124,16 +128,21 @@ const Info = styled.p`
   color: var(--md-sys-color-outline);
 `
 
+const NameRow = styled.div`
+  margin-bottom: 8px;
+`
+
 const Footer = styled.div`
   display: flex;
   gap: 8px;
   justify-content: flex-end;
 `
 
-// 'request' is { file, image, url, title, allowOriginal }, the result goes to 'onDone':
-// a cropped File, the original File, or null when cancelled
+// 'request' is { file, image, url, existingNames }, the result goes to 'onDone':
+// the cropped File, or null when cancelled
 const ImageCropDialog = ({ request, onDone }) => {
-  const { file, image, url } = request
+  const { file, image, url, existingNames = [] } = request
+  const { ext } = splitFilename(file.name)
   const width = image.naturalWidth
   const height = image.naturalHeight
   const scale = Math.min(1, VIEW_MAX_WIDTH / width, VIEW_MAX_HEIGHT / height)
@@ -141,6 +150,7 @@ const ImageCropDialog = ({ request, onDone }) => {
   const [selection, setSelection] = useState(() => getDefaultSelection(width, height))
   const [working, setWorking] = useState(false)
   const [error, setError] = useState(null)
+  const [baseName, setBaseName] = useState(() => splitFilename(file.name).base)
   const dragRef = useRef(null)
 
   useEffect(() => () => URL.revokeObjectURL(url), [url])
@@ -185,7 +195,7 @@ const ImageCropDialog = ({ request, onDone }) => {
   const onCrop = async () => {
     setWorking(true)
     try {
-      onDone(await cropFile(file, image, selection))
+      onDone(await cropFile(file, image, selection, filename))
     } catch (err) {
       setError(err.message)
       setWorking(false)
@@ -193,12 +203,17 @@ const ImageCropDialog = ({ request, onDone }) => {
   }
 
   const outputSize = Math.min(selection.size, MAX_ICON_SIZE)
+  const filename = baseName.trim() + ext
+  const nameError = validateBaseName(baseName)
+  const nameWarning = existingNames.includes(filename)
+    ? 'An icon with this name already exists and will be replaced'
+    : null
 
   return (
     <Dialog
       isOpen
       size="lg"
-      header={request.title || `Crop ${file.name}`}
+      header={`Crop ${file.name}`}
       onClose={() => onDone(null)}
       footer={
         <Footer>
@@ -207,13 +222,24 @@ const ImageCropDialog = ({ request, onDone }) => {
             variant="text"
             onClick={() => setSelection(getDefaultSelection(width, height))}
           />
-          {request.allowOriginal && (
-            <Button label="Use original" onClick={() => onDone(file)} disabled={working} />
-          )}
-          <Button label="Crop" variant="filled" onClick={onCrop} disabled={working} />
+          <Button
+            label="Crop"
+            variant="filled"
+            onClick={onCrop}
+            disabled={working || !!nameError}
+          />
         </Footer>
       }
     >
+      <NameRow>
+        <FilenameInput
+          base={baseName}
+          ext={ext}
+          onChange={setBaseName}
+          error={nameError}
+          warning={nameWarning}
+        />
+      </NameRow>
       <View
         style={{ width: width * scale, height: height * scale }}
         onPointerMove={onPointerMove}
