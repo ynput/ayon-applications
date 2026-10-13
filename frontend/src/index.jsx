@@ -9,6 +9,34 @@ import CustomIcons from './CustomIcons'
 
 const ADDON_NAME = 'applications'
 
+// Fonts are not bundled (see vite.config.js), reuse font faces of AYON frontend
+// which hosts this page in a same-origin iframe
+const copyParentFontFaces = () => {
+  let parentSheets
+  try {
+    if (window.parent === window) return
+    parentSheets = window.parent.document.styleSheets
+  } catch {
+    return
+  }
+  const rules = []
+  for (const sheet of parentSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (rule instanceof window.parent.CSSFontFaceRule) rules.push(rule.cssText)
+      }
+    } catch {
+      // Cross-origin stylesheet
+    }
+  }
+  if (!rules.length) return
+  const style = document.createElement('style')
+  style.textContent = rules.join('\n')
+  document.head.appendChild(style)
+}
+
+copyParentFontFaces()
+
 const App = () => {
   const context = useContext(AddonContext)
   const accessToken = context?.accessToken
