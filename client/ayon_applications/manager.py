@@ -320,6 +320,8 @@ class ApplicationLaunchContext:
         env_group (Optional[str]): Environment variable group. If not set
             'DEFAULT_ENV_SUBGROUP' is used.
         launch_type (Optional[str]): Launch type. If not set 'local' is used.
+        addons_manager (Optional[AddonsManager]): Initialized addons manager.
+            New one is created if not passed.
         **data (dict): Any additional data. Data may be used during
             preparation to store objects usable in multiple places.
     """
@@ -330,6 +332,7 @@ class ApplicationLaunchContext:
         executable: ApplicationExecutable,
         env_group: Optional[str] = None,
         launch_type: Optional[str] = None,
+        addons_manager: Optional[AddonsManager] = None,
         **data,
     ):
         from .process import ProcessManager
@@ -337,7 +340,10 @@ class ApplicationLaunchContext:
         # Application object
         self.application: Application = application
 
-        self.addons_manager: AddonsManager = AddonsManager()
+        if addons_manager is None:
+            addons_manager = AddonsManager()
+
+        self.addons_manager: AddonsManager = addons_manager
         self.process_manager: ProcessManager = ProcessManager()
         self.redirect_output: bool = application.redirect_output
 

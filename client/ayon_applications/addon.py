@@ -432,7 +432,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"addons/{cls.name}/{cls.version}/"
             f"tools{context_path}?{query}"
         )
-        return response.data["applications"]
+        return response.data["tools"]
 
     def launch_application(
         self,
@@ -496,7 +496,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         detail = None
         try:
             app_manager = self.get_applications_manager()
-            app_manager.launch(app_name, **data)
+            app_manager.launch(
+                app_name, addons_manager=self.manager, **data
+            )
             failed = False
 
         except (
@@ -554,7 +556,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 data = None
                 async with ClientSession() as session:
                     async with session.get(url) as resp:
-                        if resp.status != 200:
+                        if resp.status == 200:
                             data = await resp.read()
 
                 _cache_icon(filename, data)

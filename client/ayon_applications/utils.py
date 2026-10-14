@@ -212,7 +212,6 @@ def get_app_environments_for_context(
         launch_type=launch_type,
         env=env,
         addons_manager=addons_manager,
-        modules_manager=addons_manager,
     )
     context.run_prelaunch_hooks()
     return context.env
@@ -376,7 +375,6 @@ def prepare_app_environments(
     data: dict[str, Any],
     env_group: Optional[str] = None,
     implementation_envs: bool = True,
-    addons_manager: Optional[AddonsManager] = None
 ) -> None:
     """Modify launch environments based on launched app and context.
 
@@ -389,8 +387,11 @@ def prepare_app_environments(
     log = data["log"]
     source_env = data["env"].copy()
 
+    # Store addons manager so it can be reused by following preparations
+    addons_manager = data.get("addons_manager")
     if addons_manager is None:
         addons_manager = AddonsManager()
+        data["addons_manager"] = addons_manager
 
     _add_python_version_paths(app, source_env, log, addons_manager)
 
@@ -425,6 +426,7 @@ def prepare_app_environments(
         data.get("project_name"),
         data.get("folder_entity"),
         data.get("task_entity"),
+        project_settings=data.get("project_settings"),
     )
 
     # Add tools environments
@@ -566,8 +568,10 @@ def prepare_context_environments(
 
     # Load project specific environments
     project_name = project_entity["name"]
-    project_settings = get_project_settings(project_name)
-    data["project_settings"] = project_settings
+    project_settings = data.get("project_settings")
+    if project_settings is None:
+        project_settings = get_project_settings(project_name)
+        data["project_settings"] = project_settings
 
     app = data["app"]
     context_env = {
@@ -645,13 +649,11 @@ def prepare_context_environments(
 
     data["env"]["AYON_WORKDIR"] = workdir
 
-    _prepare_last_workfile(data, workdir, addons_manager)
+    _prepare_last_workfile(data, workdir)
 
 
 def _prepare_last_workfile(
-    data: EnvironmentPrepData,
-    workdir: str,
-    addons_manager: AddonsManager,
+    data: EnvironmentPrepData, workdir: str
 ) -> None:
     """last workfile workflow preparation.
 
@@ -668,8 +670,10 @@ def _prepare_last_workfile(
         workdir (str): Path to folder where workfiles should be stored.
 
     """
-    if not addons_manager:
+    addons_manager = data.get("addons_manager")
+    if addons_manager is None:
         addons_manager = AddonsManager()
+        data["addons_manager"] = addons_manager
 
     log = data["log"]
 

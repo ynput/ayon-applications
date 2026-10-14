@@ -34,7 +34,11 @@ def get_application_items(
     fill_icon_url: bool = False,
 ) -> list[ApplicationItem]:
     app_settings = addon_settings["applications"]
-    app_groups = app_settings.pop("additional_apps")
+    app_groups = [
+        group
+        for group in app_settings.pop("additional_apps")
+        if group["enabled"]
+    ]
     for group_name, value in app_settings.items():
         if not value["enabled"]:
             continue

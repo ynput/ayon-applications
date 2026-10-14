@@ -387,16 +387,15 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._refresh_processes()
 
     def _refresh(self) -> None:
-        self._state.refresh_in_pool = False
         start = time.time()
 
-        self._refresh_processes()
-        self._refresh_states()
+        try:
+            self._refresh_processes()
+            self._refresh_states()
+        except Exception as exc:
+            self.error.emit(str(exc))
 
-        while True:
-            if self._state.stopped:
-                return
-
+        while not self._state.stopped:
             if self._state.has_new_roots:
                 break
 
@@ -404,8 +403,13 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
                 break
             QtCore.QThread.msleep(100)
 
-        if not self._state.refresh_in_pool:
-            self._thread_pool.start(self._refresh)
+        # Keep 'refresh_in_pool' set until the refresh is really stopped
+        #   so 'start_workers' does not start the refresh more than once
+        if self._state.stopped:
+            self._state.refresh_in_pool = False
+            return
+
+        self._thread_pool.start(self._refresh)
 
     def _refresh_processes(self) -> None:
         # Avoid running of '_refresh_processes' multiple times
@@ -1316,13 +1320,20 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self._tree_model.start_workers()
         self._refresh_data()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
-        """Clean up timers and threads when closing."""
+    def hideEvent(self, event: QtGui.QHideEvent) -> None:  # noqa: N802
+        """Clean up timers and threads when the window is hidden.
+
+        Hide event is used instead of close event because dialog does not
+            receive close event when is rejected (e.g. with Esc key).
+        """
+        super().hideEvent(event)
+        # Keep workers running when hidden by window system (minimized)
+        if event.spontaneous():
+            return
         # Delegate shutdown to controller (stops timers and waits for workers)
         self._tree_model.stop_workers()
         with contextlib.suppress(Exception):
             self._controller.shutdown()
-        super().closeEvent(event)
 
 
 def main() -> None:
