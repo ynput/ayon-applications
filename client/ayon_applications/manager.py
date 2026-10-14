@@ -43,6 +43,45 @@ if TYPE_CHECKING:
     import logging
 
 
+def get_macos_launch_services_args(
+    launch_args: list[str], output_path: Optional[str] = None
+) -> Optional[list[str]]:
+    """Wrap launch arguments to launch an app bundle with 'open'.
+
+    On macOS 27+ an application spawned directly loses its "Local Network"
+    permission once its launcher process exits. Launching it through
+    LaunchServices makes it its own responsible process.
+
+    Args:
+        launch_args (list[str]): Launch arguments, executable first.
+        output_path (Optional[str]): File for application stdout and stderr.
+
+    Returns:
+        Optional[list[str]]: Wrapped launch arguments or None
+    """
+    if not launch_args or platform.system().lower() != "darwin":
+        return None
+
+    # 'open' always starts the bundle main executable
+    # TODO: could it happen that we don't want the main executable here ?
+    executable = launch_args[0]
+    marker = ".app/Contents/MacOS/"
+    if executable.endswith(".app"):
+        bundle_path = executable
+    else:
+        if marker not in executable:
+            return None
+        bundle_path = executable.split(marker, 1)[0] + ".app"
+
+    # '-W' keeps 'open' alive until the application quits
+    args = ["open", "-n", "-W"]
+    if output_path:
+        args.extend(["--stdout", output_path, "--stderr", output_path])
+    args.extend(["-a", bundle_path, "--args"])
+    args.extend(launch_args[1:])
+    return args
+
+
 @dataclass
 class GroupAppInfo:
     name: str
@@ -878,6 +917,7 @@ class ApplicationLaunchContext:
             start_time=None,
         )
 
+        temp_file_path = None
         if self.redirect_output:
             with tempfile.NamedTemporaryFile(
                 mode="w",
@@ -888,13 +928,22 @@ class ApplicationLaunchContext:
             ) as temp_file:
                 temp_file_path = temp_file.name
 
+        launch_args = self.launch_args
+        open_args = get_macos_launch_services_args(
+            launch_args, temp_file_path
+        )
+        if open_args:
+            self.log.debug(f"Launching through LaunchServices: {open_args}")
+            launch_args = open_args
+
+        if temp_file_path:
             with open(temp_file_path, "wb") as tmp_file:
                 self.kwargs["stdout"] = tmp_file
                 self.kwargs["stderr"] = tmp_file
-                process = subprocess.Popen(self.launch_args, **self.kwargs)
+                process = subprocess.Popen(launch_args, **self.kwargs)
                 process_info.output = Path(temp_file_path)
         else:
-            process = subprocess.Popen(self.launch_args, **self.kwargs)
+            process = subprocess.Popen(launch_args, **self.kwargs)
 
         start_time = self.process_manager.get_process_start_time(process)
         process_info.pid = process.pid
