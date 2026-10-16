@@ -131,6 +131,7 @@ def parse_versions(versions):
 
 class ApplicationsAddon(BaseServerAddon):
     settings_model = ApplicationsAddonSettings
+    frontend_scopes = {"settings": {}}
     # TODO remove this attribute when attributes support is removed
     has_attributes = True
 
