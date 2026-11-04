@@ -16,9 +16,16 @@ try:
         compute_env_variables_structure,
     )
 except ImportError:
-    from ayon_core.lib import find_executable
-    merge_env_variables = None
-    compute_env_variables_structure = None
+    try:
+        from ayon_core.lib.env_tools import (
+            merge_env_variables,
+            compute_env_variables_structure,
+        )
+        from ayon_core.lib import find_executable
+    except ImportError:
+        from ayon_core.lib import find_executable
+        merge_env_variables = None
+        compute_env_variables_structure = None
 
 if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
@@ -58,6 +65,10 @@ class ApplicationExecutable:
             env (Optional[dict[str, str]]): Environment variables mapping for
                 formatting and variable expansion. Defaults to `os.environ`.
         """
+        if not executable or not isinstance(executable, str):
+            self.executable_path = executable or ""
+            return
+
         if env is None:
             env = dict(os.environ)
 
@@ -86,6 +97,7 @@ class ApplicationExecutable:
         """Expand user home, environment variables, and format tokens in path.
 
         Expands:
+            - Escaped dollar (`$$` -> `$`)
             - Shell-style environment variables (`$VAR`, `${VAR}`, `%VAR%`)
             - Template tokens (`{VAR}`) matching keys in `env`
             - User home directory (`~` or `~user`) via `os.path.expanduser`
@@ -97,33 +109,52 @@ class ApplicationExecutable:
         Returns:
             str: Path with expanded variables and tokens.
         """
-        if not executable:
+        if not executable or not isinstance(executable, str):
             return executable
 
-        # 1. Expand shell-style variables from os.environ first
-        #    (%VAR% on Windows, $VAR/${VAR} on POSIX/Windows)
-        executable = os.path.expandvars(executable)
+        is_windows = platform.system().lower() == "windows"
+        lookup_env = env
+        if is_windows:
+            lookup_env = {
+                k.lower(): v for k, v in env.items() if v is not None
+            }
 
-        # 2. Expand %VAR%, ${VAR}, $VAR, and {VAR} from custom env dictionary
-        def _repl(pattern: str, text: str) -> str:
-            return re.sub(
-                pattern,
-                lambda m: str(env.get(m.group(1), m.group(0))),
-                text,
+        def _get_val(key: str) -> Optional[str]:
+            if not is_windows:
+                val = env.get(key)
+            else:
+                val = lookup_env.get(key.lower())
+            return str(val) if val is not None else None
+
+        # Unified single-pass regex for environment variables and tokens:
+        # 1: Escaped dollar ($$)
+        # 2: %VAR% or %ProgramFiles(x86)%
+        # 3: ${VAR}
+        # 4: $VAR
+        # 5: {VAR}
+        token_pattern = re.compile(
+            r"(\$\$)"
+            r"|%([a-zA-Z0-9_()]+)%"
+            r"|\$\{([a-zA-Z0-9_]+)\}"
+            r"|\$([a-zA-Z0-9_]+)"
+            r"|\{([a-zA-Z0-9_]+)\}"
+        )
+
+        def _replace_token(match: re.Match) -> str:
+            if match.group(1):  # $$ -> literal $
+                return "$"
+            var_name = (
+                match.group(2)
+                or match.group(3)
+                or match.group(4)
+                or match.group(5)
             )
+            val = _get_val(var_name)
+            return val if val is not None else match.group(0)
 
-        executable = _repl(r"%([a-zA-Z0-9_]+)%", executable)
-        executable = _repl(r"\$\{([a-zA-Z0-9_]+)\}", executable)
-        executable = _repl(r"\$([a-zA-Z0-9_]+)", executable)
-        executable = _repl(r"\{([a-zA-Z0-9_]+)\}", executable)
+        executable = token_pattern.sub(_replace_token, executable)
 
-        # 3. Fallback try standard format(**env) for any remaining format keys
-        try:
-            executable = executable.format(**env)
-        except Exception:
-            pass
-
-        # 4. Expand user home directory (e.g. ~/bin/app -> /home/user/bin/app)
+        # Expand user home directory (e.g. ~/bin/app -> /home/user/bin/app)
         executable = os.path.expanduser(executable)
 
         return executable
@@ -365,6 +396,10 @@ class Application:
         Returns:
             dict[str, str]: Fully resolved environment mapping.
         """
+        # Fast path if neither group nor variant defines custom environment
+        if not group_env and not variant_env:
+            return dict(os.environ)
+
         from .utils import parse_environments
 
         env_values: dict[str, str] = {}
@@ -378,6 +413,9 @@ class Application:
                 env_values = merge_env_variables(parsed, env_values)
             else:
                 env_values.update(parsed)
+
+        if not env_values:
+            return dict(os.environ)
 
         source_env = dict(os.environ)
         if merge_env_variables is not None:
