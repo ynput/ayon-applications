@@ -100,7 +100,7 @@ class ApplicationExecutable:
         """Expand user home, environment variables, and format tokens in path.
 
         Expands:
-            - Escaped dollar (`$$` -> `$`)
+            - Escaped delimiters (`$$` -> `$`, `{{` -> `{`, `}}` -> `}`)
             - Shell-style environment variables (`$VAR`, `${VAR}`, `%VAR%`)
             - Template tokens (`{VAR}`) matching keys in `env`
             - User home directory (`~` or `~user`) via `os.path.expanduser`
@@ -130,22 +130,28 @@ class ApplicationExecutable:
             return str(val) if val is not None else None
 
         # Unified single-pass regex for environment variables and tokens:
-        # 1: Escaped dollar ($$)
+        # 1: Escaped delimiters ($$, {{, }})
         # 2: %VAR% or %ProgramFiles(x86)%
-        # 3: ${VAR}
+        # 3: ${VAR} or ${ProgramFiles(x86)}
         # 4: $VAR (alphanumerics and underscore only, avoiding trailing hyphen)
-        # 5: {VAR}
+        # 5: {VAR} or {ProgramFiles(x86)}
         token_pattern = re.compile(
-            r"(\$\$)"
+            r"(\$\$|\{\{|\}\})"
             r"|%([a-zA-Z0-9_()\-]+)%"
-            r"|\$\{([a-zA-Z0-9_\-]+)\}"
+            r"|\$\{([a-zA-Z0-9_()\-]+)\}"
             r"|\$([a-zA-Z0-9_]+)"
-            r"|\{([a-zA-Z0-9_\-]+)\}"
+            r"|\{([a-zA-Z0-9_()\-]+)\}"
         )
 
         def _replace_token(match: re.Match) -> str:
-            if match.group(1):  # $$ -> literal $
-                return "$"
+            escaped = match.group(1)
+            if escaped:
+                if escaped == "$$":
+                    return "$"
+                if escaped == "{{":
+                    return "{"
+                if escaped == "}}":
+                    return "}"
             var_name = (
                 match.group(2)
                 or match.group(3)
