@@ -11,6 +11,7 @@ from typing import Optional, Any, Generator
 
 try:
     from ayon_core.lib import (
+        Logger,
         find_executable,
         merge_env_variables,
         compute_env_variables_structure,
@@ -21,11 +22,13 @@ except ImportError:
             merge_env_variables,
             compute_env_variables_structure,
         )
-        from ayon_core.lib import find_executable
+        from ayon_core.lib import Logger, find_executable
     except ImportError:
-        from ayon_core.lib import find_executable
+        from ayon_core.lib import Logger, find_executable
         merge_env_variables = None
         compute_env_variables_structure = None
+
+log = Logger.get_logger(__name__)
 
 if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
@@ -130,14 +133,14 @@ class ApplicationExecutable:
         # 1: Escaped dollar ($$)
         # 2: %VAR% or %ProgramFiles(x86)%
         # 3: ${VAR}
-        # 4: $VAR
+        # 4: $VAR (alphanumerics and underscore only, avoiding trailing hyphen)
         # 5: {VAR}
         token_pattern = re.compile(
             r"(\$\$)"
-            r"|%([a-zA-Z0-9_()]+)%"
-            r"|\$\{([a-zA-Z0-9_]+)\}"
+            r"|%([a-zA-Z0-9_()\-]+)%"
+            r"|\$\{([a-zA-Z0-9_\-]+)\}"
             r"|\$([a-zA-Z0-9_]+)"
-            r"|\{([a-zA-Z0-9_]+)\}"
+            r"|\{([a-zA-Z0-9_\-]+)\}"
         )
 
         def _replace_token(match: re.Match) -> str:
@@ -427,8 +430,11 @@ class Application:
         if compute_env_variables_structure is not None:
             try:
                 return compute_env_variables_structure(merged_env)
-            except Exception:
-                pass
+            except Exception as exc:
+                log.debug(
+                    "Failed to compute dynamic environment structure: %s",
+                    exc,
+                )
         return merged_env
 
     @property
