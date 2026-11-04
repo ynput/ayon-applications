@@ -4,11 +4,21 @@ import os
 import platform
 import json
 import copy
+import re
 import subprocess
 import typing
 from typing import Optional, Any, Generator
 
-from ayon_core.lib import find_executable
+try:
+    from ayon_core.lib import (
+        find_executable,
+        merge_env_variables,
+        compute_env_variables_structure,
+    )
+except ImportError:
+    from ayon_core.lib import find_executable
+    merge_env_variables = None
+    compute_env_variables_structure = None
 
 if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
@@ -36,12 +46,22 @@ class LaunchTypes:
 class ApplicationExecutable:
     """Representation of executable loaded from settings."""
 
-    def __init__(self, executable: str):
-        # Try to format executable with environments
-        try:
-            executable = executable.format(**os.environ)
-        except Exception:
-            pass
+    def __init__(
+        self,
+        executable: str,
+        env: Optional[dict[str, str]] = None,
+    ):
+        """Initialize ApplicationExecutable.
+
+        Args:
+            executable (str): Executable path from settings.
+            env (Optional[dict[str, str]]): Environment variables mapping for
+                formatting and variable expansion. Defaults to `os.environ`.
+        """
+        if env is None:
+            env = dict(os.environ)
+
+        executable = self.expand_executable_path(executable, env)
 
         # On MacOS check if exists path to executable when ends with `.app`
         # - it is common that path will lead to "/Applications/Blender" but
@@ -56,6 +76,57 @@ class ApplicationExecutable:
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}> {self.executable_path}"
+
+    @classmethod
+    def expand_executable_path(
+        cls,
+        executable: str,
+        env: dict[str, str],
+    ) -> str:
+        """Expand user home, environment variables, and format tokens in path.
+
+        Expands:
+            - Shell-style environment variables (`$VAR`, `${VAR}`, `%VAR%`)
+            - Template tokens (`{VAR}`) matching keys in `env`
+            - User home directory (`~` or `~user`) via `os.path.expanduser`
+
+        Args:
+            executable (str): Executable path string from settings.
+            env (dict[str, str]): Environment variables mapping.
+
+        Returns:
+            str: Path with expanded variables and tokens.
+        """
+        if not executable:
+            return executable
+
+        # 1. Expand shell-style variables from os.environ first
+        #    (%VAR% on Windows, $VAR/${VAR} on POSIX/Windows)
+        executable = os.path.expandvars(executable)
+
+        # 2. Expand %VAR%, ${VAR}, $VAR, and {VAR} from custom env dictionary
+        def _repl(pattern: str, text: str) -> str:
+            return re.sub(
+                pattern,
+                lambda m: str(env.get(m.group(1), m.group(0))),
+                text,
+            )
+
+        executable = _repl(r"%([a-zA-Z0-9_]+)%", executable)
+        executable = _repl(r"\$\{([a-zA-Z0-9_]+)\}", executable)
+        executable = _repl(r"\$([a-zA-Z0-9_]+)", executable)
+        executable = _repl(r"\{([a-zA-Z0-9_]+)\}", executable)
+
+        # 3. Fallback try standard format(**env) for any remaining format keys
+        try:
+            executable = executable.format(**env)
+        except Exception:
+            pass
+
+        # 4. Expand user home directory (e.g. ~/bin/app -> /home/user/bin/app)
+        executable = os.path.expanduser(executable)
+
+        return executable
 
     @staticmethod
     def macos_executable_prep(executable: str) -> str:
@@ -250,8 +321,12 @@ class Application:
             arguments = []
 
         _executables = data["executables"].get(platform.system().lower(), [])
+        env_for_executables = self._get_environment_for_executables(
+            group_env=group.environment,
+            variant_env=env,
+        )
         executables = [
-            ApplicationExecutable(executable)
+            ApplicationExecutable(executable, env=env_for_executables)
             for executable in _executables
         ]
 
@@ -271,6 +346,52 @@ class Application:
 
     def __repr__(self):
         return f"<{self.__class__.__name__}> - {self.full_name}"
+
+    @classmethod
+    def _get_environment_for_executables(
+        cls,
+        group_env: dict[str, Any],
+        variant_env: dict[str, Any],
+    ) -> dict[str, str]:
+        """Prepare flattened and resolved environments for executable paths.
+
+        Merges group and variant environments on top of current system
+        environment (os.environ) and resolves dynamic variable structures.
+
+        Args:
+            group_env (dict[str, Any]): Application group environment.
+            variant_env (dict[str, Any]): Application variant environment.
+
+        Returns:
+            dict[str, str]: Fully resolved environment mapping.
+        """
+        from .utils import parse_environments
+
+        env_values: dict[str, str] = {}
+        for raw_env in (group_env, variant_env):
+            if not raw_env or not isinstance(raw_env, dict):
+                continue
+            parsed = parse_environments(raw_env)
+            if not parsed:
+                continue
+            if merge_env_variables is not None:
+                env_values = merge_env_variables(parsed, env_values)
+            else:
+                env_values.update(parsed)
+
+        source_env = dict(os.environ)
+        if merge_env_variables is not None:
+            merged_env = merge_env_variables(env_values, source_env)
+        else:
+            merged_env = source_env
+            merged_env.update(env_values)
+
+        if compute_env_variables_structure is not None:
+            try:
+                return compute_env_variables_structure(merged_env)
+            except Exception:
+                pass
+        return merged_env
 
     @property
     def environment(self) -> dict[str, str]:
