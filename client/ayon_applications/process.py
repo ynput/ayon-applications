@@ -531,6 +531,13 @@ class ProcessManager:
             start_time: float | None = None) -> bool:
         """Check if a process is running using psutil.
 
+        The process is identified by its PID and start time. The executable
+        is compared only when the start time is not known, because the
+        process with the stored PID does not always run the stored
+        executable. For example on macOS applications are launched through
+        'open', and some hosts are launched through the AYON launcher or
+        a wrapper script.
+
         Args:
             pid (int): Process ID to check.
             executable (str): Executable name to verify.
@@ -542,43 +549,46 @@ class ProcessManager:
         """
         import psutil
 
+        is_windows = platform.system().lower() == "windows"
         try:
             proc = psutil.Process(pid)
+            # Process has ended but its parent did not reap it yet
+            #   - there are no zombie processes on Windows
+            if not is_windows and proc.status() == psutil.STATUS_ZOMBIE:
+                return False
         except (psutil.NoSuchProcess, psutil.ZombieProcess):
             return False
+        except psutil.AccessDenied:
+            pass
 
-        # If start_time provided, verify it matches process creation time
         if start_time is not None:
             try:
                 proc_ct = proc.create_time()
-                # allow small tolerance for float differences
-                if abs(proc_ct - float(start_time)) > 1.0:
-                    return False
             except Exception:  # noqa: BLE001
                 # cannot verify start time -> conservative False
                 return False
+            # allow small tolerance for float differences
+            return abs(proc_ct - float(start_time)) <= 1.0
 
         if not executable:
             # No executable provided, process exists
-            # (and start_time matched if provided)
             return True
 
-        # Try to get executable path/name and command line first
+        # Get each value separately so one failing call does not skip
+        #   the others
         candidates = set()
         with contextlib.suppress(Exception):
-            exe_path = proc.exe() if hasattr(proc, "exe") else None
+            exe_path = proc.exe()
             if exe_path:
                 candidates.add(Path(exe_path).as_posix())
 
-            name = proc.name()
-            if name:
-                candidates.add(name)
+        with contextlib.suppress(Exception):
+            candidates.add(proc.name())
 
-            cmd = proc.cmdline()
-            if cmd:
-                first = cmd[0]
-                candidates.add(first)
-        if platform.system().lower() == "windows":
+        with contextlib.suppress(Exception):
+            candidates.add(proc.cmdline()[0])
+
+        if is_windows:
             # On Windows be more relaxed and check image name only
             candidates = {c.lower() for c in candidates if c}
             return Path(executable).name.lower() in candidates
