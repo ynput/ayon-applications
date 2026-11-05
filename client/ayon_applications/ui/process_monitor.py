@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import enum
 from logging import getLogger
 from pathlib import Path
+import threading
 import time
 from time import perf_counter
 from typing import TYPE_CHECKING, Optional, Union
@@ -248,26 +249,36 @@ class RefreshData:
     _root_items_to_remove: set[str] = field(default_factory=set)
     _new_root_items: list[QtGui.QStandardItem] = field(default_factory=list)
     _descendants_to_update: dict[str, list] = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def set_items(
         self, new_items: list[QtGui.QStandardItem], to_remove: set[str]
     ) -> None:
-        """Set new items and items to remove."""
-        self._new_root_items = new_items
-        self._root_items_to_remove = to_remove
-        if new_items or to_remove:
+        """Queue new items and items to remove.
+
+        Merge with already queued changes. Refresh can run more than once
+            before the main thread applies them, and replacing them would
+            lose new items that are already registered by hash.
+        """
+        if not new_items and not to_remove:
+            return
+        with self._lock:
+            self._new_root_items.extend(new_items)
+            self._root_items_to_remove |= to_remove
             self.new_changes = True
 
     def set_process_state(self, process_hash: str, state: int) -> None:
         """Change status of process."""
-        self._states_to_set[process_hash] = state
-        self.new_changes = True
+        with self._lock:
+            self._states_to_set[process_hash] = state
+            self.new_changes = True
 
     def set_descendants(
         self, process_hash: str, descendants: list[ProcessInfo]
     ) -> None:
-        self._descendants_to_update[process_hash] = descendants
-        self.new_changes = True
+        with self._lock:
+            self._descendants_to_update[process_hash] = descendants
+            self.new_changes = True
 
     def pop(self) -> tuple[
         list[QtGui.QStandardItem],
@@ -275,14 +286,16 @@ class RefreshData:
         dict[str, list[ProcessInfo]],
         dict[str, int],
     ]:
-        self._new_root_items, items = [], self._new_root_items
-        self._root_items_to_remove, to_remove = (
-            set(), self._root_items_to_remove
-        )
-        self._descendants_to_update, descendants_to_update = (
-            {}, self._descendants_to_update
-        )
-        self._states_to_set, states_to_set = {}, self._states_to_set
+        with self._lock:
+            self.new_changes = False
+            self._new_root_items, items = [], self._new_root_items
+            self._root_items_to_remove, to_remove = (
+                set(), self._root_items_to_remove
+            )
+            self._descendants_to_update, descendants_to_update = (
+                {}, self._descendants_to_update
+            )
+            self._states_to_set, states_to_set = {}, self._states_to_set
         return items, to_remove, descendants_to_update, states_to_set
 
 
@@ -419,7 +432,12 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             return
 
         self._state.refreshing_processes = True
+        try:
+            self._refresh_root_processes()
+        finally:
+            self._state.refreshing_processes = False
 
+    def _refresh_root_processes(self) -> None:
         to_remove = set(self._root_items_by_hash)
 
         refresh_data = self._state.refresh_data
@@ -459,8 +477,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         refresh_data.set_items(new_items, to_remove)
         if new_items:
             self._state.has_new_roots = True
-
-        self._state.refreshing_processes = False
 
     def _refresh_timer_callback(self):
         refresh_data = self._state.refresh_data
