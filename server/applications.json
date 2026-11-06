@@ -745,6 +745,53 @@
                 }
             ]
         },
+        "mari": {
+            "enabled": true,
+            "host_name": "mari",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "8.0",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Mari8.0v1\\Bundle\\bin\\Mari8.0v1.exe"
+                        ],
+                        "darwin": [],
+                        "linux": [
+                            "/usr/local/Mari8.0v1/mari"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                },
+                {
+                    "name": "7.5",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [
+                            "C:\\Program Files\\Mari7.5v2\\Bundle\\bin\\Mari7.5v2.exe"
+                        ],
+                        "darwin": [],
+                        "linux": [
+                            "/usr/local/Mari7.5v2/mari"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "fusion": {
             "enabled": true,
             "host_name": "fusion",
