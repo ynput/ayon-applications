@@ -1,6 +1,6 @@
 name = "applications"
 title = "Applications"
-version = "1.4.8+dev"
+version = "1.4.9"
 
 client_dir = "ayon_applications"
 
