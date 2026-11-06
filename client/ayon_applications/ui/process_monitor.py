@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import enum
 from logging import getLogger
 from pathlib import Path
+import threading
 import time
 from time import perf_counter
 from typing import TYPE_CHECKING, Optional, Union
@@ -248,26 +249,36 @@ class RefreshData:
     _root_items_to_remove: set[str] = field(default_factory=set)
     _new_root_items: list[QtGui.QStandardItem] = field(default_factory=list)
     _descendants_to_update: dict[str, list] = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def set_items(
         self, new_items: list[QtGui.QStandardItem], to_remove: set[str]
     ) -> None:
-        """Set new items and items to remove."""
-        self._new_root_items = new_items
-        self._root_items_to_remove = to_remove
-        if new_items or to_remove:
+        """Queue new items and items to remove.
+
+        Merge with already queued changes. Refresh can run more than once
+            before the main thread applies them, and replacing them would
+            lose new items that are already registered by hash.
+        """
+        if not new_items and not to_remove:
+            return
+        with self._lock:
+            self._new_root_items.extend(new_items)
+            self._root_items_to_remove |= to_remove
             self.new_changes = True
 
     def set_process_state(self, process_hash: str, state: int) -> None:
         """Change status of process."""
-        self._states_to_set[process_hash] = state
-        self.new_changes = True
+        with self._lock:
+            self._states_to_set[process_hash] = state
+            self.new_changes = True
 
     def set_descendants(
         self, process_hash: str, descendants: list[ProcessInfo]
     ) -> None:
-        self._descendants_to_update[process_hash] = descendants
-        self.new_changes = True
+        with self._lock:
+            self._descendants_to_update[process_hash] = descendants
+            self.new_changes = True
 
     def pop(self) -> tuple[
         list[QtGui.QStandardItem],
@@ -275,14 +286,16 @@ class RefreshData:
         dict[str, list[ProcessInfo]],
         dict[str, int],
     ]:
-        self._new_root_items, items = [], self._new_root_items
-        self._root_items_to_remove, to_remove = (
-            set(), self._root_items_to_remove
-        )
-        self._descendants_to_update, descendants_to_update = (
-            {}, self._descendants_to_update
-        )
-        self._states_to_set, states_to_set = {}, self._states_to_set
+        with self._lock:
+            self.new_changes = False
+            self._new_root_items, items = [], self._new_root_items
+            self._root_items_to_remove, to_remove = (
+                set(), self._root_items_to_remove
+            )
+            self._descendants_to_update, descendants_to_update = (
+                {}, self._descendants_to_update
+            )
+            self._states_to_set, states_to_set = {}, self._states_to_set
         return items, to_remove, descendants_to_update, states_to_set
 
 
@@ -291,12 +304,10 @@ class _ModelState:
     # Method '_refresh' is in thread pool -> avoid having it there more
     #   than once
     refresh_in_pool: bool = False
-    # Avoid running '_refresh_processes' mutliple time
-    refreshing_processes: bool = False
     # Model refresh is stopped by main window (e.g. when closed)
     stopped: bool = True
-    # There are new processes that require refresh
-    has_new_roots: bool = False
+    # Refresh was requested (e.g. by user) -> worker should not wait
+    refresh_requested: bool = False
     # Helper to keep track of data to refresh
     refresh_data: RefreshData = field(default_factory=RefreshData)
 
@@ -374,9 +385,12 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
     def start_workers(self):
         self._state.stopped = False
         self._refresh_timer.start()
-        if not self._state.refresh_in_pool:
-            self._state.refresh_in_pool = True
-            self._thread_pool.start(self._refresh)
+        if self._state.refresh_in_pool:
+            # Worker is still running (e.g. window was minimized)
+            self.refresh()
+            return
+        self._state.refresh_in_pool = True
+        self._thread_pool.start(self._refresh)
 
     def stop_workers(self):
         self._state.stopped = True
@@ -384,10 +398,15 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._thread_pool.waitForDone()
 
     def refresh(self) -> None:
-        self._refresh_processes()
+        """Request refresh.
+
+        Refresh always runs in the worker so it never runs twice at once.
+        """
+        self._state.refresh_requested = True
 
     def _refresh(self) -> None:
         start = time.time()
+        self._state.refresh_requested = False
 
         try:
             self._refresh_processes()
@@ -396,7 +415,7 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
             self.error.emit(str(exc))
 
         while not self._state.stopped:
-            if self._state.has_new_roots:
+            if self._state.refresh_requested:
                 break
 
             if time.time() - start > 5:
@@ -412,14 +431,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._thread_pool.start(self._refresh)
 
     def _refresh_processes(self) -> None:
-        # Avoid running of '_refresh_processes' multiple times
-        # - this method can be triggered manually from 'refresh' and also from
-        #   internal '_refresh' in a thread pool.
-        if self._state.refreshing_processes:
-            return
-
-        self._state.refreshing_processes = True
-
         to_remove = set(self._root_items_by_hash)
 
         refresh_data = self._state.refresh_data
@@ -457,10 +468,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
         self._hashes_to_process = hashes_to_process
 
         refresh_data.set_items(new_items, to_remove)
-        if new_items:
-            self._state.has_new_roots = True
-
-        self._state.refreshing_processes = False
 
     def _refresh_timer_callback(self):
         refresh_data = self._state.refresh_data
@@ -496,8 +503,6 @@ class ProcessTreeModel(QtGui.QStandardItemModel):
 
     def _refresh_states(self) -> None:
         """Refresh descendants for all root processes."""
-        self._state.has_new_roots = False
-
         refresh_data = self._state.refresh_data
 
         queue = deque(self._hashes_to_process)
@@ -1318,7 +1323,6 @@ class ProcessMonitorWindow(QtWidgets.QDialog):
         self.setStyleSheet(load_stylesheet())
         super().showEvent(event)
         self._tree_model.start_workers()
-        self._refresh_data()
 
     def hideEvent(self, event: QtGui.QHideEvent) -> None:  # noqa: N802
         """Clean up timers and threads when the window is hidden.
