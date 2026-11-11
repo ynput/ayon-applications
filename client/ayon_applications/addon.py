@@ -542,23 +542,31 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                     next(iter(self.__class__._icons_cache))
                 )
 
+        def _download_icon(filename: str) -> bytes | None:
+            # Use connection of 'ayon_api' to use the same SSL
+            #   verification and client certificate as other requests
+            #   to the server (e.g. 'AYON_CA_FILE' and 'AYON_CERT_FILE')
+            response = ayon_api.raw_get(
+                f"addons/{self.name}/{self.version}/icons/{filename}"
+            )
+            if response.status_code == 404:
+                return None
+            # Raise on connection and server errors so the result is not
+            #   cached and the icon is requested again next time
+            response.raise_for_status()
+            return response.content
+
         async def _get_web_icon(request):
-            from aiohttp import web, ClientSession
+            import asyncio
+            from aiohttp import web
 
             filename: str = os.path.basename(request.match_info["filename"])
             # TODO find better way how to cache
             if filename not in self.__class__._icons_cache:
-                base_url = ayon_api.get_base_url()
-                url = (
-                    f"{base_url}/api/addons/{self.name}/{self.version}"
-                    f"/icons/{filename}"
+                # Request is blocking, run it outside of event loop
+                data = await asyncio.get_running_loop().run_in_executor(
+                    None, _download_icon, filename
                 )
-                data = None
-                async with ClientSession() as session:
-                    async with session.get(url) as resp:
-                        if resp.status == 200:
-                            data = await resp.read()
-
                 _cache_icon(filename, data)
 
             body = self.__class__._icons_cache[filename]
