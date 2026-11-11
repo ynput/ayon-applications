@@ -549,9 +549,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             response = ayon_api.raw_get(
                 f"addons/{self.name}/{self.version}/icons/{filename}"
             )
-            if response.status_code == 200:
-                return response.content
-            return None
+            if response.status_code == 404:
+                return None
+            # Raise on connection and server errors so the result is not
+            #   cached and the icon is requested again next time
+            response.raise_for_status()
+            return response.content
 
         async def _get_web_icon(request):
             import asyncio
