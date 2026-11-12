@@ -223,6 +223,60 @@
                 }
             ]
         },
+        "flameassist": {
+            "enabled": true,
+            "host_name": "flame",
+            "environment": "{\n    \"FLAME_SCRIPT_DIRS\": {\n        \"windows\": \"\",\n        \"darwin\": \"\",\n        \"linux\": \"\"\n    },\n    \"FLAME_WIRETAP_HOSTNAME\": \"\",\n    \"FLAME_WIRETAP_VOLUME\": \"stonefs\",\n    \"FLAME_WIRETAP_GROUP\": \"staff\"\n}",
+            "variants": [
+                {
+                    "name": "2026-2",
+                    "label": "2026.2",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [],
+                        "darwin": [
+                            "/opt/Autodesk/flameassist_2026.2/bin/flameassist.app"
+                        ],
+                        "linux": [
+                            "/opt/Autodesk/flameassist_2026.2/bin/flameassist"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2026.2/bin/python3.11\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flameassist_2026.2/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2026.2\"\n}"
+                }
+            ]
+        },
+        "flare": {
+            "enabled": true,
+            "host_name": "flame",
+            "environment": "{\n    \"FLAME_SCRIPT_DIRS\": {\n        \"windows\": \"\",\n        \"darwin\": \"\",\n        \"linux\": \"\"\n    },\n    \"FLAME_WIRETAP_HOSTNAME\": \"\",\n    \"FLAME_WIRETAP_VOLUME\": \"stonefs\",\n    \"FLAME_WIRETAP_GROUP\": \"staff\"\n}",
+            "variants": [
+                {
+                    "name": "2026-2",
+                    "label": "2026.2",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": [],
+                        "darwin": [
+                            "/opt/Autodesk/flare_2026.2/bin/flare.app"
+                        ],
+                        "linux": [
+                            "/opt/Autodesk/flare_2026.2/bin/flare"
+                        ]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{\n  \"AYON_FLAME_PYTHON_EXEC\": \"/opt/Autodesk/python/2026.2/bin/python3.11\",\n  \"AYON_FLAME_PYTHONPATH\": \"/opt/Autodesk/flare_2026.2/python\",\n  \"AYON_WIRETAP_TOOLS\": \"/opt/Autodesk/wiretap/tools/2026.2\"\n}"
+                }
+            ]
+        },
         "gaffer": {
             "enabled": true,
             "host_name": "gaffer",
