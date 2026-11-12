@@ -78,6 +78,7 @@ HOST_TO_EXT_MAPPING = {
     "hiero": {".hrox"},
     "houdini": {".hip", ".hiplc", ".hipnc"},
     "katana": {".katana"},
+    "mari": {".mra", ".mri"},
     "maya": {".ma", ".mb"},
     "max": {".max"},
     "marvelousdesigner": {".zprj"},
