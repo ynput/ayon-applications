@@ -106,7 +106,8 @@ class ApplicationManager:
         self.tool_groups: dict[str, EnvironmentToolGroup] = {}
         self.tools: dict[str, EnvironmentTool] = {}
 
-        self._app_group_info: dict[str, GroupAppInfo] = {}
+        # Requested from server on first use, only UI needs labels and icons
+        self._app_group_info: Optional[dict[str, GroupAppInfo]] = None
 
         self._studio_settings = studio_settings
 
@@ -122,7 +123,7 @@ class ApplicationManager:
             str: Application label.
 
         """
-        group_info = self._app_group_info.get(group_name)
+        group_info = self._get_app_group_info().get(group_name)
         if group_info is not None and group_info.label:
             return group_info.label
         return group_name
@@ -137,7 +138,7 @@ class ApplicationManager:
             dict[str, str] | None: Application icon definition.
 
         """
-        group_info = self._app_group_info.get(group_name)
+        group_info = self._get_app_group_info().get(group_name)
         if group_info is None:
             return None
         return group_info.icon
@@ -153,28 +154,11 @@ class ApplicationManager:
 
     def refresh(self) -> None:
         """Refresh applications from settings."""
-        from ayon_applications import ApplicationsAddon
-
         self.app_groups.clear()
         self.applications.clear()
         self.tool_groups.clear()
         self.tools.clear()
-        self._app_group_info.clear()
-
-        app_group_info = {}
-        app_items = ApplicationsAddon.get_application_items()
-        for app_item in app_items:
-            group_name = app_item["full_name"].split("/")[0]
-            if group_name in app_group_info:
-                continue
-
-            app_group_info[group_name] = GroupAppInfo(
-                group_name,
-                label=app_item["group_label"],
-                icon=app_item["icon"],
-            )
-
-        self._app_group_info = app_group_info
+        self._app_group_info = None
 
         if self._studio_settings is not None:
             settings = copy.deepcopy(self._studio_settings)
@@ -209,6 +193,27 @@ class ApplicationManager:
             self.tool_groups[group.name] = group
             for tool in group:
                 self.tools[tool.full_name] = tool
+
+    def _get_app_group_info(self) -> dict[str, GroupAppInfo]:
+        if self._app_group_info is not None:
+            return self._app_group_info
+
+        from ayon_applications import ApplicationsAddon
+
+        app_group_info = {}
+        for app_item in ApplicationsAddon.get_application_items():
+            group_name = app_item["full_name"].split("/")[0]
+            if group_name in app_group_info:
+                continue
+
+            app_group_info[group_name] = GroupAppInfo(
+                group_name,
+                label=app_item["group_label"],
+                icon=app_item["icon"],
+            )
+
+        self._app_group_info = app_group_info
+        return app_group_info
 
     def find_latest_available_variant_for_group(
         self, group_name: str
