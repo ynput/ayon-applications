@@ -17,18 +17,27 @@ try:
         compute_env_variables_structure,
     )
 except ImportError:
-    try:
-        from ayon_core.lib.env_tools import (
-            merge_env_variables,
-            compute_env_variables_structure,
-        )
-        from ayon_core.lib import Logger, find_executable
-    except ImportError:
-        from ayon_core.lib import Logger, find_executable
-        merge_env_variables = None
-        compute_env_variables_structure = None
+    from ayon_core.lib import Logger, find_executable
+    from ayon_core.lib.env_tools import (
+        merge_env_variables,
+        compute_env_variables_structure,
+    )
 
 log = Logger.get_logger(__name__)
+
+# Unified single-pass regex for environment variables and tokens:
+# 1: Escaped delimiters ($${VAR}, $$, {{, }})
+# 2: %VAR% or %ProgramFiles(x86)%
+# 3: ${VAR} or ${ProgramFiles(x86)}
+# 4: $VAR (alphanumerics and underscore only, avoiding trailing hyphen)
+# 5: {VAR} or {ProgramFiles(x86)}
+_TOKEN_PATTERN = re.compile(
+    r"(\$\$\{[a-zA-Z0-9_()\-]+\}|\$\$|\{\{|\}\})"
+    r"|%([a-zA-Z0-9_()\-]+)%"
+    r"|\$\{([a-zA-Z0-9_()\-]+)\}"
+    r"|\$([a-zA-Z0-9_]+)"
+    r"|\{([a-zA-Z0-9_()\-]+)\}"
+)
 
 if typing.TYPE_CHECKING:
     from ayon_applications.manager import ApplicationManager
@@ -72,9 +81,6 @@ class ApplicationExecutable:
             self.executable_path = executable or ""
             return
 
-        if env is None:
-            env = dict(os.environ)
-
         executable = self.expand_executable_path(executable, env)
 
         # On MacOS check if exists path to executable when ends with `.app`
@@ -95,19 +101,21 @@ class ApplicationExecutable:
     def expand_executable_path(
         cls,
         executable: str,
-        env: dict[str, str],
+        env: Optional[dict[str, str]] = None,
     ) -> str:
         """Expand user home, environment variables, and format tokens in path.
 
         Expands:
-            - Escaped delimiters (`$$` -> `$`, `{{` -> `{`, `}}` -> `}`)
+            - Escaped delimiters (`$${VAR}` -> `${VAR}`, `$$` -> `$`,
+              `{{` -> `{`, `}}` -> `}`)
             - Shell-style environment variables (`$VAR`, `${VAR}`, `%VAR%`)
             - Template tokens (`{VAR}`) matching keys in `env`
             - User home directory (`~` or `~user`) via `os.path.expanduser`
 
         Args:
             executable (str): Executable path string from settings.
-            env (dict[str, str]): Environment variables mapping.
+            env (Optional[dict[str, str]]): Environment variables mapping.
+                Defaults to `os.environ`.
 
         Returns:
             str: Path with expanded variables and tokens.
@@ -115,58 +123,26 @@ class ApplicationExecutable:
         if not executable or not isinstance(executable, str):
             return executable
 
-        is_windows = platform.system().lower() == "windows"
-        lookup_env = env
-        if is_windows:
-            lookup_env = {
-                k.lower(): v for k, v in env.items() if v is not None
-            }
-
-        def _get_val(key: str) -> Optional[str]:
-            if not is_windows:
-                val = env.get(key)
-            else:
-                val = lookup_env.get(key.lower())
-            return str(val) if val is not None else None
-
-        # Unified single-pass regex for environment variables and tokens:
-        # 1: Escaped delimiters ($$, {{, }})
-        # 2: %VAR% or %ProgramFiles(x86)%
-        # 3: ${VAR} or ${ProgramFiles(x86)}
-        # 4: $VAR (alphanumerics and underscore only, avoiding trailing hyphen)
-        # 5: {VAR} or {ProgramFiles(x86)}
-        token_pattern = re.compile(
-            r"(\$\$|\{\{|\}\})"
-            r"|%([a-zA-Z0-9_()\-]+)%"
-            r"|\$\{([a-zA-Z0-9_()\-]+)\}"
-            r"|\$([a-zA-Z0-9_]+)"
-            r"|\{([a-zA-Z0-9_()\-]+)\}"
-        )
-
-        def _replace_token(match: re.Match) -> str:
-            escaped = match.group(1)
-            if escaped:
-                if escaped == "$$":
-                    return "$"
-                if escaped == "{{":
-                    return "{"
-                if escaped == "}}":
-                    return "}"
-            var_name = (
-                match.group(2)
-                or match.group(3)
-                or match.group(4)
-                or match.group(5)
+        if _TOKEN_PATTERN.search(executable):
+            if env is None:
+                env = os.environ
+            is_windows = platform.system().lower() == "windows"
+            lookup_env = (
+                {k.lower(): v for k, v in env.items() if v is not None}
+                if is_windows
+                else env
             )
-            val = _get_val(var_name)
-            return val if val is not None else match.group(0)
 
-        executable = token_pattern.sub(_replace_token, executable)
+            def _replace_token(match: re.Match) -> str:
+                token = match.group(match.lastindex)
+                if match.lastindex == 1:
+                    return token[1:]
+                val = lookup_env.get(token.lower() if is_windows else token)
+                return str(val) if val is not None else match.group(0)
 
-        # Expand user home directory (e.g. ~/bin/app -> /home/user/bin/app)
-        executable = os.path.expanduser(executable)
+            executable = _TOKEN_PATTERN.sub(_replace_token, executable)
 
-        return executable
+        return os.path.expanduser(executable)
 
     @staticmethod
     def macos_executable_prep(executable: str) -> str:
@@ -361,10 +337,15 @@ class Application:
             arguments = []
 
         _executables = data["executables"].get(platform.system().lower(), [])
-        env_for_executables = self._get_environment_for_executables(
-            group_env=group.environment,
-            variant_env=env,
-        )
+        env_for_executables = None
+        if any(
+            isinstance(exe, str) and _TOKEN_PATTERN.search(exe)
+            for exe in _executables
+        ):
+            env_for_executables = self._get_environment_for_executables(
+                group_env=group.environment,
+                variant_env=env,
+            )
         executables = [
             ApplicationExecutable(executable, env=env_for_executables)
             for executable in _executables
@@ -395,9 +376,6 @@ class Application:
     ) -> dict[str, str]:
         """Prepare flattened and resolved environments for executable paths.
 
-        Merges group and variant environments on top of current system
-        environment (os.environ) and resolves dynamic variable structures.
-
         Args:
             group_env (dict[str, Any]): Application group environment.
             variant_env (dict[str, Any]): Application variant environment.
@@ -405,7 +383,6 @@ class Application:
         Returns:
             dict[str, str]: Fully resolved environment mapping.
         """
-        # Fast path if neither group nor variant defines custom environment
         if not group_env and not variant_env:
             return dict(os.environ)
 
@@ -413,35 +390,23 @@ class Application:
 
         env_values: dict[str, str] = {}
         for raw_env in (group_env, variant_env):
-            if not raw_env or not isinstance(raw_env, dict):
-                continue
-            parsed = parse_environments(raw_env)
-            if not parsed:
-                continue
-            if merge_env_variables is not None:
-                env_values = merge_env_variables(parsed, env_values)
-            else:
-                env_values.update(parsed)
+            if raw_env and isinstance(raw_env, dict):
+                parsed = parse_environments(raw_env)
+                if parsed:
+                    env_values = merge_env_variables(parsed, env_values)
 
         if not env_values:
             return dict(os.environ)
 
-        source_env = dict(os.environ)
-        if merge_env_variables is not None:
-            merged_env = merge_env_variables(env_values, source_env)
-        else:
-            merged_env = source_env
-            merged_env.update(env_values)
-
-        if compute_env_variables_structure is not None:
-            try:
-                return compute_env_variables_structure(merged_env)
-            except Exception as exc:
-                log.debug(
-                    "Failed to compute dynamic environment structure: %s",
-                    exc,
-                )
-        return merged_env
+        merged_env = merge_env_variables(env_values, dict(os.environ))
+        try:
+            return compute_env_variables_structure(merged_env)
+        except Exception as exc:
+            log.debug(
+                "Failed to compute dynamic environment structure: %s",
+                exc,
+            )
+            return merged_env
 
     @property
     def environment(self) -> dict[str, str]:
