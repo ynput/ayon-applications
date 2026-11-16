@@ -31,6 +31,14 @@ INFO_BY_GROUP_NAME = {
         "label": "Flame",
         "icon": "flame.png",
     },
+    "flameassist": {
+        "label": "Flame Assist",
+        "icon": "flame.png",
+    },
+    "flare": {
+        "label": "Flare",
+        "icon": "flame.png",
+    },
     "fusion": {
         "label": "Fusion",
         "icon": "fusion.png",
