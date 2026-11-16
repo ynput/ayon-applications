@@ -107,7 +107,7 @@ class ApplicationManager:
         self.tools: dict[str, EnvironmentTool] = {}
 
         # Requested from server on first use, only UI needs labels and icons
-        self._app_group_info: Optional[dict[str, GroupAppInfo]] = None
+        self._app_group_info: dict[str, GroupAppInfo] | None = None
 
         self._studio_settings = studio_settings
 
