@@ -220,10 +220,13 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """
         if filename is None:
             filename = os.path.basename(path)
-        endpoint = f"addons/{cls.name}/{cls.version}/customIcons/{filename}"
-        response = ayon_api.upload_file(
-            endpoint, path
+        # Pass full url, 'ayon_api' handles relative endpoint of
+        #   'upload_file' differently based on its version.
+        url = (
+            f"{ayon_api.get_base_url()}/api/addons/{cls.name}/{cls.version}"
+            f"/customIcons/{filename}"
         )
+        response = ayon_api.upload_file(url, path)
         response.raise_for_status()
 
     @classmethod
