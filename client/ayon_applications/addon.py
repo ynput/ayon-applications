@@ -222,6 +222,12 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             filename = os.path.basename(path)
         # Pass full url, 'ayon_api' handles relative endpoint of
         #   'upload_file' differently based on its version.
+        # TODO Simplify to relative endpoint once AYON launcher 1.5.1
+        #   (ayon-python-api 1.2.11) is minimum compatible version.
+        # endpoint = (
+        #     f"api/addons/{cls.name}/{cls.version}/customIcons/{filename}"
+        # )
+        # response = ayon_api.upload_file(endpoint, path)
         url = (
             f"{ayon_api.get_base_url()}/api/addons/{cls.name}/{cls.version}"
             f"/customIcons/{filename}"
