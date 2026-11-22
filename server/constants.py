@@ -59,6 +59,10 @@ INFO_BY_GROUP_NAME = {
         "label": "Loki",
         "icon": "loki.png",
     },
+    "mari": {
+        "label": "Mari",
+        "icon": "mari.png",
+    },
     "maya": {
         "label": "Maya",
         "icon": "maya.png",
