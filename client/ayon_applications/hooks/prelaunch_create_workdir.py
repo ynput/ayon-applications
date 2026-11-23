@@ -8,12 +8,16 @@ from ayon_applications import (
 
 
 class CreateWorkdirHook(PreLaunchHook):
-    """Create workdir folder for host application on local launch."""
+    """Create workdir for local, remote, and automated host launches."""
 
     # Execute right after GlobalHostDataHook (-100) and before hooks
     # that copy templates or create extra folders in workdir.
     order = -90
-    launch_types = {LaunchTypes.local}
+    launch_types = {
+        LaunchTypes.local,
+        LaunchTypes.remote,
+        LaunchTypes.automated,
+    }
 
     def execute(self) -> None:
         if not self.application.is_host:
