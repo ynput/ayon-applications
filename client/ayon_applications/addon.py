@@ -14,12 +14,10 @@ from typing import Optional, Any
 import ayon_api
 
 from ayon_core.lib import (
-    Logger,
     run_ayon_launcher_process,
     get_settings_variant,
     is_headless_mode_enabled,
     env_value_to_bool,
-    NestedCacheItem,
 )
 from ayon_core.addon import (
     AYONAddon,
@@ -58,8 +56,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     admin_action = True
 
     _icons_cache: dict[str, bytes | None] = {}
-    # Executables information by project name and settings variant
-    _executables_cache = NestedCacheItem(levels=2, lifetime=300)
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
@@ -311,6 +307,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         *,
         variant: str | None = None,
         version: str | None = None,
+        validate_executables: bool = False,
     ) -> list[dict[str, Any]]:
         """Get application items.
 
@@ -327,6 +324,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             version (str | None): Specific version of applications addon
                 to get items for. If None, it will use the version
                 resolved for current context (variant and project).
+            validate_executables (bool): Validate if applications have
+                existing executable on this machine. Result is stored
+                to 'has_valid_executable' key of each item.
 
         Example application dict (may vary based on applications
             addon version):
@@ -339,11 +339,19 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 "icon": dict[str, str] | None
                 "show_grouped": bool
                 "executables": dict[str, list[str]]
+                "has_valid_executable": bool | None
             }
 
             'executables' are raw paths from settings by platform name
                 ('windows', 'linux', 'darwin'). Not available with older
                 versions of applications addon.
+
+            'has_valid_executable' is available only with
+                'validate_executables' enabled. It is 'True' if any
+                executable for current platform exists, the same way as
+                on application launch. It is 'None' if executables are not
+                available, e.g. older applications addon version is used
+                for the context.
 
         Returns:
             list[dict]: Application items.
@@ -386,6 +394,18 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 "type": "ayon_url",
                 "url": url.lstrip("/"),
             }
+
+        if validate_executables:
+            platform_name = platform.system().lower()
+            for app_item in app_items:
+                has_valid_executable = None
+                executables = app_item.get("executables")
+                if executables is not None:
+                    has_valid_executable = any(
+                        ApplicationExecutable(executable).exists()
+                        for executable in executables.get(platform_name, [])
+                    )
+                app_item["has_valid_executable"] = has_valid_executable
         return app_items
 
     @classmethod
@@ -443,103 +463,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"tools{context_path}?{query}"
         )
         return response.data["tools"]
-
-    @classmethod
-    def app_has_valid_executable(
-        cls,
-        project_name: str | None,
-        app_name: str,
-        *,
-        variant: str | None = None,
-    ) -> bool:
-        """Check if application has existing executable on this machine.
-
-        Executables are received from server for the context, which means
-            the information respects project bundles. Paths are validated
-            for the current platform the same way as on application launch.
-
-        Information about applications is cached per project and variant.
-            Use 'clear_executables_cache' to force re-validation.
-
-        Args:
-            project_name (str | None): Project name. Studio applications are
-                used if 'None' is passed.
-            app_name (str): Full application name e.g. 'maya/2025'.
-            variant (str | None): Settings variant. Current settings variant
-                is used if not passed in.
-
-        Returns:
-            bool: True if any executable for the application exists. Returns
-                'False' if application is not available for the context.
-                Returns 'True' if it is not possible to validate
-                executables, e.g. older applications addon version is used
-                for the project.
-
-        """
-        if variant is None:
-            variant = get_settings_variant()
-
-        cache = cls._executables_cache[project_name][variant]
-        if not cache.is_valid:
-            cache.update_data(
-                cls._collect_executables_info(project_name, variant)
-            )
-
-        info = cache.get_data()
-        validity_by_app_name: dict[str, bool] = info["validity"]
-        if app_name in validity_by_app_name:
-            return validity_by_app_name[app_name]
-
-        executables_by_app_name = info["executables"]
-        if executables_by_app_name is None:
-            # Failed to receive information from server
-            is_valid = True
-        elif app_name not in executables_by_app_name:
-            is_valid = False
-        else:
-            executables = executables_by_app_name[app_name]
-            if executables is None:
-                # Applications addon version used for the context does not
-                #   provide executables
-                is_valid = True
-            else:
-                platform_name = platform.system().lower()
-                is_valid = any(
-                    ApplicationExecutable(executable).exists()
-                    for executable in executables.get(platform_name) or []
-                )
-
-        validity_by_app_name[app_name] = is_valid
-        return is_valid
-
-    @classmethod
-    def clear_executables_cache(cls) -> None:
-        """Clear cache used by 'app_has_valid_executable'."""
-        cls._executables_cache.reset()
-
-    @classmethod
-    def _collect_executables_info(
-        cls, project_name: str | None, variant: str
-    ) -> dict[str, Any]:
-        executables_by_app_name = None
-        try:
-            app_items = cls.get_application_items(
-                project_name, variant=variant
-            )
-            executables_by_app_name = {
-                app_item["full_name"]: app_item.get("executables")
-                for app_item in app_items
-            }
-        except Exception:
-            Logger.get_logger(cls.__name__).warning(
-                "Failed to receive applications information for"
-                f" project '{project_name}' and variant '{variant}'.",
-                exc_info=True,
-            )
-        return {
-            "executables": executables_by_app_name,
-            "validity": {},
-        }
 
     def launch_application(
         self,
