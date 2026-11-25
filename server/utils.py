@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from typing import Any
 import urllib.parse
@@ -8,6 +8,16 @@ from .constants import LABELS_BY_GROUP_NAME, ICONS_BY_GROUP_NAME
 
 @dataclass
 class ApplicationItem:
+    """Application variant available in a context.
+
+    Attributes:
+        executables (dict[str, list[str]]): Executable paths from settings
+            by platform name ('windows', 'linux', 'darwin'). Paths are raw
+            values from settings, which means they may contain environment
+            variable placeholders and macOS paths may point to '.app' bundle.
+            They have to be resolved on client side.
+
+    """
     host_name: str
     full_name: str
     full_label: str
@@ -15,6 +25,7 @@ class ApplicationItem:
     variant_label: str
     icon: dict[str, str] | None
     show_grouped: bool
+    executables: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass
@@ -113,6 +124,10 @@ def get_items_for_app_groups(
                 variant_label=variant_label,
                 icon=icon,
                 show_grouped=variant["show_grouped"],
+                executables={
+                    platform_name: list(paths)
+                    for platform_name, paths in variant["executables"].items()
+                },
             ))
 
     items.sort(key=_sort_getter)

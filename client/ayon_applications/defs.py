@@ -105,6 +105,12 @@ class ApplicationExecutable:
 
     def _realpath(self) -> Optional[str]:
         """Check if path is valid executable path."""
+        # Executable can't exist if its directory does not exist. This also
+        #   skips expensive lookup in PATH in older ayon-core versions.
+        exe_dir = os.path.dirname(self.executable_path)
+        if exe_dir and not os.path.isdir(exe_dir):
+            return None
+
         # Check for executable in PATH
         result = find_executable(self.executable_path)
         if result is not None:
