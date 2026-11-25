@@ -14,6 +14,7 @@ from typing import Optional, Any
 import ayon_api
 
 from ayon_core.lib import (
+    Logger,
     run_ayon_launcher_process,
     get_settings_variant,
     is_headless_mode_enabled,
@@ -443,8 +444,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         )
         return response.data["tools"]
 
+    @classmethod
     def app_has_valid_executable(
-        self,
+        cls,
         project_name: str | None,
         app_name: str,
         *,
@@ -477,10 +479,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         if variant is None:
             variant = get_settings_variant()
 
-        cache = self._executables_cache[project_name][variant]
+        cache = cls._executables_cache[project_name][variant]
         if not cache.is_valid:
             cache.update_data(
-                self._collect_executables_info(project_name, variant)
+                cls._collect_executables_info(project_name, variant)
             )
 
         info = cache.get_data()
@@ -515,12 +517,13 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         """Clear cache used by 'app_has_valid_executable'."""
         cls._executables_cache.reset()
 
+    @classmethod
     def _collect_executables_info(
-        self, project_name: str | None, variant: str
+        cls, project_name: str | None, variant: str
     ) -> dict[str, Any]:
         executables_by_app_name = None
         try:
-            app_items = self.get_application_items(
+            app_items = cls.get_application_items(
                 project_name, variant=variant
             )
             executables_by_app_name = {
@@ -528,7 +531,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 for app_item in app_items
             }
         except Exception:
-            self.log.warning(
+            Logger.get_logger(cls.__name__).warning(
                 "Failed to receive applications information for"
                 f" project '{project_name}' and variant '{variant}'.",
                 exc_info=True,
