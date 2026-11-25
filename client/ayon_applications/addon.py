@@ -57,6 +57,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     admin_action = True
 
     _icons_cache: dict[str, bytes | None] = {}
+    # Executables information by project name and settings variant
+    _executables_cache = NestedCacheItem(levels=2, lifetime=300)
 
     def tray_init(self) -> None:
         """Initialize the tray action."""
@@ -475,7 +477,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         if variant is None:
             variant = get_settings_variant()
 
-        cache = self._get_executables_cache()[project_name][variant]
+        cache = self._executables_cache[project_name][variant]
         if not cache.is_valid:
             cache.update_data(
                 self._collect_executables_info(project_name, variant)
@@ -508,16 +510,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         validity_by_app_name[app_name] = is_valid
         return is_valid
 
-    def clear_executables_cache(self) -> None:
+    @classmethod
+    def clear_executables_cache(cls) -> None:
         """Clear cache used by 'app_has_valid_executable'."""
-        self._get_executables_cache().reset()
-
-    def _get_executables_cache(self) -> NestedCacheItem:
-        cache = getattr(self, "_executables_cache", None)
-        if cache is None:
-            cache = NestedCacheItem(levels=2, lifetime=300)
-            self._executables_cache = cache
-        return cache
+        cls._executables_cache.reset()
 
     def _collect_executables_info(
         self, project_name: str | None, variant: str
