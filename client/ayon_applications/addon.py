@@ -326,7 +326,8 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 resolved for current context (variant and project).
             validate_executables (bool): Validate if applications have
                 existing executable on this machine. Result is stored
-                to 'has_valid_executable' key of each item.
+                to 'has_valid_executable' key of each item. Executables
+                are not checked if 'show_only_available' is disabled.
 
         Example application dict (may vary based on applications
             addon version):
@@ -356,9 +357,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             'has_valid_executable' is available only with
                 'validate_executables' enabled. It is 'True' if any
                 executable for current platform exists, the same way as
-                on application launch. It is 'None' if executables are not
-                available, e.g. older applications addon version is used
-                for the context.
+                on application launch. It is 'None' if 'show_only_available'
+                is disabled or executables are not available, e.g. older
+                applications addon version is used for the context.
 
         Returns:
             list[dict]: Application items.
@@ -411,7 +412,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             for app_item in app_items:
                 has_valid_executable = None
                 executables = app_item.get("executables")
-                if executables is not None:
+                if show_only_available and executables is not None:
                     has_valid_executable = any(
                         ApplicationExecutable(executable).exists()
                         for executable in executables.get(platform_name, [])
