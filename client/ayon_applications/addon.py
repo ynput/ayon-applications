@@ -384,10 +384,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"apps{context_path}?{query}"
         )
         app_items = response.data["applications"]
-        # Value is in response only once, but it is related to all items
-        show_only_available = response.data.get("show_only_available", True)
         for app_item in app_items:
-            app_item["show_only_available"] = show_only_available
+            # Older versions of applications addon don't provide it
+            app_item.setdefault("show_only_available", True)
 
         # Fill icon urls with 'addon_url' and prepare icon definitions
         if not version:
@@ -412,7 +411,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             for app_item in app_items:
                 has_valid_executable = None
                 executables = app_item.get("executables")
-                if show_only_available and executables is not None:
+                if app_item["show_only_available"] and executables is not None:
                     has_valid_executable = any(
                         ApplicationExecutable(executable).exists()
                         for executable in executables.get(platform_name, [])

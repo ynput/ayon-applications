@@ -16,6 +16,9 @@ class ApplicationItem:
             values from settings, which means they may contain environment
             variable placeholders and macOS paths may point to '.app' bundle.
             They have to be resolved on client side.
+        show_only_available (bool): Value of 'only_available' setting, the
+            same for all items of a context. Launcher tool should show only
+            applications with existing executable if enabled.
 
     """
     host_name: str
@@ -26,6 +29,7 @@ class ApplicationItem:
     icon: dict[str, str] | None
     show_grouped: bool
     executables: dict[str, list[str]] = field(default_factory=dict)
+    show_only_available: bool = True
 
 
 @dataclass
@@ -56,11 +60,14 @@ def get_application_items(
         value["name"] = group_name
         app_groups.append(value)
 
-    return get_items_for_app_groups(
+    app_items = get_items_for_app_groups(
         app_groups,
         version=version,
         fill_icon_url=fill_icon_url,
     )
+    for app_item in app_items:
+        app_item.show_only_available = addon_settings["only_available"]
+    return app_items
 
 
 def get_tool_items(
