@@ -558,6 +558,16 @@ class ProjectToolsModel(BaseSettingsModel):
 
 
 class ApplicationsAddonSettings(BaseSettingsModel):
+    only_available: bool = SettingsField(
+        True,
+        title="Show only available applications",
+        description=(
+            "Enable to show only applications for which the executable"
+            " paths are found on the running machine. Works only for"
+            " the Launcher tool, other tools and integrations are not"
+            " affected."
+        )
+    )
     applications: ApplicationsSettings = SettingsField(
         default_factory=ApplicationsSettings,
         title="Applications Definitions",
@@ -616,6 +626,7 @@ def _get_tools_defaults():
 
 
 DEFAULT_VALUES = {
+    "only_available": True,
     "project_applications": {
         "profiles": [
             {

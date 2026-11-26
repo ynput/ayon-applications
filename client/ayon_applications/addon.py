@@ -339,12 +339,19 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 "icon": dict[str, str] | None
                 "show_grouped": bool
                 "executables": dict[str, list[str]]
+                "show_only_available": bool
                 "has_valid_executable": bool | None
             }
 
             'executables' are raw paths from settings by platform name
                 ('windows', 'linux', 'darwin'). Not available with older
                 versions of applications addon.
+
+            'show_only_available' is value of 'only_available' setting
+                resolved on server for the context, the same for all items.
+                Launcher tool should show only applications with valid
+                executable if enabled. It is 'True' (the setting default)
+                if older version of applications addon does not provide it.
 
             'has_valid_executable' is available only with
                 'validate_executables' enabled. It is 'True' if any
@@ -376,6 +383,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"apps{context_path}?{query}"
         )
         app_items = response.data["applications"]
+        # Value is in response only once, but it is related to all items
+        show_only_available = response.data.get("show_only_available", True)
+        for app_item in app_items:
+            app_item["show_only_available"] = show_only_available
 
         # Fill icon urls with 'addon_url' and prepare icon definitions
         if not version:
