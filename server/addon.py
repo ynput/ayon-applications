@@ -766,6 +766,7 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _get_applications_endpoint(
         self,
+        user: CurrentUser,
         project_name: str | None = None,
         variant: str | None = Query(None, title="Settings Variant"),
         version: str | None = Query(None, title="Addon version"),
@@ -784,6 +785,7 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _get_task_applications_endpoint(
         self,
+        user: CurrentUser,
         project_name: str,
         task_id: str,
         variant: str | None = Query(None, title="Settings Variant"),
@@ -801,6 +803,7 @@ class ApplicationsAddon(BaseServerAddon):
 
     async def _get_tools_endpoint(
         self,
+        user: CurrentUser,
         project_name: str | None = None,
         variant: str | None = Query(None, title="Settings Variant"),
         version: str | None = Query(None, title="Addon version"),
