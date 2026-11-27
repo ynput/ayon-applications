@@ -167,19 +167,11 @@ class ApplicationGroup:
         data: dict[str, Any],
         manager: "ApplicationManager",
     ):
-        icon = manager.get_app_icon(name)
-
-        label = data.get("label")
-        if not label:
-            label = manager.get_app_label(name)
-
         self.name = name
         self.manager = manager
         self._data = data
 
         self.enabled = data["enabled"]
-        self.label = label
-        self.icon: dict[str, str] | None = icon
         env = {}
         try:
             env = json.loads(data["environment"])
@@ -207,6 +199,18 @@ class ApplicationGroup:
             yield variant
 
     @property
+    def label(self) -> str:
+        # Label and icon from server are requested on first access
+        label = self._data.get("label")
+        if not label:
+            label = self.manager.get_app_label(self.name)
+        return label
+
+    @property
+    def icon(self) -> dict[str, str] | None:
+        return self.manager.get_app_icon(self.name)
+
+    @property
     def environment(self) -> dict[str, str]:
         return copy.deepcopy(self._environment)
 
@@ -232,10 +236,6 @@ class Application:
         if group.enabled:
             enabled = data.get("enabled", True)
 
-        if group.label:
-            full_label = " ".join((group.label, label))
-        else:
-            full_label = label
         env = {}
         try:
             env = json.loads(data["environment"])
@@ -263,7 +263,6 @@ class Application:
         self.use_python_2 = data.get("use_python_2", False)
 
         self.full_name = f"{group.name}/{name}"
-        self.full_label = full_label
         self.arguments = arguments
         self.executables = executables
         self._environment = env
@@ -275,6 +274,13 @@ class Application:
     @property
     def environment(self) -> dict[str, str]:
         return copy.deepcopy(self._environment)
+
+    @property
+    def full_label(self) -> str:
+        group_label = self.group.label
+        if group_label:
+            return f"{group_label} {self.label}"
+        return self.label
 
     @property
     def manager(self) -> "ApplicationManager":
