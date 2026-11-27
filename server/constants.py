@@ -103,6 +103,10 @@ INFO_BY_GROUP_NAME = {
         "label": "Photoshop",
         "icon": "photoshop.png",
     },
+    "photocraft": {
+        "label": "PhotoCraft",
+        "icon": "photocraft.png",
+    },
     "premiere": {
         "label": "Premiere",
         "icon": "premiere.png",

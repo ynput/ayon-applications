@@ -34,6 +34,7 @@ DEFAULT_APP_GROUPS = {
     "harmony",
     "tvpaint",
     "photoshop",
+    "photocraft",
     "aftereffects",
     "premiere",
     "celaction",
@@ -431,6 +432,8 @@ class ApplicationsSettings(BaseSettingsModel):
         default_factory=AppGroup, title="TVPaint")
     photoshop: AppGroup = SettingsField(
         default_factory=AppGroup, title="Photoshop")
+    photocraft: AppGroup = SettingsField(
+        default_factory=AppGroup, title="PhotoCraft")
     aftereffects: AppGroup = SettingsField(
         default_factory=AppGroup, title="After Effects")
     premiere: AppGroup = SettingsField(

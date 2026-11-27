@@ -85,6 +85,7 @@ HOST_TO_EXT_MAPPING = {
     "motionbuilder": {".fbx"},
     "nuke": {".nk"},
     "photoshop": {".psd", ".psb"},
+    "photocraft": {".pcraft"},
     "premiere": {".prproj"},
     "resolve": {".drp"},
     "silhouette": {".sfx"},

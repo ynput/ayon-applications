@@ -1205,6 +1205,29 @@
                 }
             ]
         },
+        "photocraft": {
+            "enabled": true,
+            "host_name": "photocraft",
+            "environment": "{}",
+            "variants": [
+                {
+                    "name": "0.23",
+                    "label": "",
+                    "show_grouped": true,
+                    "executables": {
+                        "windows": ["{LOCALAPPDATA}\\Programs\\ArtCraft\\PhotoCraft\\photocraft.exe"],
+                        "darwin": ["/Applications/PhotoCraft.app"],
+                        "linux": ["/usr/bin/photocraft"]
+                    },
+                    "arguments": {
+                        "windows": [],
+                        "darwin": [],
+                        "linux": []
+                    },
+                    "environment": "{}"
+                }
+            ]
+        },
         "aftereffects": {
             "enabled": true,
             "host_name": "aftereffects",
