@@ -318,7 +318,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
         Args:
             project_name (str | None): Project name.
-            task_id (str | None): Task id for which applications are fitlered.
+            task_id (str | None): Task id for which applications are filtered.
             variant (str | None): Settings variant. Current settings variant
                 is used if not passed in.
             version (str | None): Specific version of applications addon
@@ -407,17 +407,23 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             }
 
         if validate_executables:
-            platform_name = platform.system().lower()
-            for app_item in app_items:
-                has_valid_executable = None
-                executables = app_item.get("executables")
-                if executables is not None:
-                    has_valid_executable = any(
-                        ApplicationExecutable(executable).exists()
-                        for executable in executables.get(platform_name, [])
-                    )
-                app_item["has_valid_executable"] = has_valid_executable
+            self.validate_app_items_executable_paths(app_items)
         return app_items
+
+    @classmethod
+    def validate_app_items_executable_paths(
+        cls, app_items: list[dict[str, Any]]
+    ) -> None:
+        platform_name = platform.system().lower()
+        for app_item in app_items:
+            has_valid_executable = None
+            executables = app_item.get("executables")
+            if executables is not None:
+                has_valid_executable = any(
+                    ApplicationExecutable(executable).exists()
+                    for executable in executables.get(platform_name, [])
+                )
+            app_item["has_valid_executable"] = has_valid_executable
 
     @classmethod
     def get_tool_items(
