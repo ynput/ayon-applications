@@ -399,6 +399,24 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
     def validate_app_items_executable_paths(
         cls, app_items: list[dict[str, Any]]
     ) -> dict[str, bool | None]:
+        """Validate if applications have existing executable on this machine.
+
+        Executables for the current platform are checked the same way as
+            on application launch, using 'ApplicationExecutable.exists'.
+            Result describes only the machine where this is called.
+
+        Args:
+            app_items (list[dict[str, Any]]): Application items from
+                'get_application_items'.
+
+        Returns:
+            dict[str, bool | None]: Validity by application full name.
+                'True' if any executable for current platform exists,
+                'False' if none exists or no executable is set. 'None' if
+                item does not contain 'executables', e.g. older
+                applications addon version is used for the context.
+
+        """
         platform_name = platform.system().lower()
         output = {}
         for app_item in app_items:
