@@ -307,7 +307,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
         *,
         variant: str | None = None,
         version: str | None = None,
-        validate_executables: bool = False,
     ) -> list[dict[str, Any]]:
         """Get application items.
 
@@ -324,9 +323,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             version (str | None): Specific version of applications addon
                 to get items for. If None, it will use the version
                 resolved for current context (variant and project).
-            validate_executables (bool): Validate if applications have
-                existing executable on this machine. Result is stored
-                to 'has_valid_executable' key of each item.
 
         Example application dict (may vary based on applications
             addon version):
@@ -340,7 +336,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 "show_grouped": bool
                 "executables": dict[str, list[str]]
                 "show_only_available": bool
-                "has_valid_executable": bool | None
             }
 
             'executables' are raw paths from settings by platform name
@@ -352,13 +347,6 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 Launcher tool should show only applications with valid
                 executable if enabled. It is 'True' (the setting default)
                 if older version of applications addon does not provide it.
-
-            'has_valid_executable' is available only with
-                'validate_executables' enabled. It is 'True' if any
-                executable for current platform exists, the same way as
-                on application launch. It is 'None' if executables are not
-                available, e.g. older applications addon version is used
-                for the context.
 
         Returns:
             list[dict]: Application items.
@@ -405,16 +393,14 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 "type": "ayon_url",
                 "url": url.lstrip("/"),
             }
-
-        if validate_executables:
-            self.validate_app_items_executable_paths(app_items)
         return app_items
 
     @classmethod
     def validate_app_items_executable_paths(
         cls, app_items: list[dict[str, Any]]
-    ) -> None:
+    ) -> dict[str, bool | None]:
         platform_name = platform.system().lower()
+        output = {}
         for app_item in app_items:
             has_valid_executable = None
             executables = app_item.get("executables")
@@ -423,7 +409,9 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                     ApplicationExecutable(executable).exists()
                     for executable in executables.get(platform_name, [])
                 )
-            app_item["has_valid_executable"] = has_valid_executable
+            name = app_item["full_name"]
+            output[name] = has_valid_executable
+        return output
 
     @classmethod
     def get_tool_items(
