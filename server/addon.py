@@ -545,6 +545,50 @@ class ApplicationsAddon(BaseServerAddon):
             )
         return output
 
+    async def get_show_only_available(
+        self,
+        project_name: str | None,
+        variant: str,
+        *,
+        version: str | None = None,
+    ) -> bool:
+        """Get 'only_available' setting value for a project and variant.
+
+        If enabled, launcher tool should show only applications that have
+            existing executable on the machine.
+
+        Args:
+            project_name (str | None): Project name.
+            variant (str): Variant name, e.g. "production" or "staging".
+            version (str | None): Addon version to get the value for. If not
+                provided, it will use the resolved addon version for the
+                context.
+
+        Returns:
+            bool: Show only applications with existing executable.
+
+        """
+        if version is not None:
+            addon = self._get_addon_version(version)
+        else:
+            addon = await self.get_addon_for_context(project_name, variant)
+
+        if addon is None:
+            return True
+
+        if addon is not self and hasattr(addon, "get_show_only_available"):
+            return await addon.get_show_only_available(
+                project_name, variant=variant, version=addon.version
+            )
+
+        if project_name is None:
+            settings = await addon.get_studio_settings(variant=variant)
+        else:
+            settings = await addon.get_project_settings(
+                project_name, variant=variant
+            )
+        return getattr(settings, "only_available", True)
+
     async def get_addon_for_context(
         self, project_name: str | None, variant: str
     ) -> BaseServerAddon | None:
@@ -777,9 +821,13 @@ class ApplicationsAddon(BaseServerAddon):
             variant=variant,
             version=version,
         )
+        show_only_available = await self.get_show_only_available(
+            project_name, variant=variant, version=version
+        )
 
         return {
-            "applications": [app_item for app_item in app_items]
+            "applications": [app_item for app_item in app_items],
+            "show_only_available": show_only_available,
         }
 
     async def _get_task_applications_endpoint(
@@ -794,9 +842,13 @@ class ApplicationsAddon(BaseServerAddon):
         app_items = await self.get_application_items_for_task(
             project_name, task_id=task_id, variant=variant, version=version
         )
+        show_only_available = await self.get_show_only_available(
+            project_name, variant=variant, version=version
+        )
 
         return {
-            "applications": [app_item for app_item in app_items]
+            "applications": [app_item for app_item in app_items],
+            "show_only_available": show_only_available,
         }
 
     async def _get_tools_endpoint(

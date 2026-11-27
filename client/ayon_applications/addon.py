@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import json
+import platform
 import traceback
 import tempfile
 import warnings
@@ -28,7 +29,7 @@ from ayon_core.addon import (
 
 from .version import __version__
 from .constants import APPLICATIONS_ADDON_ROOT
-from .defs import LaunchTypes
+from .defs import LaunchTypes, ApplicationExecutable
 from .manager import ApplicationManager
 from .exceptions import (
     ApplicationLaunchFailed,
@@ -325,7 +326,7 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
 
         Args:
             project_name (str | None): Project name.
-            task_id (str | None): Task id for which applications are fitlered.
+            task_id (str | None): Task id for which applications are filtered.
             variant (str | None): Settings variant. Current settings variant
                 is used if not passed in.
             version (str | None): Specific version of applications addon
@@ -342,7 +343,19 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 "variant_label": str
                 "icon": dict[str, str] | None
                 "show_grouped": bool
+                "executables": dict[str, list[str]]
+                "show_only_available": bool
             }
+
+            'executables' are raw paths from settings by platform name
+                ('windows', 'linux', 'darwin'). Not available with older
+                versions of applications addon.
+
+            'show_only_available' is value of 'only_available' setting
+                resolved on server for the context, the same for all items.
+                Launcher tool should show only applications with valid
+                executable if enabled. It is 'True' (the setting default)
+                if older version of applications addon does not provide it.
 
         Returns:
             list[dict]: Application items.
@@ -367,6 +380,10 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
             f"apps{context_path}?{query}"
         )
         app_items = response.data["applications"]
+        # Value is in response only once, but it is related to all items
+        show_only_available = response.data.get("show_only_available", True)
+        for app_item in app_items:
+            app_item["show_only_available"] = show_only_available
 
         # Fill icon urls with 'addon_url' and prepare icon definitions
         if not version:
@@ -386,6 +403,42 @@ class ApplicationsAddon(AYONAddon, IPluginPaths, ITrayAction):
                 "url": url.lstrip("/"),
             }
         return app_items
+
+    @classmethod
+    def validate_app_items_executable_paths(
+        cls, app_items: list[dict[str, Any]]
+    ) -> dict[str, bool | None]:
+        """Validate if applications have existing executable on this machine.
+
+        Executables for the current platform are checked the same way as
+            on application launch, using 'ApplicationExecutable.exists'.
+            Result describes only the machine where this is called.
+
+        Args:
+            app_items (list[dict[str, Any]]): Application items from
+                'get_application_items'.
+
+        Returns:
+            dict[str, bool | None]: Validity by application full name.
+                'True' if any executable for current platform exists,
+                'False' if none exists or no executable is set. 'None' if
+                item does not contain 'executables', e.g. older
+                applications addon version is used for the context.
+
+        """
+        platform_name = platform.system().lower()
+        output = {}
+        for app_item in app_items:
+            has_valid_executable = None
+            executables = app_item.get("executables")
+            if executables is not None:
+                has_valid_executable = any(
+                    ApplicationExecutable(executable).exists()
+                    for executable in executables.get(platform_name, [])
+                )
+            name = app_item["full_name"]
+            output[name] = has_valid_executable
+        return output
 
     @classmethod
     def get_tool_items(
